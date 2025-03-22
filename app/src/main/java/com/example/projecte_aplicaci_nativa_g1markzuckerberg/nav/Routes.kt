@@ -1,0 +1,12 @@
+package com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav
+
+
+sealed class Routes(val route: String) {
+    object Home : Routes("home")
+    // Puedes agregar más rutas, por ejemplo:
+    object Register : Routes("register")
+    object Login : Routes("login")
+    object LoginMobile : Routes("register_email") // Nueva ruta añadida
+    object HomeLoged : Routes("home_loged") // Nueva ruta añadida
+
+}
