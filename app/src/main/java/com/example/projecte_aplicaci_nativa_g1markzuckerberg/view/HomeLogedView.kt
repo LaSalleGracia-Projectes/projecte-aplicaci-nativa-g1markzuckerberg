@@ -25,8 +25,17 @@ import androidx.navigation.NavController
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.NavbarView
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.HomeLogedViewModel
+import java.text.SimpleDateFormat
+import java.util.*
 
 private val BluePrimary @Composable get() = MaterialTheme.colorScheme.primary
+
+// Función de ayuda para formatear el timestamp a fecha/hora
+fun formatTimestamp(timestamp: Long): String {
+    val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+    val date = Date(timestamp * 1000) // convertir segundos a milisegundos
+    return sdf.format(date)
+}
 
 @Composable
 fun HomeLogedView(
@@ -151,38 +160,31 @@ fun HomeLogedView(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // =============================
-                // Sección 2: Próximos partidos
+                // Sección 2: Próximos partidos (Fixtures)
                 // =============================
-                Text(
-                    text = "Jornada X",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Para ocupar todo el ancho, ponemos esta sección sin el padding horizontal extra.
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    // 10 partidos
-                    repeat(10) {
-                        MatchRow()
-                    }
-
-                    // Botón "Ver más" centrado
+                viewModel.jornadaData.value?.let { jornada ->
+                    // Título de la jornada
+                    Text(
+                        text = "Jornada ${jornada.jornada}",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        OutlinedButton(onClick = {
-                            // TODO: Mostrar más partidos
-                        }) {
-                            Text("Ver más")
-                        }
+
+                    // Recorre cada fixture
+                    jornada.fixtures.forEach { fixture ->
+                        // Separa los nombres de los equipos, asumiendo que el string es "Equipo1 vs Equipo2"
+                        val teams = fixture.name.split(" vs ")
+                        val team1 = teams.getOrNull(0) ?: "Equipo 1"
+                        val team2 = teams.getOrNull(1) ?: "Equipo 2"
+                        val formattedDate = formatTimestamp(fixture.starting_at_timestamp)
+
+                        MatchRow(team1 = team1, team2 = team2, date = formattedDate)
                     }
                 }
 
-                Spacer(modifier = Modifier.height(80.dp)) // margen al final para no tapar contenido con la navbar
+                Spacer(modifier = Modifier.height(80.dp)) // margen final para no tapar contenido con la navbar
             }
         }
 
@@ -202,9 +204,9 @@ fun HomeLogedView(
     }
 }
 
-/* --------------------------
-   COMPOSABLES REUTILIZABLES
-   -------------------------- */
+// --------------------------
+// COMPOSABLES REUTILIZABLES
+// --------------------------
 
 // Fila para "Mis ligas": (Icono Liga) Nombre Liga | XX Puntos | XX (icono personas)
 @Composable
@@ -272,7 +274,7 @@ fun LeagueRow(onClick: () -> Unit) {
 
 // Fila para partidos: se adapta para ocupar todo el ancho, igual que LeagueRow
 @Composable
-fun MatchRow() {
+fun MatchRow(team1: String, team2: String, date: String) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -293,13 +295,13 @@ fun MatchRow() {
                 horizontalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "Equipo 1",
+                    text = team1,
                     fontSize = 14.sp,
                     color = Color.Black
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Image(
-                    painter = painterResource(id = R.drawable.fantasydraft), // TODO: Reemplazar por el ícono de Equipo 1
+                    painter = painterResource(id = R.drawable.fantasydraft), // TODO: Reemplazar por ícono del equipo 1
                     contentDescription = "Equipo 1 Icon",
                     modifier = Modifier.size(24.dp)
                 )
@@ -311,7 +313,7 @@ fun MatchRow() {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Fecha/Hora",
+                    text = date,
                     fontSize = 14.sp,
                     color = Color.Black,
                     textAlign = TextAlign.Center
@@ -325,13 +327,13 @@ fun MatchRow() {
                 horizontalArrangement = Arrangement.Center
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.fantasydraft), // TODO: Reemplazar por el ícono de Equipo 2
+                    painter = painterResource(id = R.drawable.fantasydraft), // TODO: Reemplazar por ícono del equipo 2
                     contentDescription = "Equipo 2 Icon",
                     modifier = Modifier.size(24.dp)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "Equipo 2",
+                    text = team2,
                     fontSize = 14.sp,
                     color = Color.Black
                 )
@@ -339,7 +341,6 @@ fun MatchRow() {
         }
     }
 }
-
 
 // Pequeña barra vertical entre columnas
 @Composable

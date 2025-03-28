@@ -18,10 +18,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         // Hacer que el contenido ocupe toda la pantalla
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        //WindowCompat.setDecorFitsSystemWindows(window, false)
 
         // Ocultar barra de estado
-        window.insetsController?.hide(WindowInsets.Type.statusBars())
+        //window.insetsController?.hide(WindowInsets.Type.statusBars())
 
         setContent {
             Projecteaplicacinativag1markzuckerbergTheme(
