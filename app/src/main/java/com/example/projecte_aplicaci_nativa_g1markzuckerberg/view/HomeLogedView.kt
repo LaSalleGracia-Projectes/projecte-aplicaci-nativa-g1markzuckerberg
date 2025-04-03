@@ -4,14 +4,13 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.NavbarView
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.HomeLogedViewModel
 import java.text.SimpleDateFormat
@@ -104,52 +104,50 @@ fun HomeLogedView(
             // Línea divisoria
             HorizontalDivider()
 
-            // ***** ZONA SCROLLEABLE: TABLAS (Mis ligas + Próximos partidos) *****
-            val scrollState = rememberScrollState()
-            Column(
+            // ZONA SCROLLEABLE: TABLAS (Mis ligas + Próximos partidos)
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .verticalScroll(scrollState)
                     .padding(16.dp) // margen interior para "Mis ligas" y sus botones
             ) {
-                // =============================
                 // Sección 1: Tabla "Mis ligas"
-                // =============================
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Mis ligas",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
-                    // Botones: "Buscar liga" y "Crear liga"
-                    Row {
-                        OutlinedButton(
-                            onClick = {
-                                // TODO: Lógica para buscar liga
-                            },
-                            modifier = Modifier.padding(end = 8.dp)
-                        ) {
-                            Text("Buscar Liga")
-                        }
-                        OutlinedButton(
-                            onClick = {
-                                // TODO: Lógica para crear liga
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Mis ligas",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
+                        )
+                        // Botones: "Buscar liga" y "Crear liga"
+                        Row {
+                            OutlinedButton(
+                                onClick = {
+                                    // TODO: Lógica para buscar liga
+                                },
+                                modifier = Modifier.padding(end = 8.dp)
+                            ) {
+                                Text("Buscar Liga")
                             }
-                        ) {
-                            Text("Crear Liga")
+                            OutlinedButton(
+                                onClick = {
+                                    // TODO: Lógica para crear liga
+                                }
+                            ) {
+                                Text("Crear Liga")
+                            }
                         }
                     }
                 }
 
                 // Filas de ligas (ejemplo con 5 filas)
-                repeat(5) {
+                items(5) {
                     LeagueRow(
                         onClick = {
                             // TODO: Navegar a la vista de la liga
@@ -157,23 +155,22 @@ fun HomeLogedView(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                item {
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
 
-                // =============================
                 // Sección 2: Próximos partidos (Fixtures)
-                // =============================
                 viewModel.jornadaData.value?.let { jornada ->
-                    // Título de la jornada
-                    Text(
-                        text = "Jornada ${jornada.jornada}",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Recorre cada fixture
-                    jornada.fixtures.forEach { fixture ->
+                    item {
+                        Text(
+                            text = "Jornada ${jornada.jornada}",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                    items(jornada.fixtures) { fixture ->
                         // Separa los nombres de los equipos, asumiendo que el string es "Equipo1 vs Equipo2"
                         val teams = fixture.name.split(" vs ")
                         val team1 = teams.getOrNull(0) ?: "Equipo 1"
@@ -184,7 +181,9 @@ fun HomeLogedView(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(80.dp)) // margen final para no tapar contenido con la navbar
+                item {
+                    Spacer(modifier = Modifier.height(80.dp)) // margen final para no tapar contenido con la navbar
+                }
             }
         }
 
@@ -195,10 +194,11 @@ fun HomeLogedView(
                 .align(Alignment.BottomCenter)
         ) {
             NavbarView(
+                navController = navController,
                 onProfileClick = { /* TODO */ },
-                onHomeClick = { /* TODO */ },
+                onHomeClick = { navController.navigate(Routes.HomeLoged.route) },
                 onNotificationsClick = { /* TODO */ },
-                onSettingsClick = { /* TODO */ }
+                onSettingsClick = { navController.navigate(Routes.Settings.route) }
             )
         }
     }

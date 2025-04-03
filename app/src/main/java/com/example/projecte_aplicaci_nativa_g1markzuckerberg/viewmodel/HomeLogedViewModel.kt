@@ -6,6 +6,7 @@ import androidx.compose.runtime.State
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient.authRepository
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.JornadaResponse
 import kotlinx.coroutines.launch
 import retrofit2.Response

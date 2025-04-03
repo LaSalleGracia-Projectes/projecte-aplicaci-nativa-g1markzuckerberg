@@ -16,7 +16,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
 
 @Composable
 fun NavBarItem(
@@ -34,10 +37,11 @@ fun NavBarItem(
 }
 @Composable
 fun NavbarView(
+    navController: NavController,
     onProfileClick: () -> Unit,
-    onHomeClick: () -> Unit,
+    onHomeClick: () -> Unit = {navController.navigate(Routes.HomeLoged.route)},
     onNotificationsClick: () -> Unit,
-    onSettingsClick: () -> Unit
+    onSettingsClick: () -> Unit = { navController.navigate(Routes.Settings.route) }
 ) {
     Row(
         modifier = Modifier

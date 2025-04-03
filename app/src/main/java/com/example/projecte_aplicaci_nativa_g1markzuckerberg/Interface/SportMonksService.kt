@@ -14,6 +14,6 @@ interface SportMonksService {
     ): Response<JornadaResponse>
 
     // Ejemplo: obtener siempre la misma jornada (28)
-    @GET("api/v1/sportmonks/jornadas/28")
+    @GET("api/v1/sportmonks/jornadas/30")
     suspend fun getJornadaFixtures(): Response<JornadaResponse>
 }

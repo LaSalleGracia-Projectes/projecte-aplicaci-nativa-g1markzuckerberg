@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -16,22 +17,36 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.LoginViewModel
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.factory.LoginViewModelFactory
 
 // Color primario (ajustar según la guía de estilos)
 private val BluePrimary @Composable get() = MaterialTheme.colorScheme.primary
+@Composable
+fun LoginScreen(navController: NavController) {
+    val loginViewModel: LoginViewModel = viewModel(
+        factory = LoginViewModelFactory(RetrofitClient.authRepository)
+    )
+    LoginView(navController = navController, viewModel = loginViewModel)
+}
 
 @Composable
 fun LoginView(
     navController: NavController,
     viewModel: LoginViewModel
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) }
+    val email by viewModel.email.observeAsState("")
+    val password by viewModel.password.observeAsState("")
+    val passwordVisible by viewModel.passwordVisible.observeAsState(false)
+
+    val isLoading by viewModel.isLoading.observeAsState(false)
+    val errorMessage by viewModel.errorMessage.observeAsState()
+
 
     Column(
         modifier = Modifier
@@ -84,7 +99,7 @@ fun LoginView(
             // Campo de texto para Correo
             OutlinedTextField(
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = viewModel::onEmailChanged,
                 label = { Text("Correo") },
                 leadingIcon = {
                     Image(
@@ -103,7 +118,7 @@ fun LoginView(
             // Campo de texto para Contraseña
             OutlinedTextField(
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = viewModel::onPasswordChanged,
                 label = { Text("Contraseña") },
                 leadingIcon = {
                     Image(
@@ -122,7 +137,7 @@ fun LoginView(
                 },
                 trailingIcon = {
                     val iconRes = if (passwordVisible) R.drawable.visibility_on else R.drawable.visibility_off
-                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    IconButton(onClick = { viewModel.togglePasswordVisibility() }) {
                         Image(
                             painter = painterResource(id = iconRes),
                             contentDescription = "Mostrar/Ocultar contraseña",
@@ -146,12 +161,22 @@ fun LoginView(
             )
 
             Spacer(modifier = Modifier.height(24.dp))
+            // Indicador de carga
+            if (viewModel.isLoading.value == true) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+            }
+
+            // Mostrar error si lo hay
+            viewModel.errorMessage.value?.let { error ->
+                Text(text = error, color = MaterialTheme.colorScheme.error)
+            }
 
             // Botón "Iniciar sesión"
             Button(
                 onClick = {
-                    navController.navigate(Routes.HomeLoged.route)
-
+                    viewModel.login {
+                        navController.navigate(Routes.HomeLoged.route)
+                    }
                     // TODO: Lógica para iniciar sesión
                 },
                 modifier = Modifier
