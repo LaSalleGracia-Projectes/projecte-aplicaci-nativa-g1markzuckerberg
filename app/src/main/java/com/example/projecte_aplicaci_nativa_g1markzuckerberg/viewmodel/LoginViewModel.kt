@@ -1,10 +1,15 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel
 
+import android.content.Context
+import android.content.Intent
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.repository.AuthRepository
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import kotlinx.coroutines.launch
 
 class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
@@ -50,5 +55,32 @@ class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
             }
         }
     }
+    private lateinit var googleSignInClient: GoogleSignInClient
+
+    fun initGoogle(context: Context) {
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestEmail()
+            .requestIdToken("884876575294-oh7lg4cmsm01ue1g4os6plpuqflua19n.apps.googleusercontent.com") // <- Este lo sacas de la consola de Google
+            .build()
+        googleSignInClient = GoogleSignIn.getClient(context, gso)
+    }
+
+    fun getGoogleSignInIntent(): Intent {
+        return googleSignInClient.signInIntent
+    }
+    fun handleGoogleToken(idToken: String, onSuccess: () -> Unit) {
+        _isLoading.value = true
+        viewModelScope.launch {
+            val result = authRepository.loginWithGoogle(idToken)
+            _isLoading.value = false
+            result.onSuccess {
+                onSuccess()
+            }.onFailure {
+                _errorMessage.value = it.message
+            }
+        }
+    }
+
+
 }
 

@@ -70,5 +70,23 @@ class AuthRepository(
             }
         }
     }
+    suspend fun loginWithGoogle(idToken: String): Result<String> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = service.loginWithGoogle(idToken)
+                if (response.isSuccessful) {
+                    response.body()?.mobileToken?.let { token ->
+                        tokenManager.saveToken(token)
+                        Result.success(token)
+                    } ?: Result.failure(Exception("Token no recibido"))
+                } else {
+                    Result.failure(Exception("Error ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
+
 
 }

@@ -1,5 +1,8 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,6 +14,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -24,6 +28,8 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.LoginViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.factory.LoginViewModelFactory
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.common.api.ApiException
 
 // Color primario (ajustar según la guía de estilos)
 private val BluePrimary @Composable get() = MaterialTheme.colorScheme.primary
@@ -46,6 +52,26 @@ fun LoginView(
 
     val isLoading by viewModel.isLoading.observeAsState(false)
     val errorMessage by viewModel.errorMessage.observeAsState()
+
+    val context = LocalContext.current
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        try {
+            val account = task.getResult(ApiException::class.java)
+            val idToken = account.idToken
+            if (idToken != null) {
+                viewModel.handleGoogleToken(idToken) {
+                    navController.navigate(Routes.HomeLoged.route)
+                }
+            }
+        } catch (e: ApiException) {
+            Log.e("GoogleSignIn", "Error: ${e.message}")
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.initGoogle(context)
+    }
 
 
     Column(
@@ -199,7 +225,7 @@ fun LoginView(
             // Botón "Iniciar sesión con Google"
             OutlinedButton(
                 onClick = {
-                    // TODO: Lógica para iniciar sesión con Google
+                    launcher.launch(viewModel.getGoogleSignInIntent())
                 },
                 modifier = Modifier
                     .fillMaxWidth()
