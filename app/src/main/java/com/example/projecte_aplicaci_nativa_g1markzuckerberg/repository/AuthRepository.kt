@@ -52,14 +52,11 @@ class AuthRepository(
 
     fun getToken(): String? = tokenManager.getToken()
 
-    // En AuthRepository.kt
     suspend fun logoutMobile(): Result<Unit> {
         return withContext(Dispatchers.IO) {
             try {
-                // Ajusta si tu AuthService tiene el método logoutMobile
                 val response = service.logoutMobile()
                 if (response.isSuccessful) {
-                    // Limpia el token local
                     tokenManager.clearToken()
                     Result.success(Unit)
                 } else {
@@ -71,4 +68,21 @@ class AuthRepository(
         }
     }
 
+    suspend fun loginWithGoogle(idToken: String): Result<String> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = service.loginWithGoogle(mapOf("idToken" to idToken))
+                if (response.isSuccessful) {
+                    response.body()?.mobileToken?.let { token ->
+                        tokenManager.saveToken(token)
+                        Result.success(token)
+                    } ?: Result.failure(Exception("Token no recibido"))
+                } else {
+                    Result.failure(Exception("Error ${response.code()}"))
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
 }

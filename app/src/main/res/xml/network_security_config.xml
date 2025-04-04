@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Permite tráfico en texto claro (HTTP) para pruebas o entornos controlados -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+            <!-- Opcional: <certificates src="user" /> -->
+        </trust-anchors>
+    </base-config>
+
+    <!-- Ejemplo de configuración específica para un dominio -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+    </domain-config>
+</network-security-config>
