@@ -21,8 +21,8 @@ interface AuthService {
     @POST("api/v1/auth/logoutMobile")
     suspend fun logoutMobile(): Response<Unit>
 
-    @GET("auth/google/mobile/callback")
-    suspend fun loginWithGoogle(@Query("id_token") idToken: String): Response<GoogleAuthResponse>
+    @POST("api/v1/auth/google/mobile/token")
+    suspend fun loginWithGoogle(@Body body: Map<String, String>): Response<GoogleAuthResponse>
 
 
 }

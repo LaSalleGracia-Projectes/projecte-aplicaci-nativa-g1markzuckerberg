@@ -24,7 +24,7 @@ class RegisterViewModel : ViewModel() {
     fun initGoogle(context: Context) {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
-            .requestIdToken("884876575294-oh7lg4cmsm01ue1g4os6plpuqflua19n.apps.googleusercontent.com") // <- Este lo sacas de la consola de Google
+            .requestIdToken("884876575294-4t7eid7marm9u9s2u9mb7agv5i1k4lgu.apps.googleusercontent.com") // <- Este lo sacas de la consola de Google
             .build()
         googleSignInClient = GoogleSignIn.getClient(context, gso)
     }
