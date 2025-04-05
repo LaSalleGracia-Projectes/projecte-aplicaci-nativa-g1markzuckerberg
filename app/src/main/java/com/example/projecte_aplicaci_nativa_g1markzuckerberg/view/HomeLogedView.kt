@@ -1,5 +1,6 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -33,12 +34,14 @@ private val BluePrimary @Composable get() = MaterialTheme.colorScheme.primary
 // Función de ayuda para formatear el timestamp a fecha/hora
 fun formatTimestamp(timestamp: Long): String {
     val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+    sdf.timeZone = TimeZone.getTimeZone("Europe/Madrid")
     val date = Date(timestamp * 1000) // convertir segundos a milisegundos
     return sdf.format(date)
 }
 fun splitDateTime(timestamp: Long): Pair<String, String> {
     // Por ejemplo, "16/03/2025 15:30" se separa en ("16/03/2025", "15:30")
     val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+    sdf.timeZone = TimeZone.getTimeZone("Europe/Madrid")
     val date = Date(timestamp * 1000)
     val fullDateTime = sdf.format(date)
     val parts = fullDateTime.split(" ")
@@ -89,8 +92,8 @@ fun HomeLogedView(
                         maxLines = 1
                     )
                     // Logo de la app (si usas URL, AsyncImage; si es un recurso local, puedes usar painterResource)
-                    AsyncImage(
-                        model = "https://yourdomain.com/logo.png",
+                    Image(
+                        painter = painterResource(id = R.drawable.fantasydraft),
                         contentDescription = "Logo FantasyDraft",
                         modifier = Modifier.size(108.dp)
                     )
@@ -196,10 +199,6 @@ fun HomeLogedView(
                             visitantTeamImage = fixture.visitant_team_image ?: ""
                         )
                     }
-                }
-
-                item {
-                    Spacer(modifier = Modifier.height(80.dp)) // margen final para no tapar contenido con la navbar
                 }
             }
         }

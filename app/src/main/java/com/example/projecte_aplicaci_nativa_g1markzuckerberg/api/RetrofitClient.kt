@@ -10,7 +10,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
     // Si usas el emulador de Android, localhost es 10.0.2.2
-    private const val BASE_URL = "http://10.0.2.2:3000/"
+    private const val BASE_URL = "http://192.168.1.41:3000/"
 
     // Este repositorio se asignará desde tu Application o mediante DI
     lateinit var authRepository: AuthRepository
