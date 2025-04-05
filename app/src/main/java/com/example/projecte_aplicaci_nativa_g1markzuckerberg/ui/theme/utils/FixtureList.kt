@@ -18,6 +18,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.Fixture
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.view.MatchRow
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.view.formatTimestamp
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.FixturesViewModel
 
 @Composable
@@ -33,18 +35,30 @@ fun FixtureList(viewModel: FixturesViewModel) {
             textAlign = TextAlign.Center
         )
     } else if (fixtures.isEmpty()) {
-        // Muestra la rueda de carga mientras se obtienen datos
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
     } else {
         LazyColumn(modifier = Modifier.fillMaxWidth()) {
             items(fixtures) { fixture ->
-                FixtureRow(fixture = fixture)
+                // Separa los nombres de los equipos, asumiendo que el string es "Equipo1 vs Equipo2"
+                val teams = fixture.name.split(" vs ")
+                val team1 = teams.getOrNull(0) ?: "Equipo 1"
+                val team2 = teams.getOrNull(1) ?: "Equipo 2"
+                val formattedDate = formatTimestamp(fixture.starting_at_timestamp)
+
+                MatchRow(
+                    team1 = team1,
+                    team2 = team2,
+                    timestamp = fixture.starting_at_timestamp,
+                    localTeamImage = fixture.local_team_image ?: "",
+                    visitantTeamImage = fixture.visitant_team_image ?: ""
+                )
             }
         }
     }
 }
+
 
 
 @Composable

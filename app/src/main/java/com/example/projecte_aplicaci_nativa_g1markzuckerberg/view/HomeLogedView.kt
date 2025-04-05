@@ -1,6 +1,5 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -21,6 +20,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.NavbarView
@@ -36,6 +36,17 @@ fun formatTimestamp(timestamp: Long): String {
     val date = Date(timestamp * 1000) // convertir segundos a milisegundos
     return sdf.format(date)
 }
+fun splitDateTime(timestamp: Long): Pair<String, String> {
+    // Por ejemplo, "16/03/2025 15:30" se separa en ("16/03/2025", "15:30")
+    val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+    val date = Date(timestamp * 1000)
+    val fullDateTime = sdf.format(date)
+    val parts = fullDateTime.split(" ")
+    val datePart = parts.getOrNull(0) ?: ""
+    val timePart = parts.getOrNull(1) ?: ""
+    return datePart to timePart
+}
+
 
 @Composable
 fun HomeLogedView(
@@ -77,8 +88,9 @@ fun HomeLogedView(
                         modifier = Modifier.weight(1f),
                         maxLines = 1
                     )
-                    Image(
-                        painter = painterResource(id = R.drawable.fantasydraft),
+                    // Logo de la app (si usas URL, AsyncImage; si es un recurso local, puedes usar painterResource)
+                    AsyncImage(
+                        model = "https://yourdomain.com/logo.png",
                         contentDescription = "Logo FantasyDraft",
                         modifier = Modifier.size(108.dp)
                     )
@@ -171,13 +183,18 @@ fun HomeLogedView(
                         Spacer(modifier = Modifier.height(8.dp))
                     }
                     items(jornada.fixtures) { fixture ->
-                        // Separa los nombres de los equipos, asumiendo que el string es "Equipo1 vs Equipo2"
+                        // Separa los nombres de los equipos
                         val teams = fixture.name.split(" vs ")
                         val team1 = teams.getOrNull(0) ?: "Equipo 1"
                         val team2 = teams.getOrNull(1) ?: "Equipo 2"
-                        val formattedDate = formatTimestamp(fixture.starting_at_timestamp)
 
-                        MatchRow(team1 = team1, team2 = team2, date = formattedDate)
+                        MatchRow(
+                            team1 = team1,
+                            team2 = team2,
+                            timestamp = fixture.starting_at_timestamp,
+                            localTeamImage = fixture.local_team_image ?: "",
+                            visitantTeamImage = fixture.visitant_team_image ?: ""
+                        )
                     }
                 }
 
@@ -225,7 +242,7 @@ fun LeagueRow(onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Icono Liga (Placeholder)
-            Image(
+            androidx.compose.foundation.Image(
                 painter = painterResource(id = R.drawable.fantasydraft), // TODO: Reemplazar por icono de liga
                 contentDescription = "Liga Icon",
                 modifier = Modifier.size(32.dp)
@@ -262,7 +279,7 @@ fun LeagueRow(onClick: () -> Unit) {
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 // Icono personas
-                Image(
+                androidx.compose.foundation.Image(
                     painter = painterResource(id = R.drawable.fantasydraft), // TODO: Reemplazar por icono de usuarios
                     contentDescription = "Users Icon",
                     modifier = Modifier.size(20.dp)
@@ -272,75 +289,81 @@ fun LeagueRow(onClick: () -> Unit) {
     }
 }
 
-// Fila para partidos: se adapta para ocupar todo el ancho, igual que LeagueRow
+// Fila para partidos: ahora se organiza en dos filas verticales
 @Composable
-fun MatchRow(team1: String, team2: String, date: String) {
-    Box(
+fun MatchRow(
+    team1: String,
+    team2: String,
+    timestamp: Long,
+    localTeamImage: String,
+    visitantTeamImage: String
+) {
+    // Separamos la fecha y la hora en dos strings
+    val (datePart, timePart) = splitDateTime(timestamp)
+
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
+            .height(80.dp)         // Damos más altura
+            .padding(8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color(0xFFEFEFEF))
-                .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+        // Columna izquierda: nombre arriba, escudo abajo
+        Column(
+            modifier = Modifier.weight(1f),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Grupo izquierdo: Equipo 1 (texto + imagen)
-            Row(
-                modifier = Modifier.weight(1f),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = team1,
-                    fontSize = 14.sp,
-                    color = Color.Black
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Image(
-                    painter = painterResource(id = R.drawable.fantasydraft), // TODO: Reemplazar por ícono del equipo 1
-                    contentDescription = "Equipo 1 Icon",
-                    modifier = Modifier.size(24.dp)
-                )
-            }
+            Text(
+                text = team1,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            AsyncImage(
+                model = localTeamImage,
+                contentDescription = "Imagen equipo local",
+                modifier = Modifier.size(28.dp)
+            )
+        }
 
-            // Grupo central: Fecha/Hora
-            Box(
-                modifier = Modifier.weight(1f),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = date,
-                    fontSize = 14.sp,
-                    color = Color.Black,
-                    textAlign = TextAlign.Center
-                )
-            }
+        // Columna central: fecha arriba, hora abajo
+        Column(
+            modifier = Modifier.weight(1f),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = datePart,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Normal
+            )
+            Text(
+                text = timePart,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Light
+            )
+        }
 
-            // Grupo derecho: Equipo 2 (imagen + texto)
-            Row(
-                modifier = Modifier.weight(1f),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.fantasydraft), // TODO: Reemplazar por ícono del equipo 2
-                    contentDescription = "Equipo 2 Icon",
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = team2,
-                    fontSize = 14.sp,
-                    color = Color.Black
-                )
-            }
+        // Columna derecha: nombre arriba, escudo abajo
+        Column(
+            modifier = Modifier.weight(1f),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = team2,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            AsyncImage(
+                model = visitantTeamImage,
+                contentDescription = "Imagen equipo visitante",
+                modifier = Modifier.size(28.dp)
+            )
         }
     }
 }
+
 
 // Pequeña barra vertical entre columnas
 @Composable
