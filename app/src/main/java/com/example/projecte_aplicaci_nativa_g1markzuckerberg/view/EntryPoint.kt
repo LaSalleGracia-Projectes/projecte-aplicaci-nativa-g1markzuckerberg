@@ -90,7 +90,7 @@ fun EntryPoint(
         composable(Routes.HomeLoged.route) {
             HomeLogedView(
                 navController = navigationController,
-                viewModel = homeLogedViewModel)
+                homeLogedViewModel = homeLogedViewModel)
         }
         composable(Routes.Settings.route) {
             SettingsScreen(

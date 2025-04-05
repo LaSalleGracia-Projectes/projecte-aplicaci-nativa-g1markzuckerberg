@@ -11,6 +11,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,14 +25,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.NavbarView
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.CreateLigaViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.HomeLogedViewModel
 import java.text.SimpleDateFormat
 import java.util.*
+import android.widget.Toast
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
 
 private val BluePrimary @Composable get() = MaterialTheme.colorScheme.primary
 
@@ -54,8 +64,28 @@ fun splitDateTime(timestamp: Long): Pair<String, String> {
 @Composable
 fun HomeLogedView(
     navController: NavController,
-    viewModel: HomeLogedViewModel
+    homeLogedViewModel: HomeLogedViewModel, // Renombrado para evitar conflicto
+    createLigaViewModel: CreateLigaViewModel = viewModel() // Obtén el CreateLigaViewModel
 ) {
+    var openCreateLigaDialog by remember { mutableStateOf(false) }
+    // Observa los resultados y errores del ViewModel de crear liga
+    val createLigaResult by createLigaViewModel.createLigaResult.observeAsState()
+    val errorMessage by createLigaViewModel.errorMessage.observeAsState("")
+    // Obtén el contexto para mostrar Toast
+    val context = LocalContext.current
+
+    // Efecto para cerrar el diálogo y mostrar mensaje según el resultado
+    LaunchedEffect(key1 = createLigaResult, key2 = errorMessage) {
+        if (createLigaResult != null) {
+            openCreateLigaDialog = false
+            Toast.makeText(context, "Liga creada correctamente", Toast.LENGTH_SHORT).show()
+        } else if (errorMessage.isNotEmpty()) {
+            // Puedes decidir si deseas cerrar el modal en caso de error o no.
+            // Aquí mostramos un Toast con el error:
+            Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -152,8 +182,9 @@ fun HomeLogedView(
                             }
                             OutlinedButton(
                                 onClick = {
-                                    // TODO: Lógica para crear liga
-                                }
+                                    openCreateLigaDialog = true
+                                    println("Crear Liga button clicked")
+                                },
                             ) {
                                 Text("Crear Liga")
                             }
@@ -175,7 +206,7 @@ fun HomeLogedView(
                 }
 
                 // Sección 2: Próximos partidos (Fixtures)
-                viewModel.jornadaData.value?.let { jornada ->
+                homeLogedViewModel.jornadaData.value?.let { jornada ->
                     item {
                         Text(
                             text = "Jornada ${jornada.jornada}",
@@ -215,6 +246,15 @@ fun HomeLogedView(
                 onHomeClick = { navController.navigate(Routes.HomeLoged.route) },
                 onNotificationsClick = { /* TODO */ },
                 onSettingsClick = { navController.navigate(Routes.Settings.route) }
+            )
+        }
+        // Bloque para mostrar el modal de crear liga cuando openCreateLigaDialog es true
+        if (openCreateLigaDialog) {
+            CreateLigaDialog(
+                onDismiss = { openCreateLigaDialog = false },
+                onCreateLiga = { leagueName ->
+                    createLigaViewModel.createLiga(leagueName)
+                },
             )
         }
     }
