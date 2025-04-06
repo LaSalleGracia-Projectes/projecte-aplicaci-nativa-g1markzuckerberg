@@ -21,23 +21,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.NavbarView
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.CreateLigaViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.HomeLogedViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 import android.widget.Toast
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CreateLigaDialog
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.JoinLigaDialog
 
 private val BluePrimary @Composable get() = MaterialTheme.colorScheme.primary
 
@@ -65,14 +67,26 @@ fun splitDateTime(timestamp: Long): Pair<String, String> {
 fun HomeLogedView(
     navController: NavController,
     homeLogedViewModel: HomeLogedViewModel, // Renombrado para evitar conflicto
-    createLigaViewModel: CreateLigaViewModel = viewModel() // Obtén el CreateLigaViewModel
 ) {
     var openCreateLigaDialog by remember { mutableStateOf(false) }
     // Observa los resultados y errores del ViewModel de crear liga
-    val createLigaResult by createLigaViewModel.createLigaResult.observeAsState()
-    val errorMessage by createLigaViewModel.errorMessage.observeAsState("")
+    val createLigaResult by homeLogedViewModel.createLigaResult.observeAsState()
+    val errorMessage by homeLogedViewModel.errorMessage.observeAsState("")
     // Obtén el contexto para mostrar Toast
     val context = LocalContext.current
+    var openJoinLigaDialog by remember { mutableStateOf(false) }
+    val joinLigaResult by homeLogedViewModel.joinLigaResult.observeAsState()
+    val userLeagues by homeLogedViewModel.userLeagues.observeAsState(emptyList())
+
+
+    LaunchedEffect(key1 = joinLigaResult, key2 = errorMessage) {
+        if (joinLigaResult != null) {
+            openJoinLigaDialog = false
+            Toast.makeText(context, "Te has unido correctamente a la liga", Toast.LENGTH_SHORT).show()
+        } else if (errorMessage.isNotEmpty()) {
+            Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+        }
+    }
 
     // Efecto para cerrar el diálogo y mostrar mensaje según el resultado
     LaunchedEffect(key1 = createLigaResult, key2 = errorMessage) {
@@ -85,6 +99,10 @@ fun HomeLogedView(
             Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
         }
     }
+    LaunchedEffect(Unit) {
+        homeLogedViewModel.fetchUserLeagues()
+    }
+
 
     Box(
         modifier = Modifier
@@ -155,8 +173,15 @@ fun HomeLogedView(
                     .fillMaxSize()
                     .padding(16.dp) // margen interior para "Mis ligas" y sus botones
             ) {
+                if (userLeagues.isEmpty()) {
+                    item {
+                        Text("No estás en ninguna liga aún", modifier = Modifier.padding(16.dp))
+                    }
+                }
+
                 // Sección 1: Tabla "Mis ligas"
                 item {
+
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -175,10 +200,12 @@ fun HomeLogedView(
                             OutlinedButton(
                                 onClick = {
                                     // TODO: Lógica para buscar liga
+                                    openJoinLigaDialog = true
+
                                 },
                                 modifier = Modifier.padding(end = 8.dp)
                             ) {
-                                Text("Buscar Liga")
+                                Text("Unirse a Liga")
                             }
                             OutlinedButton(
                                 onClick = {
@@ -193,10 +220,12 @@ fun HomeLogedView(
                 }
 
                 // Filas de ligas (ejemplo con 5 filas)
-                items(5) {
+                items(userLeagues) { liga ->
                     LeagueRow(
+                        name = liga.name,
+                        puntos = liga.puntos_totales,
                         onClick = {
-                            // TODO: Navegar a la vista de la liga
+                            // TODO: Navegar a detalles de liga
                         }
                     )
                 }
@@ -253,7 +282,16 @@ fun HomeLogedView(
             CreateLigaDialog(
                 onDismiss = { openCreateLigaDialog = false },
                 onCreateLiga = { leagueName ->
-                    createLigaViewModel.createLiga(leagueName)
+                    homeLogedViewModel.createLiga(leagueName)
+                },
+            )
+        }
+        // Al final del Box, agrega el modal:
+        if (openJoinLigaDialog) {
+            JoinLigaDialog(
+                onDismiss = { openJoinLigaDialog = false },
+                onJoinLiga = { leagueCode ->
+                    homeLogedViewModel.joinLiga(leagueCode)
                 },
             )
         }
@@ -266,7 +304,11 @@ fun HomeLogedView(
 
 // Fila para "Mis ligas": (Icono Liga) Nombre Liga | XX Puntos | XX (icono personas)
 @Composable
-fun LeagueRow(onClick: () -> Unit) {
+fun LeagueRow(
+    name: String,
+    puntos: String,
+    onClick: () -> Unit
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -280,18 +322,16 @@ fun LeagueRow(onClick: () -> Unit) {
                 .padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icono Liga (Placeholder)
-            androidx.compose.foundation.Image(
-                painter = painterResource(id = R.drawable.fantasydraft), // TODO: Reemplazar por icono de liga
+            Image(
+                painter = painterResource(id = R.drawable.fantasydraft),
                 contentDescription = "Liga Icon",
                 modifier = Modifier.size(32.dp)
             )
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // Nombre de la liga
             Text(
-                text = "Nombre Liga",
+                text = name,
                 fontSize = 14.sp,
                 color = Color.Black,
                 modifier = Modifier.weight(1f)
@@ -299,34 +339,18 @@ fun LeagueRow(onClick: () -> Unit) {
 
             VerticalDivider()
 
-            // Puntos
             Text(
-                text = "XX Puntos",
+                text = "$puntos Pts",
                 fontSize = 14.sp,
                 color = Color.Black,
                 modifier = Modifier.padding(horizontal = 8.dp)
             )
 
-            VerticalDivider()
-
-            // Cantidad de usuarios
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "XX",
-                    fontSize = 14.sp,
-                    color = Color.Black
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                // Icono personas
-                androidx.compose.foundation.Image(
-                    painter = painterResource(id = R.drawable.fantasydraft), // TODO: Reemplazar por icono de usuarios
-                    contentDescription = "Users Icon",
-                    modifier = Modifier.size(20.dp)
-                )
-            }
+            // Puedes añadir más info si quieres, como número de usuarios
         }
     }
 }
+
 
 // Fila para partidos: ahora se organiza en dos filas verticales
 @Composable

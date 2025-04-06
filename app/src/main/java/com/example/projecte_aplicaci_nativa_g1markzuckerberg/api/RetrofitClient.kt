@@ -2,6 +2,7 @@ package com.example.projecte_aplicaci_nativa_g1markzuckerberg.api
 
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.Interface.AuthService
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.Interface.LigaService
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.Interface.UserService
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.interfaz.SportMonksService
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.network.AuthInterceptor
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.repository.AuthRepository
@@ -12,7 +13,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 object RetrofitClient {
     // Ip para el emulador de Android, localhost es 10.0.2.2
     // Ip para el dispositivo físico, 192.168.1.41:3000
-    private const val BASE_URL = "http://10.0.2.2:3000/"
+    private const val BASE_URL = "http://192.168.1.41:3000/"
 
     // Este repositorio se asignará desde tu Application o mediante DI
     lateinit var authRepository: AuthRepository
@@ -47,5 +48,13 @@ object RetrofitClient {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(LigaService::class.java)
+    }
+    val userService: UserService by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(UserService::class.java)
     }
 }
