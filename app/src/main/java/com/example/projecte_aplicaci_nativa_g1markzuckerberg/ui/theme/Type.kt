@@ -2,22 +2,31 @@ package com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 
-// Puedes añadir fuentes y estilos específicos aquí
-val Typography = Typography(
+val Inter = FontFamily(
+    Font(R.font.inter__medium, FontWeight.Normal),
+    Font(R.font.inter_bold, FontWeight.Bold),
+    Font(R.font.inter_regular, FontWeight.SemiBold),
+)
+val AppTypography = Typography(
     bodyLarge = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = Inter,
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp
     ),
-    // Ejemplo de estilo para títulos grandes
     titleLarge = TextStyle(
-        fontFamily = FontFamily.Default,
+        fontFamily = Inter,
         fontWeight = FontWeight.Bold,
         fontSize = 24.sp
     ),
-    // Agrega más estilos si lo necesitas...
+    bodyMedium = TextStyle(
+        fontFamily = Inter,
+        fontWeight = FontWeight.Medium,
+        fontSize = 14.sp
+    )
 )

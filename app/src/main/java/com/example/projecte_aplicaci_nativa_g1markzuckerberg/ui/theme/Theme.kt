@@ -8,43 +8,32 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80,
-    // Sobrescribe más colores si lo deseas para modo oscuro
+    primary = PrimaryColor,
+    secondary = SecondaryColor,
+    tertiary = TertiaryColor,
     background = Color(0xFF121212),
     surface = Color(0xFF1D1D1D),
     onPrimary = Color.Black,
-    onSecondary = Color.Black,
-    onTertiary = Color.Black
+    onSecondary = Color.White,
+    onTertiary = Color.White
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    onPrimary = Color.White,
-    secondary = PurpleGrey40,
-    onSecondary = Color.White,
-    tertiary = Pink40,
-    onTertiary = Color.White,
-
-    // Sobrescribe con tu guía de estilos
+    primary = PrimaryColor,
+    secondary = SecondaryColor,
+    tertiary = TertiaryColor,
     background = BackgroundLight,
-    onBackground = Color.Black,
     surfaceVariant = SurfaceVariantLight,
     onSurfaceVariant = OnSurfaceVariantLight,
-    outline = OutlineLight
-
-    /* Otros colores opcionales:
-       surface = Color.White,
-       onSurface = Color.Black,
-       etc.
-    */
+    outline = OutlineLight,
+    onPrimary = Color.White,
+    onSecondary = Color.White,
+    onTertiary = Color.White
 )
 
 @Composable
 fun Projecteaplicacinativag1markzuckerbergTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color es para Android 12+; lo mantengo para que puedas decidir si lo usas
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
@@ -59,7 +48,7 @@ fun Projecteaplicacinativag1markzuckerbergTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography,  // ver Typography.kt
+        typography = AppTypography,
         content = content
     )
 }

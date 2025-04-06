@@ -119,8 +119,8 @@ fun HomeLogedView(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(140.dp)
-                    .background(BluePrimary),
+                    .height(100.dp)
+                    .background(MaterialTheme.colorScheme.primary),
                 contentAlignment = Alignment.Center
             ) {
                 Row(
@@ -134,8 +134,8 @@ fun HomeLogedView(
                     Text(
                         text = "FantasyDraft",
                         fontSize = 28.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.weight(1f),
                         maxLines = 1
                     )
@@ -143,7 +143,7 @@ fun HomeLogedView(
                     Image(
                         painter = painterResource(id = R.drawable.fantasydraft),
                         contentDescription = "Logo FantasyDraft",
-                        modifier = Modifier.size(108.dp)
+                        modifier = Modifier.size(80.dp)
                     )
                 }
             }
@@ -152,14 +152,15 @@ fun HomeLogedView(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color(0xFFEFEFEF)) // gris claro suave
+                    .background(MaterialTheme.colorScheme.secondary)
                     .padding(vertical = 16.dp)
             ) {
                 Text(
                     text = "Crea una liga con tus amigos!",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSecondary,
                     modifier = Modifier.align(Alignment.Center)
                 )
             }
@@ -318,7 +319,7 @@ fun LeagueRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color(0xFFEFEFEF))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
                 .padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -332,8 +333,8 @@ fun LeagueRow(
 
             Text(
                 text = name,
-                fontSize = 14.sp,
-                color = Color.Black,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f)
             )
 
@@ -341,8 +342,8 @@ fun LeagueRow(
 
             Text(
                 text = "$puntos Pts",
-                fontSize = 14.sp,
-                color = Color.Black,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 8.dp)
             )
 
