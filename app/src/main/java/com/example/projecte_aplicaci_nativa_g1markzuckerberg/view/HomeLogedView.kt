@@ -83,6 +83,7 @@ fun HomeLogedView(
         if (joinLigaResult != null) {
             openJoinLigaDialog = false
             Toast.makeText(context, "Te has unido correctamente a la liga", Toast.LENGTH_SHORT).show()
+            homeLogedViewModel.fetchUserLeagues()
         } else if (errorMessage.isNotEmpty()) {
             Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
         }
@@ -93,6 +94,7 @@ fun HomeLogedView(
         if (createLigaResult != null) {
             openCreateLigaDialog = false
             Toast.makeText(context, "Liga creada correctamente", Toast.LENGTH_SHORT).show()
+            homeLogedViewModel.fetchUserLeagues()
         } else if (errorMessage.isNotEmpty()) {
             // Puedes decidir si deseas cerrar el modal en caso de error o no.
             // Aquí mostramos un Toast con el error:
@@ -113,7 +115,7 @@ fun HomeLogedView(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = 56.dp) // Espacio para la navbar
+                .padding(bottom = 50.dp) // Espacio para la navbar
         ) {
             // CABECERA
             Box(
@@ -220,13 +222,13 @@ fun HomeLogedView(
                     }
                 }
 
-                // Filas de ligas (ejemplo con 5 filas)
+                // Ejemplo seguro para LeagueRow:
                 items(userLeagues) { liga ->
                     LeagueRow(
                         name = liga.name,
                         puntos = liga.puntos_totales,
                         onClick = {
-                            // TODO: Navegar a detalles de liga
+                            navController.navigate(Routes.LigaView.createRoute(liga.code))
                         }
                     )
                 }
@@ -273,7 +275,7 @@ fun HomeLogedView(
             NavbarView(
                 navController = navController,
                 onProfileClick = { /* TODO */ },
-                onHomeClick = { navController.navigate(Routes.HomeLoged.route) },
+                onHomeClick = { },
                 onNotificationsClick = { /* TODO */ },
                 onSettingsClick = { navController.navigate(Routes.Settings.route) }
             )

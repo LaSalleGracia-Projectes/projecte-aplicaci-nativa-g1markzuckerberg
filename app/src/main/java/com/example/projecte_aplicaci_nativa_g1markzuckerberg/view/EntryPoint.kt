@@ -14,6 +14,7 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.RegisterE
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.RegisterViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.view.*
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.HomeLogedViewModel
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.LigaViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.factory.LoginViewModelFactory
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.factory.RegisterEmailViewModelFactory
 import com.example.proyecte_aplicaci_nativa_g1markzuckerberg.viewmodel.HomeViewModel
@@ -99,5 +100,11 @@ fun EntryPoint(
                 navController = navigationController
             )
         }
+        composable(Routes.LigaView.route) { backStackEntry ->
+            val ligaCode = backStackEntry.arguments?.getString("ligaCode") ?: ""
+            val ligaViewModel: LigaViewModel = viewModel()
+            LigaView(navController = navigationController, ligaCode = ligaCode, ligaViewModel = ligaViewModel)
+        }
+
     }
 }

@@ -186,8 +186,7 @@ fun RegisterEmailView(
             Column(modifier = Modifier.padding(bottom = 8.dp)) {
                 Text(text = "• Debe incluir una mayúscula", fontSize = 12.sp, color = Color.Gray)
                 Text(text = "• Debe incluir números", fontSize = 12.sp, color = Color.Gray)
-                Text(text = "• Debe contener al menos un carácter especial", fontSize = 12.sp, color = Color.Gray)
-                Text(text = "• La contraseña debe ser de al menos 8 caracteres", fontSize = 12.sp, color = Color.Gray)
+                Text(text = "• La contraseña debe ser de al menos 6 caracteres", fontSize = 12.sp, color = Color.Gray)
             }
             Spacer(modifier = Modifier.height(8.dp))
 

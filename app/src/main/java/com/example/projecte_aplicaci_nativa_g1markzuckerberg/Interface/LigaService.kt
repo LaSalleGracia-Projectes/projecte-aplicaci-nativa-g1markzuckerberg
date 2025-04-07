@@ -3,10 +3,13 @@ package com.example.projecte_aplicaci_nativa_g1markzuckerberg.Interface
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.CreateLigaRequest
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.CreateLigaResponse
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.JoinLigaResponse
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.LigaUsersResponse
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface LigaService {
     @POST("api/v1/liga/create")
@@ -18,4 +21,11 @@ interface LigaService {
     suspend fun joinLiga(
         @Path("ligaCode") ligaCode: String
     ): Response<JoinLigaResponse>
+
+    @GET("api/v1/liga/users/{ligaCode}")
+    suspend fun getUsersByLiga(
+        @Path("ligaCode") ligaCode: String,
+        @Query("jornada") jornada: Int? = null
+    ): Response<LigaUsersResponse>
+
 }
