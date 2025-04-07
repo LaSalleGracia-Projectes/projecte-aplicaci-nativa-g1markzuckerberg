@@ -44,7 +44,7 @@ fun SettingsView(
                 onProfileClick = { /* TODO */ },
                 onHomeClick = { navController.navigate(Routes.HomeLoged.route) },
                 onNotificationsClick = { /* TODO */ },
-                onSettingsClick = { navController.navigate(Routes.Settings.route) }
+                onSettingsClick = { }
             )
         }
     ) { paddingValues ->

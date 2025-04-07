@@ -1,6 +1,7 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -26,6 +27,7 @@ import androidx.navigation.NavController
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.ForgotPasswordDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.LoginViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.factory.LoginViewModelFactory
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -52,8 +54,10 @@ fun LoginView(
 
     val isLoading by viewModel.isLoading.observeAsState(false)
     val errorMessage by viewModel.errorMessage.observeAsState()
-
+    var showForgotPasswordDialog by remember { mutableStateOf(false) }
+    val forgotPasswordMessage by viewModel.forgotPasswordMessage.observeAsState()
     val context = LocalContext.current
+
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
         try {
@@ -66,6 +70,13 @@ fun LoginView(
             }
         } catch (e: ApiException) {
             Log.e("GoogleSignIn", "Error: ${e.message}")
+        }
+    }
+
+    LaunchedEffect(forgotPasswordMessage) {
+        forgotPasswordMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            showForgotPasswordDialog = false
         }
     }
 
@@ -182,7 +193,7 @@ fun LoginView(
                     .align(Alignment.End)
                     .padding(top = 8.dp)
                     .clickable {
-                        // TODO: Navegar a pantalla de recuperar contraseña
+                        showForgotPasswordDialog = true
                     }
             )
 
@@ -247,6 +258,14 @@ fun LoginView(
                     fontSize = 16.sp
                 )
             }
+        }
+        if (showForgotPasswordDialog) {
+            ForgotPasswordDialog(
+                onDismiss = { showForgotPasswordDialog = false },
+                onSubmit = { email ->
+                    viewModel.forgotPassword(email)
+                }
+            )
         }
     }
 }

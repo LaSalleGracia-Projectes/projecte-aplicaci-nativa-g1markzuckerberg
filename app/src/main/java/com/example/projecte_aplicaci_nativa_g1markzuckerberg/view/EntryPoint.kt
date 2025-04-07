@@ -7,12 +7,14 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.NavHost
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.factory.HomeLogedViewModelFactory
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.LoginViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.RegisterEmailViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.RegisterViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.view.*
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.HomeLogedViewModel
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.LigaViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.factory.LoginViewModelFactory
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.factory.RegisterEmailViewModelFactory
 import com.example.proyecte_aplicaci_nativa_g1markzuckerberg.viewmodel.HomeViewModel
@@ -29,8 +31,9 @@ fun EntryPoint(
     registerEmailViewModel: RegisterEmailViewModel = viewModel(
         factory = RegisterEmailViewModelFactory(RetrofitClient.authRepository)
     ),
-    homeLogedViewModel: HomeLogedViewModel = viewModel()
-) {
+    homeLogedViewModel: HomeLogedViewModel = viewModel(
+        factory = HomeLogedViewModelFactory(RetrofitClient.authRepository)
+    )) {
     // Ejemplo: comprobación del token al arrancar la app
     LaunchedEffect(Unit) {
         val token = RetrofitClient.authRepository.getToken()
@@ -90,12 +93,18 @@ fun EntryPoint(
         composable(Routes.HomeLoged.route) {
             HomeLogedView(
                 navController = navigationController,
-                viewModel = homeLogedViewModel)
+                homeLogedViewModel = homeLogedViewModel)
         }
         composable(Routes.Settings.route) {
             SettingsScreen(
                 navController = navigationController
             )
         }
+        composable(Routes.LigaView.route) { backStackEntry ->
+            val ligaCode = backStackEntry.arguments?.getString("ligaCode") ?: ""
+            val ligaViewModel: LigaViewModel = viewModel()
+            LigaView(navController = navigationController, ligaCode = ligaCode, ligaViewModel = ligaViewModel)
+        }
+
     }
 }

@@ -9,4 +9,8 @@ sealed class Routes(val route: String) {
     object LoginMobile : Routes("register_email") // Nueva ruta añadida
     object HomeLoged : Routes("home_loged") // Nueva ruta añadida
     object Settings: Routes("settings")
+    object LigaView : Routes("liga_view/{ligaCode}") {
+        fun createRoute(ligaCode: String) = "liga_view/$ligaCode"
+    }
+
 }

@@ -6,6 +6,8 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.ForgotPasswordRequest
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.repository.AuthRepository
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -22,6 +24,9 @@ class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
 
     private val _passwordVisible = MutableLiveData(false)
     val passwordVisible: LiveData<Boolean> get() = _passwordVisible
+
+    private val _forgotPasswordMessage = MutableLiveData<String>()
+    val forgotPasswordMessage: LiveData<String> = _forgotPasswordMessage
 
     fun onEmailChanged(newEmail: String) {
         _email.value = newEmail
@@ -77,6 +82,21 @@ class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
                 onSuccess()
             }.onFailure {
                 _errorMessage.value = it.message
+            }
+        }
+    }
+
+    fun forgotPassword(email: String) {
+        viewModelScope.launch {
+            try {
+                val response = RetrofitClient.userService.forgotPassword(ForgotPasswordRequest(email))
+                if (response.isSuccessful) {
+                    _forgotPasswordMessage.value = response.body()?.message ?: "Correo enviado correctamente."
+                } else {
+                    _forgotPasswordMessage.value = "Error: ${response.code()}"
+                }
+            } catch (e: Exception) {
+                _forgotPasswordMessage.value = "Error de red: ${e.message}"
             }
         }
     }
