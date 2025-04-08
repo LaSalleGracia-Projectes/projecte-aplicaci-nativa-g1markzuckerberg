@@ -1,103 +1,97 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
+import android.widget.Toast
+import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.*
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CreateLigaDialog
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.JoinLigaDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.NavbarView
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.HomeLogedViewModel
 import java.text.SimpleDateFormat
 import java.util.*
-import android.widget.Toast
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.platform.LocalContext
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CreateLigaDialog
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.JoinLigaDialog
 
-private val BluePrimary @Composable get() = MaterialTheme.colorScheme.primary
-
-// Función de ayuda para formatear el timestamp a fecha/hora
+/** Funciones para formatear la fecha y hora */
 fun formatTimestamp(timestamp: Long): String {
     val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
     sdf.timeZone = TimeZone.getTimeZone("Europe/Madrid")
-    val date = Date(timestamp * 1000) // convertir segundos a milisegundos
-    return sdf.format(date)
+    return sdf.format(Date(timestamp * 1000))
 }
 fun splitDateTime(timestamp: Long): Pair<String, String> {
-    // Por ejemplo, "16/03/2025 15:30" se separa en ("16/03/2025", "15:30")
     val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
     sdf.timeZone = TimeZone.getTimeZone("Europe/Madrid")
-    val date = Date(timestamp * 1000)
-    val fullDateTime = sdf.format(date)
-    val parts = fullDateTime.split(" ")
-    val datePart = parts.getOrNull(0) ?: ""
-    val timePart = parts.getOrNull(1) ?: ""
-    return datePart to timePart
+    val parts = sdf.format(Date(timestamp * 1000)).split(" ")
+    return Pair(parts.getOrNull(0) ?: "", parts.getOrNull(1) ?: "")
 }
 
-
+/** Vista principal para el HomeLoged */
 @Composable
 fun HomeLogedView(
     navController: NavController,
-    homeLogedViewModel: HomeLogedViewModel, // Renombrado para evitar conflicto
+    homeLogedViewModel: HomeLogedViewModel,
 ) {
     var openCreateLigaDialog by remember { mutableStateOf(false) }
-    // Observa los resultados y errores del ViewModel de crear liga
+    var openJoinLigaDialog by remember { mutableStateOf(false) }
     val createLigaResult by homeLogedViewModel.createLigaResult.observeAsState()
     val errorMessage by homeLogedViewModel.errorMessage.observeAsState("")
-    // Obtén el contexto para mostrar Toast
-    val context = LocalContext.current
-    var openJoinLigaDialog by remember { mutableStateOf(false) }
     val joinLigaResult by homeLogedViewModel.joinLigaResult.observeAsState()
     val userLeagues by homeLogedViewModel.userLeagues.observeAsState(emptyList())
-
+    val context = LocalContext.current
+    val configuration = LocalConfiguration.current
 
     LaunchedEffect(key1 = joinLigaResult, key2 = errorMessage) {
         if (joinLigaResult != null) {
             openJoinLigaDialog = false
-            Toast.makeText(context, "Te has unido correctamente a la liga", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Te has unido correctamente a la liga", Toast.LENGTH_SHORT)
+                .show()
             homeLogedViewModel.fetchUserLeagues()
         } else if (errorMessage.isNotEmpty()) {
             Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
         }
     }
-
-    // Efecto para cerrar el diálogo y mostrar mensaje según el resultado
     LaunchedEffect(key1 = createLigaResult, key2 = errorMessage) {
         if (createLigaResult != null) {
             openCreateLigaDialog = false
             Toast.makeText(context, "Liga creada correctamente", Toast.LENGTH_SHORT).show()
             homeLogedViewModel.fetchUserLeagues()
         } else if (errorMessage.isNotEmpty()) {
-            // Puedes decidir si deseas cerrar el modal en caso de error o no.
-            // Aquí mostramos un Toast con el error:
             Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
         }
     }
@@ -105,155 +99,169 @@ fun HomeLogedView(
         homeLogedViewModel.fetchUserLeagues()
     }
 
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        // Contenido general con espacio entre cabecera y navbar
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = 50.dp) // Espacio para la navbar
+                .padding(bottom = 56.dp)
         ) {
-            // CABECERA
+            /** CABECERA */
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(100.dp)
-                    .background(MaterialTheme.colorScheme.primary),
+                    .height(110.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.primary,
+                                MaterialTheme.colorScheme.secondary
+                            )
+                        )
+                    )
+                    .padding(horizontal = 20.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp),
+                    modifier = Modifier.fillMaxSize(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Spacer(modifier = Modifier.width(12.dp))
+                    IconButton(
+                        onClick = { navController.popBackStack() },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
                     Text(
                         text = "FantasyDraft",
-                        fontSize = 28.sp,
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontSize = 26.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = 0.5.sp
+                        ),
                         color = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.weight(1f),
-                        maxLines = 1
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.weight(1f)
                     )
-                    // Logo de la app (si usas URL, AsyncImage; si es un recurso local, puedes usar painterResource)
                     Image(
                         painter = painterResource(id = R.drawable.fantasydraft),
                         contentDescription = "Logo FantasyDraft",
-                        modifier = Modifier.size(80.dp)
+                        modifier = Modifier
+                            .size(70.dp)
                     )
                 }
             }
 
-            // SUBTÍTULO
+            /** SUBTÍTULO con fondo sutil */
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.secondary)
-                    .padding(vertical = 16.dp)
+                    .padding(horizontal = 20.dp, vertical = 8.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.primary,
+                                MaterialTheme.colorScheme.secondary
+                            )
+                        )
+                    )                    .padding(vertical = 12.dp, horizontal = 12.dp),
+                contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Crea una liga con tus amigos!",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.bodyLarge,
+                    text = "¡Crea una liga con tus amigos!",
+                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp, fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSecondary,
-                    modifier = Modifier.align(Alignment.Center)
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+
                 )
             }
 
-            // Línea divisoria
-            HorizontalDivider()
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
 
-            // ZONA SCROLLEABLE: TABLAS (Mis ligas + Próximos partidos)
+            /** SECCIÓN: Listado de “Mis ligas” y Próximos partidos */
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp) // margen interior para "Mis ligas" y sus botones
+                modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
+                contentPadding = PaddingValues(vertical = 4.dp)
             ) {
                 if (userLeagues.isEmpty()) {
                     item {
-                        Text("No estás en ninguna liga aún", modifier = Modifier.padding(16.dp))
-                    }
-                }
-
-                // Sección 1: Tabla "Mis ligas"
-                item {
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
                         Text(
-                            text = "Mis ligas",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Black
+                            "No estás en ninguna liga aún",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
+                            color = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.padding(12.dp)
                         )
-                        // Botones: "Buscar liga" y "Crear liga"
-                        Row {
-                            OutlinedButton(
-                                onClick = {
-                                    // TODO: Lógica para buscar liga
-                                    openJoinLigaDialog = true
-
-                                },
-                                modifier = Modifier.padding(end = 8.dp)
-                            ) {
-                                Text("Unirse a Liga")
-                            }
-                            OutlinedButton(
-                                onClick = {
-                                    openCreateLigaDialog = true
-                                    println("Crear Liga button clicked")
-                                },
-                            ) {
-                                Text("Crear Liga")
-                            }
-                        }
                     }
                 }
 
-                // Ejemplo seguro para LeagueRow:
-                items(userLeagues) { liga ->
-                    LeagueRow(
-                        name = liga.name,
-                        puntos = liga.puntos_totales,
-                        onClick = {
-                            navController.navigate(Routes.LigaView.createRoute(liga.code))
+                /** Encabezado de la sección "MIS LIGAS" con botones redondeados */
+                item {
+                    SectionHeader(
+                        title = "MIS LIGAS",
+                        buttonContent = {
+                            Row {
+                                FilledTonalButton(
+                                    onClick = { openJoinLigaDialog = true },
+                                    shape = RoundedCornerShape(50.dp),
+                                    colors = ButtonDefaults.filledTonalButtonColors(
+                                        containerColor = MaterialTheme.colorScheme.primary,
+                                        contentColor = Color.White
+                                    ),
+                                    modifier = Modifier.height(34.dp)
+                                ) {
+                                    Text("UNIRSE", style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp))
+                                }
+                                Spacer(modifier = Modifier.width(4.dp))
+                                FilledTonalButton(
+                                    onClick = { openCreateLigaDialog = true },
+                                    shape = RoundedCornerShape(50.dp),
+                                    colors = ButtonDefaults.filledTonalButtonColors(
+                                        containerColor = MaterialTheme.colorScheme.secondary,
+                                        contentColor = Color.White
+                                    ),
+                                    modifier = Modifier.height(34.dp)
+                                ) {
+                                    Text("CREAR", style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp))
+                                }
+                            }
                         }
                     )
                 }
 
-                item {
-                    Spacer(modifier = Modifier.height(24.dp))
+                /** Lista de ligas (sin separación extra entre tarjetas) */
+                itemsIndexed(userLeagues) { index, liga ->
+                    LeagueRow(
+                        name = liga.name,
+                        puntos = liga.puntos_totales,
+                        leagueCode = liga.code,
+                        onClick = { navController.navigate(Routes.LigaView.createRoute(liga.code)) },
+                        onOptionsClick = {
+                            // Aquí puedes implementar la acción para el menú de opciones.
+                            // Por ejemplo, abrir un diálogo o un dropdown.
+                        }
+                    )
                 }
 
-                // Sección 2: Próximos partidos (Fixtures)
+                item { Spacer(modifier = Modifier.height(12.dp)) }
+
+                /** Encabezado de "PARTIDOS – JORNADA X" */
                 homeLogedViewModel.jornadaData.value?.let { jornada ->
                     item {
-                        Text(
-                            text = "Jornada ${jornada.jornada}",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Black
-                        )
+                        SectionHeader(title = "PARTIDOS – JORNADA ${jornada.jornada}")
                         Spacer(modifier = Modifier.height(8.dp))
                     }
                     items(jornada.fixtures) { fixture ->
-                        // Separa los nombres de los equipos
                         val teams = fixture.name.split(" vs ")
                         val team1 = teams.getOrNull(0) ?: "Equipo 1"
                         val team2 = teams.getOrNull(1) ?: "Equipo 2"
-
                         MatchRow(
                             team1 = team1,
                             team2 = team2,
@@ -261,101 +269,193 @@ fun HomeLogedView(
                             localTeamImage = fixture.local_team_image ?: "",
                             visitantTeamImage = fixture.visitant_team_image ?: ""
                         )
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
             }
         }
 
-        // NAVBAR FIJA ABAJO
+        /** NAVBAR: ocupa todo el ancho, con fondo de gradiente similar al header y estilo moderno */
         Box(
             modifier = Modifier
-                .fillMaxWidth()
                 .align(Alignment.BottomCenter)
         ) {
             NavbarView(
                 navController = navController,
-                onProfileClick = { /* TODO */ },
-                onHomeClick = { },
-                onNotificationsClick = { /* TODO */ },
-                onSettingsClick = { navController.navigate(Routes.Settings.route) }
+                onProfileClick = { /* Acción perfil */ },
+                onHomeClick = { navController.navigate(Routes.HomeLoged.route) },
+                onNotificationsClick = { /* Acción notificaciones */ },
+                onSettingsClick = { navController.navigate(Routes.Settings.route) },
+                modifier = Modifier.fillMaxWidth()
             )
         }
-        // Bloque para mostrar el modal de crear liga cuando openCreateLigaDialog es true
+
+        /** Diálogos con estilo refinado */
         if (openCreateLigaDialog) {
             CreateLigaDialog(
                 onDismiss = { openCreateLigaDialog = false },
-                onCreateLiga = { leagueName ->
-                    homeLogedViewModel.createLiga(leagueName)
-                },
+                onCreateLiga = { leagueName -> homeLogedViewModel.createLiga(leagueName) },
             )
         }
-        // Al final del Box, agrega el modal:
         if (openJoinLigaDialog) {
             JoinLigaDialog(
                 onDismiss = { openJoinLigaDialog = false },
-                onJoinLiga = { leagueCode ->
-                    homeLogedViewModel.joinLiga(leagueCode)
-                },
+                onJoinLiga = { leagueCode -> homeLogedViewModel.joinLiga(leagueCode) },
             )
         }
     }
 }
 
-// --------------------------
-// COMPOSABLES REUTILIZABLES
-// --------------------------
+/** Encabezado de sección con título y contenido opcional de botón */
+@Composable
+fun SectionHeader(
+    title: String,
+    buttonContent: (@Composable () -> Unit)? = null
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium.copy(fontSize = 16.sp, fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onBackground,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        buttonContent?.let { it() }
+    }
+}
 
-// Fila para "Mis ligas": (Icono Liga) Nombre Liga | XX Puntos | XX (icono personas)
 @Composable
 fun LeagueRow(
     name: String,
     puntos: String,
-    onClick: () -> Unit
+    leagueCode: String,
+    onClick: () -> Unit,
+    onOptionsClick: () -> Unit
 ) {
-    Box(
+    // Variables placeholder: reemplaza estas con los datos reales de tu lógica
+    val draftCompleted = false  // false -> no completado ("❌"), true -> completado ("✅")
+    val userCount = 10          // Ejemplo: 10 usuarios en la liga
+
+    // Convertir los puntos a entero para evitar decimales (si es posible)
+    val ptsInt = puntos.toDoubleOrNull()?.toInt() ?: puntos
+
+    Card(
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .clickable { onClick() }
+            .height(70.dp)
+            .clickable { onClick() },
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.fantasydraft),
-                contentDescription = "Liga Icon",
-                modifier = Modifier.size(32.dp)
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Text(
-                text = name,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f)
-            )
-
-            VerticalDivider()
-
-            Text(
-                text = "$puntos Pts",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 8.dp)
-            )
-
-            // Puedes añadir más info si quieres, como número de usuarios
+        Row(modifier = Modifier.background(MaterialTheme.colorScheme.surfaceVariant)) {
+            // Contenedor para la imagen con márgenes laterales y verticales
+            Box(
+                modifier = Modifier
+                    .padding(vertical = 8.dp, horizontal = 4.dp)
+                    .fillMaxHeight()
+                    .width(80.dp)
+            ) {
+                AsyncImage(
+                    model = "${RetrofitClient.BASE_URL}api/v1/liga/image/$leagueCode",
+                    contentDescription = "Imagen Liga",
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp)),
+                    placeholder = painterResource(id = R.drawable.fantasydraft),
+                    error = painterResource(id = R.drawable.fantasydraft)
+                )
+            }
+            // Contenido a la derecha, con padding para alinear el título y la fila inferior
+            Column(
+                modifier = Modifier
+                    .padding(vertical = 8.dp, horizontal = 8.dp)
+                    .fillMaxHeight()
+                    .weight(1f),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Fila superior: Nombre de la liga y botón de opciones
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = name,
+                        style = MaterialTheme.typography.titleSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(
+                        onClick = onOptionsClick,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "Opciones",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                // Fila inferior: "Draft", usuarios y puntos
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    // Campo Draft
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "Draft:",
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = if (draftCompleted) "✅" else "❌",
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp)
+                        )
+                    }
+                    // Campo Usuarios
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "👥",
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp)
+                        )
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Text(
+                            text = "$userCount",
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    // Campo Puntos, con fuente más grande
+                    Text(
+                        text = "$ptsInt pts",
+                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 16.sp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
         }
     }
 }
 
 
-// Fila para partidos: ahora se organiza en dos filas verticales
+
+/** Tarjeta para "Partidos" (Fixtures); se mantiene el estilo compacto */
 @Composable
 fun MatchRow(
     team1: String,
@@ -364,83 +464,72 @@ fun MatchRow(
     localTeamImage: String,
     visitantTeamImage: String
 ) {
-    // Separamos la fecha y la hora en dos strings
     val (datePart, timePart) = splitDateTime(timestamp)
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(80.dp)         // Damos más altura
-            .padding(8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+    Card(
+        shape = RoundedCornerShape(8.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        modifier = Modifier.fillMaxWidth()
     ) {
-        // Columna izquierda: nombre arriba, escudo abajo
-        Column(
-            modifier = Modifier.weight(1f),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Row(
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                text = team1,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            AsyncImage(
-                model = localTeamImage,
-                contentDescription = "Imagen equipo local",
-                modifier = Modifier.size(28.dp)
-            )
-        }
-
-        // Columna central: fecha arriba, hora abajo
-        Column(
-            modifier = Modifier.weight(1f),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = datePart,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Normal
-            )
-            Text(
-                text = timePart,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Light
-            )
-        }
-
-        // Columna derecha: nombre arriba, escudo abajo
-        Column(
-            modifier = Modifier.weight(1f),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = team2,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            AsyncImage(
-                model = visitantTeamImage,
-                contentDescription = "Imagen equipo visitante",
-                modifier = Modifier.size(28.dp)
-            )
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = team1,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                AsyncImage(
+                    model = localTeamImage,
+                    contentDescription = "Escudo Equipo Local",
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = datePart,
+                    fontSize = 12.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = timePart,
+                    fontSize = 12.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = team2,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                AsyncImage(
+                    model = visitantTeamImage,
+                    contentDescription = "Escudo Equipo Visitante",
+                    modifier = Modifier.size(32.dp)
+                )
+            }
         }
     }
-}
-
-
-// Pequeña barra vertical entre columnas
-@Composable
-fun VerticalDivider(
-    color: Color = Color.Gray,
-    thickness: Dp = 1.dp
-) {
-    Box(
-        modifier = Modifier
-            .width(thickness)
-            .fillMaxHeight()
-            .background(color)
-    )
 }

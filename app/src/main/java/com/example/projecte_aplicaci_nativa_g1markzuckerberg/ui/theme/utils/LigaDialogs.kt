@@ -7,6 +7,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -14,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -26,7 +29,7 @@ fun CreateLigaDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = "Crear Liga") },
+        title = { Text(text = "Crear Liga", fontSize = 18.sp) },
         text = {
             OutlinedTextField(
                 value = leagueName,
@@ -36,23 +39,31 @@ fun CreateLigaDialog(
             )
         },
         confirmButton = {
-            Button(
-                onClick = { onCreateLiga(leagueName) }
+            FilledTonalButton(
+                onClick = { onCreateLiga(leagueName) },
+                shape = RoundedCornerShape(50.dp),
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = androidx.compose.material3.MaterialTheme.colorScheme.secondary,
+                    contentColor = Color.White
+                ),
+                modifier = Modifier.height(40.dp)
             ) {
-                Text("Crear")
+                Text("Crear", fontSize = 14.sp)
             }
         },
         dismissButton = {
             OutlinedButton(
-                onClick = onDismiss
+                onClick = onDismiss,
+                shape = RoundedCornerShape(50.dp),
+                modifier = Modifier.height(40.dp)
             ) {
-                Text("Cancelar")
+                Text("Cancelar", fontSize = 14.sp)
             }
-        }
+        },
+        shape = RoundedCornerShape(16.dp)
     )
-
-
 }
+
 @Composable
 fun JoinLigaDialog(
     onDismiss: () -> Unit,
@@ -62,27 +73,38 @@ fun JoinLigaDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Unirse a Liga") },
+        title = { Text("Unirse a Liga", fontSize = 18.sp) },
         text = {
-            Column {
-                OutlinedTextField(
-                    value = ligaCode,
-                    onValueChange = { ligaCode = it },
-                    label = { Text("Código de la liga") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+            OutlinedTextField(
+                value = ligaCode,
+                onValueChange = { ligaCode = it },
+                label = { Text("Código de la liga") },
+                modifier = Modifier.fillMaxWidth()
+            )
         },
         confirmButton = {
-            Button(onClick = { onJoinLiga(ligaCode) }) {
-                Text("Unirse")
+            FilledTonalButton(
+                onClick = { onJoinLiga(ligaCode) },
+                shape = RoundedCornerShape(50.dp),
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                    contentColor = Color.White
+                ),
+                modifier = Modifier.height(40.dp)
+            ) {
+                Text("Unirse", fontSize = 14.sp)
             }
         },
         dismissButton = {
-            OutlinedButton(onClick = onDismiss) {
-                Text("Cancelar")
+            OutlinedButton(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(50.dp),
+                modifier = Modifier.height(40.dp)
+            ) {
+                Text("Cancelar", fontSize = 14.sp)
             }
-        }
+        },
+        shape = RoundedCornerShape(16.dp)
     )
 }
 @Composable
