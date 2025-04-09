@@ -1,13 +1,17 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
+import LoadingTransitionScreen
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
@@ -15,17 +19,24 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.NavbarView
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.LigaViewModel
+import androidx.compose.ui.graphics.SolidColor
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.LeagueCodeDialog
 
 @Composable
 fun LigaView(
@@ -34,193 +45,344 @@ fun LigaView(
     ligaViewModel: LigaViewModel
 ) {
     val ligaData by ligaViewModel.ligaData.observeAsState()
-    val createdJornada = ligaData?.liga?.created_jornada ?: 30
+    val createdJornada = ligaData?.liga?.created_jornada ?: 0
     val selectedJornada by ligaViewModel.selectedJornada.observeAsState(createdJornada)
     val currentJornada by ligaViewModel.currentJornada.observeAsState(createdJornada)
     val showCodeDialog by ligaViewModel.showCodeDialog.observeAsState(false)
+    val isLoading by ligaViewModel.isLoading.observeAsState(initial = true)
 
     LaunchedEffect(key1 = selectedJornada) {
         val jornadaParam = if (selectedJornada == 0) null else selectedJornada
         ligaViewModel.fetchLigaInfo(ligaCode, jornadaParam)
     }
 
-    ligaData?.let { data ->
-        Box(modifier = Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                // HEADER: Botón atrás a la izquierda, botón compartir a la derecha y en el centro un Row con imagen y título
+    Box(modifier = Modifier.fillMaxSize()) {
+        LoadingTransitionScreen(isLoading = ligaData == null) {
+            val data = ligaData!!
+            val imageUrl = "${RetrofitClient.BASE_URL}api/v1/liga/image/${data.liga.id}"
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 56.dp) // Padding inferior igual a la altura de la Navbar
+            ) {
+                // HEADER (igual que en HomeView)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(120.dp)
-                        .background(MaterialTheme.colorScheme.primary)
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                ) {
-                    IconButton(
-                        onClick = { navController.popBackStack() },
-                        modifier = Modifier.align(Alignment.CenterStart)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Volver",
-                            tint = MaterialTheme.colorScheme.onPrimary
-                        )
-                    }
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
-                        modifier = Modifier.align(Alignment.Center)
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.fantasydraft),
-                            contentDescription = "Icono de liga",
-                            modifier = Modifier.size(40.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = data.liga.name,
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontSize = 28.sp,
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            maxLines = 1
-                        )
-                    }
-                    IconButton(
-                        onClick = { ligaViewModel.toggleShowCodeDialog() },
-                        modifier = Modifier.align(Alignment.CenterEnd)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Share,
-                            contentDescription = "Compartir código",
-                            tint = MaterialTheme.colorScheme.onPrimary
-                        )
-                    }
-                }
-
-                // FILA para el dropdown de jornadas y botón "Crear Draft" con fondo secundario
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.secondary)
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    JornadaDropdown(
-                        createdJornada = data.liga.created_jornada,
-                        currentJornada = currentJornada,
-                        selected = selectedJornada,
-                        onSelected = { jornada ->
-                            ligaViewModel.setSelectedJornada(jornada)
-                        }
-                    )
-                    Button(onClick = { /* TODO: Implementar Crear Draft */ }) {
-                        Text("Crear Draft")
-                    }
-                }
-
-                // RANKING DE USUARIOS (LazyColumn)
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    itemsIndexed(data.users) { index, user ->
-                        // Alternar color de fondo: color actual y uno un poco más oscuro (surfaceVariant)
-                        val rowColor = if (index % 2 == 0)
-                            MaterialTheme.colorScheme.background
-                        else
-                            MaterialTheme.colorScheme.surfaceVariant
-
-                        // Separador superior
-                        Divider(color = MaterialTheme.colorScheme.outline)
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(rowColor)
-                                .clickable { /* TODO: Acción al pulsar la fila, por ejemplo ver perfil */ }
-                                .padding(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // Posición en la liga
-                            Text(
-                                text = "${index + 1}",
-                                modifier = Modifier.width(30.dp)
+                        .height(140.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                colors = listOf(
+                                    MaterialTheme.colorScheme.primary,
+                                    MaterialTheme.colorScheme.secondary
+                                )
                             )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            // Imagen por defecto entre el número y el nombre
+                        )
+                        .padding(horizontal = 20.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        IconButton(
+                            onClick = { navController.popBackStack() },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Volver",
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
                             Image(
-                                painter = painterResource(id = R.drawable.fantasydraft),
-                                contentDescription = "Imagen por defecto",
-                                modifier = Modifier.size(40.dp)
+                                painter = rememberAsyncImagePainter(
+                                    model = ImageRequest.Builder(LocalContext.current)
+                                        .data(imageUrl)
+                                        .placeholder(R.drawable.fantasydraft)
+                                        .error(R.drawable.fantasydraft)
+                                        .build()
+                                ),
+                                contentDescription = "Icono de la liga",
+                                modifier = Modifier.size(45.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            // Nombre de usuario
                             Text(
-                                text = user.username,
-                                modifier = Modifier.weight(1f)
-                            )
-                            // Puntos
-                            val puntos = if (selectedJornada == 0) user.puntos_acumulados else user.puntos_jornada
-                            Text(
-                                text = "$puntos pts",
-                                modifier = Modifier.padding(end = 8.dp)
+                                text = data.liga.name.uppercase(),
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    letterSpacing = 0.3.sp
+                                ),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                maxLines = 1
                             )
                         }
-                        // Separador inferior
-                        Divider(color = MaterialTheme.colorScheme.outline)
+                        IconButton(
+                            onClick = { ligaViewModel.toggleShowCodeDialog() },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = "Compartir código",
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                    }
+                }
+
+                // SECCIÓN DE BOTONES
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    tonalElevation = 4.dp
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            JornadaDropdown(
+                                createdJornada = data.liga.created_jornada,
+                                currentJornada = currentJornada,
+                                selected = selectedJornada,
+                                onSelected = { jornada ->
+                                    ligaViewModel.setSelectedJornada(jornada)
+                                },
+                                textColor = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Button(
+                            onClick = { /* TODO: Implementar Crear Draft */ },
+                            modifier = Modifier.height(42.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondary
+                            )
+                        ) {
+                            Text(
+                                text = "Crear Draft",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    color = MaterialTheme.colorScheme.onSecondary
+                                )
+                            )
+                        }
+                    }
+                }
+
+                LoadingTransitionScreen(isLoading = isLoading) {
+                    // RANKING DE USUARIOS (LazyColumn para scroll)
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp)
+                    ) {
+                        itemsIndexed(data.users) { index, user ->
+                            // Verifica si está entre los 3 primeros
+                            val isPodio = index < 3
+                            val rankingText = when (index) {
+                                0 -> "🥇"
+                                1 -> "🥈"
+                                2 -> "🥉"
+                                else -> "${index + 1}"
+                            }
+                            // Para los tres primeros, se define un Brush con efecto metálico
+                            val backgroundBrush = if (isPodio) metallicBrushForRanking(index)
+                            else SolidColor(Color.White)
+
+                            Card(
+                                shape = RoundedCornerShape(12.dp),
+                                elevation = if (isPodio)
+                                    CardDefaults.cardElevation(defaultElevation = 8.dp)
+                                else CardDefaults.cardElevation(defaultElevation = 4.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 6.dp)
+                                    .clickable { /* Acción al pulsar la fila */ },
+                                // Usamos fondo transparente y luego lo manejamos en la Box interna
+                                colors = if (isPodio)
+                                    CardDefaults.cardColors(containerColor = Color.Transparent)
+                                else CardDefaults.cardColors(containerColor = Color.White)
+                            ) {
+                                if (isPodio) {
+                                    // Para el podio, aplicamos el degradado y un borde para simular brillo
+                                    Box(
+                                        modifier = Modifier
+                                            .background(brush = backgroundBrush, shape = RoundedCornerShape(12.dp))
+                                            .border(width = 2.dp, brush = backgroundBrush, shape = RoundedCornerShape(12.dp))
+                                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = rankingText,
+                                                style = MaterialTheme.typography.bodyLarge.copy(
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 20.sp
+                                                ),
+                                                modifier = Modifier.width(30.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Image(
+                                                painter = painterResource(id = R.drawable.fantasydraft),
+                                                contentDescription = "Imagen de usuario",
+                                                modifier = Modifier
+                                                    .size(48.dp)
+                                                    .clip(CircleShape)
+                                            )
+                                            Spacer(modifier = Modifier.width(12.dp))
+                                            Text(
+                                                text = user.username,
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            val puntos = if (selectedJornada == 0) user.puntos_acumulados else user.puntos_jornada
+                                            Text(
+                                                text = "$puntos pts",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                modifier = Modifier.padding(end = 8.dp)
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    // Diseño de carta para el resto de usuarios
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = rankingText,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            modifier = Modifier.width(30.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Image(
+                                            painter = painterResource(id = R.drawable.fantasydraft),
+                                            contentDescription = "Imagen de usuario",
+                                            modifier = Modifier
+                                                .size(48.dp)
+                                                .clip(CircleShape)
+                                        )
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        Text(
+                                            text = user.username,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        val puntos = if (selectedJornada == 0) user.puntos_acumulados else user.puntos_jornada
+                                        Text(
+                                            text = "$puntos pts",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            modifier = Modifier.padding(end = 8.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
-
-            // NAVBAR FIJA ABAJO
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.BottomCenter)
-            ) {
-                NavbarView(
-                    navController = navController,
-                    onProfileClick = { /* TODO: Acción para perfil */ },
-                    onHomeClick = { navController.navigate(Routes.HomeLoged.route) },
-                    onNotificationsClick = { /* TODO: Acción para notificaciones */ },
-                    onSettingsClick = { navController.navigate(Routes.Settings.route) }
-                )
-            }
-
-            // Modal para mostrar el código de la liga
-            if (showCodeDialog) {
-                AlertDialog(
-                    onDismissRequest = { ligaViewModel.toggleShowCodeDialog() },
-                    confirmButton = {
-                        TextButton(onClick = { ligaViewModel.toggleShowCodeDialog() }) {
-                            Text("Cerrar")
-                        }
-                    },
-                    title = { Text("Código de la liga") },
-                    text = { Text(data.liga.code) }
-                )
-            }
         }
+        // Navbar inferior
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+        ) {
+            NavbarView(
+                navController = navController,
+                onProfileClick = { /* Acción para perfil */ },
+                onHomeClick = { navController.navigate(Routes.HomeLoged.route) },
+                onNotificationsClick = { /* Acción para notificaciones */ },
+                onSettingsClick = { navController.navigate(Routes.Settings.route) },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        if (showCodeDialog && ligaData != null) {
+            LeagueCodeDialog(
+                leagueCode = ligaData!!.liga.code,
+                onDismiss = { ligaViewModel.toggleShowCodeDialog() }
+            )
+        }
+        }
+    }
+
+@Composable
+fun metallicBrushForRanking(index: Int): Brush {
+    return when (index) {
+        0 -> Brush.linearGradient(
+            colors = listOf(
+                Color(0xFFFFD700), // Oro brillante
+                Color(0xFFFFE135), // Punto intermedio más claro
+                Color(0xFFFFC200)  // Tono dorado profundo
+            )
+        )
+        1 -> Brush.linearGradient(
+            colors = listOf(
+                Color(0xFFC0C0C0), // Plateado inicial
+                Color(0xFFD3D3D3), // Punto intermedio
+                Color(0xFFC0C0C0)  // Plateado
+            )
+        )
+        2 -> Brush.linearGradient(
+            colors = listOf(
+                Color(0xFFCD7F32), // Bronce intenso
+                Color(0xFFE5B169), // Bronce más claro
+                Color(0xFFCD7F32)  // Bronce intenso
+            )
+        )
+        else -> SolidColor(Color.White)
     }
 }
 
+
+
+
+
+/** Dropdown personalizado para seleccionar la jornada */
 @Composable
 fun JornadaDropdown(
     createdJornada: Int,
     currentJornada: Int,
     selected: Int,
-    onSelected: (Int) -> Unit
+    onSelected: (Int) -> Unit,
+    textColor: Color = MaterialTheme.colorScheme.onSurface
 ) {
     var expanded by remember { mutableStateOf(false) }
     Box {
-        // Botón que muestra la opción seleccionada con icono de dropdown
-        Button(onClick = { expanded = true }) {
-            Text(text = if (selected == 0) "Total" else "J$selected")
+        Button(
+            onClick = { expanded = true },
+            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier.height(42.dp)
+        ) {
+            Text(
+                text = if (selected == 0) "Total" else "J$selected",
+                style = MaterialTheme.typography.bodyMedium.copy(color = textColor)
+            )
             Icon(
                 imageVector = Icons.Default.ArrowDropDown,
-                contentDescription = "Mostrar opciones"
+                contentDescription = "Mostrar opciones",
+                tint = textColor
             )
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            // Opciones desde la jornada de creación hasta la actual
             for (j in createdJornada..currentJornada) {
                 DropdownMenuItem(
                     text = { Text("J$j") },
@@ -230,7 +392,6 @@ fun JornadaDropdown(
                     }
                 )
             }
-            // Opción "Total"
             DropdownMenuItem(
                 text = { Text("Total") },
                 onClick = {

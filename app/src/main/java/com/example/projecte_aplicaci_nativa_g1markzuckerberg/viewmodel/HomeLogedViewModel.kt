@@ -16,44 +16,51 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.JoinLigaRespo
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.JornadaResponse
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.LigaConPuntos
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.repository.AuthRepository
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.Event
 import kotlinx.coroutines.launch
-import retrofit2.Response
 
 class HomeLogedViewModel(private val authRepository: AuthRepository) : ViewModel() {
 
+    // Datos de la jornada y fixtures.
     private val _jornadaData = mutableStateOf<JornadaResponse?>(null)
     val jornadaData: State<JornadaResponse?> = _jornadaData
 
     private val _fixturesState = mutableStateOf<List<Fixture>>(emptyList())
     val fixturesState: State<List<Fixture>> = _fixturesState
 
-    private val _createLigaResult = MutableLiveData<CreateLigaResponse?>()
-    val createLigaResult: LiveData<CreateLigaResponse?> = _createLigaResult
+    // Evento para la creación de liga.
+    private val _createLigaResult = MutableLiveData<Event<CreateLigaResponse?>>()
+    val createLigaResult: LiveData<Event<CreateLigaResponse?>> = _createLigaResult
 
-    private val _errorMessage = MutableLiveData<String>("")
-    val errorMessage: LiveData<String> = _errorMessage
+    // Evento para mensajes de error.
+    private val _errorMessage = MutableLiveData<Event<String>>()
+    val errorMessage: LiveData<Event<String>> = _errorMessage
 
-    private val _joinLigaResult = MutableLiveData<JoinLigaResponse?>()
-    val joinLigaResult: LiveData<JoinLigaResponse?> = _joinLigaResult
+    // Evento para la unión a una liga.
+    private val _joinLigaResult = MutableLiveData<Event<JoinLigaResponse?>>()
+    val joinLigaResult: LiveData<Event<JoinLigaResponse?>> = _joinLigaResult
 
+    // Lista de ligas del usuario.
     private val _userLeagues = MutableLiveData<List<LigaConPuntos>>()
     val userLeagues: LiveData<List<LigaConPuntos>> = _userLeagues
 
+    // Estado de carga.
+    private val _isLoading = MutableLiveData<Boolean>(true)
+    val isLoading: LiveData<Boolean> get() = _isLoading
+
     init {
-        // Cargar por defecto la jornada 28
+        // Cargar la jornada actual al iniciar.
         fetchCurrentJornada()
     }
 
     private fun fetchCurrentJornada() {
         viewModelScope.launch {
             try {
-                // Primero obtenemos la jornada actual
                 val currentResponse = RetrofitClient.service.getJornadaActual()
                 if (currentResponse.isSuccessful) {
                     val currentJornada = currentResponse.body()?.jornadaActual
                     if (currentJornada != null) {
-                        Log.d("API_CALL", "Jornada actual recibida: ${currentJornada.name}")
-                        // Usamos el valor recibido (ej. "30") para obtener los fixtures
+                        // Llamamos a fetchJornada con el valor recibido.
                         fetchJornada(currentJornada.name)
                     } else {
                         Log.e("API_CALL", "No se recibió la jornada actual")
@@ -74,10 +81,8 @@ class HomeLogedViewModel(private val authRepository: AuthRepository) : ViewModel
                 val response = RetrofitClient.service.getJornada(jornada)
                 if (response.isSuccessful) {
                     response.body()?.let { data ->
-                        // Ordenamos los fixtures por starting_at_timestamp de forma ascendente
                         val sortedFixtures = data.fixtures.sortedBy { it.starting_at_timestamp }
                         _fixturesState.value = sortedFixtures
-                        // Actualizamos _jornadaData, asegurándonos de incluir los fixtures ordenados
                         _jornadaData.value = data.copy(fixtures = sortedFixtures)
                     }
                 } else {
@@ -88,49 +93,59 @@ class HomeLogedViewModel(private val authRepository: AuthRepository) : ViewModel
             }
         }
     }
+
     fun createLiga(name: String) {
         viewModelScope.launch {
             try {
+                _isLoading.value = true
                 val request = CreateLigaRequest(name = name)
                 val response = RetrofitClient.ligaService.createLiga(request)
                 if (response.isSuccessful) {
-                    _createLigaResult.value = response.body()
+                    _createLigaResult.value = Event(response.body())
                 } else {
-                    _errorMessage.value = "Error: ${response.code()}"
+                    _errorMessage.value = Event("Error: ${response.code()}")
                 }
             } catch (e: Exception) {
-                _errorMessage.value = e.message ?: "Error desconocido"
+                _errorMessage.value = Event(e.message ?: "Error desconocido")
+            } finally {
+                _isLoading.value = false
             }
         }
     }
+
     fun joinLiga(code: String) {
+        _isLoading.value = true
         viewModelScope.launch {
             try {
                 val response = RetrofitClient.ligaService.joinLiga(code)
                 if (response.isSuccessful) {
-                    _joinLigaResult.value = response.body()
+                    _joinLigaResult.value = Event(response.body())
                 } else {
-                    _errorMessage.value = "Error: ${response.code()}"
+                    _errorMessage.value = Event("Error: ${response.code()}")
                 }
             } catch (e: Exception) {
-                _errorMessage.value = e.message ?: "Error desconocido"
+                _errorMessage.value = Event(e.message ?: "Error desconocido")
+            } finally {
+                _isLoading.value = false
             }
         }
     }
+
     fun fetchUserLeagues() {
+        _isLoading.value = true
         viewModelScope.launch {
             try {
                 val response = RetrofitClient.userService.getUserLeagues()
                 if (response.isSuccessful) {
                     _userLeagues.value = response.body()?.leagues ?: emptyList()
                 } else {
-                    _errorMessage.value = "Error al cargar ligas: ${response.code()}"
+                    _errorMessage.value = Event("Error al cargar ligas: ${response.code()}")
                 }
             } catch (e: Exception) {
-                _errorMessage.value = e.message ?: "Error desconocido"
+                _errorMessage.value = Event(e.message ?: "Error desconocido")
+            } finally {
+                _isLoading.value = false
             }
         }
     }
-
-
 }

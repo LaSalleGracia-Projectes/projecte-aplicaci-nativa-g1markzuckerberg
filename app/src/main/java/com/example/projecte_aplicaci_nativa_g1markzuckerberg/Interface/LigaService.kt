@@ -4,6 +4,7 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.CreateLigaReq
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.CreateLigaResponse
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.JoinLigaResponse
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.LigaUsersResponse
+import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -27,5 +28,9 @@ interface LigaService {
         @Path("ligaCode") ligaCode: String,
         @Query("jornada") jornada: Int? = null
     ): Response<LigaUsersResponse>
+    @GET("api/v1/liga/image/{ligaId}")
+    suspend fun getLeagueImage(
+        @Path("ligaId") ligaId: String
+    ): Response<ResponseBody>
 
 }
