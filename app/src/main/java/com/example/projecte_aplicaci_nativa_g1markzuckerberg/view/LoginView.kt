@@ -17,7 +17,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -28,6 +27,8 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.ForgotPasswordDialog
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.GradientHeader
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.GradientOutlinedButton
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.LoginViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.factory.LoginViewModelFactory
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -52,8 +53,6 @@ fun LoginView(
     val password by viewModel.password.observeAsState("")
     val passwordVisible by viewModel.passwordVisible.observeAsState(false)
 
-    val isLoading by viewModel.isLoading.observeAsState(false)
-    val errorMessage by viewModel.errorMessage.observeAsState()
     var showForgotPasswordDialog by remember { mutableStateOf(false) }
     val forgotPasswordMessage by viewModel.forgotPasswordMessage.observeAsState()
     val context = LocalContext.current
@@ -90,32 +89,12 @@ fun LoginView(
             .fillMaxSize()
             .background(Color.White)
     ) {
-        // Barra superior con fondo azul y botón de volver atrás
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(BluePrimary)
-                .padding(horizontal = 8.dp, vertical = 16.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(
-                    onClick = { navController.popBackStack() } // Función para volver atrás
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.arrow_back), // Icono personalizado
-                        contentDescription = "Volver",
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-                Text(
-                    text = "Iniciar sesión",
-                    modifier = Modifier.weight(1f),
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-            }
-        }
+        // Barra superior: Usando GradientHeader
+        GradientHeader(
+            title = "Iniciar sesión",
+            onBack = { navController.popBackStack() },
+            height = 140.dp
+        )
 
         // Línea divisoria gris bajo la barra
         Divider(
@@ -207,29 +186,23 @@ fun LoginView(
             viewModel.errorMessage.value?.let { error ->
                 Text(text = error, color = MaterialTheme.colorScheme.error)
             }
-
             // Botón "Iniciar sesión"
-            Button(
+            GradientOutlinedButton(
                 onClick = {
                     viewModel.login {
                         navController.navigate(Routes.HomeLoged.route)
-                    }
-                    // TODO: Lógica para iniciar sesión
-                },
+                    }                },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = BluePrimary,
-                    contentColor = Color.White
-                )
+                    .height(56.dp)
             ) {
+                Spacer(modifier = Modifier.width(12.dp))
                 Text(
                     text = "Iniciar sesión",
                     fontSize = 16.sp
                 )
             }
+
 
             Spacer(modifier = Modifier.height(24.dp))
 

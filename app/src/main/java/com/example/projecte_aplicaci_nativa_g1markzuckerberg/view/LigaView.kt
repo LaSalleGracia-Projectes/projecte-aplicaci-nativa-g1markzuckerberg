@@ -1,7 +1,9 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
+import LoadingTransitionScreen
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -9,7 +11,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
@@ -18,8 +20,8 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -33,6 +35,8 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.NavbarView
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.LigaViewModel
+import androidx.compose.ui.graphics.SolidColor
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.LeagueCodeDialog
 
 @Composable
 fun LigaView(
@@ -41,26 +45,31 @@ fun LigaView(
     ligaViewModel: LigaViewModel
 ) {
     val ligaData by ligaViewModel.ligaData.observeAsState()
-    val createdJornada = ligaData?.liga?.created_jornada ?: 30
+    val createdJornada = ligaData?.liga?.created_jornada ?: 0
     val selectedJornada by ligaViewModel.selectedJornada.observeAsState(createdJornada)
     val currentJornada by ligaViewModel.currentJornada.observeAsState(createdJornada)
     val showCodeDialog by ligaViewModel.showCodeDialog.observeAsState(false)
+    val isLoading by ligaViewModel.isLoading.observeAsState(initial = true)
 
     LaunchedEffect(key1 = selectedJornada) {
         val jornadaParam = if (selectedJornada == 0) null else selectedJornada
         ligaViewModel.fetchLigaInfo(ligaCode, jornadaParam)
     }
 
-    ligaData?.let { data ->
-        val imageUrl = "${RetrofitClient.BASE_URL}api/v1/liga/image/${data.liga.id}"
-
-        Box(modifier = Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                // CABECERA con gradiente y elementos redondeados
+    Box(modifier = Modifier.fillMaxSize()) {
+        LoadingTransitionScreen(isLoading = ligaData == null) {
+            val data = ligaData!!
+            val imageUrl = "${RetrofitClient.BASE_URL}api/v1/liga/image/${data.liga.id}"
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 56.dp) // Padding inferior igual a la altura de la Navbar
+            ) {
+                // HEADER (igual que en HomeView)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(120.dp)
+                        .height(140.dp)
                         .background(
                             Brush.horizontalGradient(
                                 colors = listOf(
@@ -69,7 +78,7 @@ fun LigaView(
                                 )
                             )
                         )
-                        .padding(horizontal = 24.dp, vertical = 8.dp),
+                        .padding(horizontal = 20.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Row(
@@ -79,49 +88,45 @@ fun LigaView(
                     ) {
                         IconButton(
                             onClick = { navController.popBackStack() },
-                            modifier = Modifier.size(36.dp)
+                            modifier = Modifier.size(28.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.ArrowBack,
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Volver",
                                 tint = MaterialTheme.colorScheme.onPrimary
                             )
                         }
                         Row(
                             modifier = Modifier.weight(1f),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
                         ) {
-                            val painter = rememberAsyncImagePainter(
-                                model = ImageRequest.Builder(LocalContext.current)
-                                    .data(imageUrl)
-                                    .placeholder(R.drawable.fantasydraft) // imagen por defecto
-                                    .error(R.drawable.fantasydraft)       // imagen en caso de error
-                                    .build()
-                            )
                             Image(
-                                painter = painter,
+                                painter = rememberAsyncImagePainter(
+                                    model = ImageRequest.Builder(LocalContext.current)
+                                        .data(imageUrl)
+                                        .placeholder(R.drawable.fantasydraft)
+                                        .error(R.drawable.fantasydraft)
+                                        .build()
+                                ),
                                 contentDescription = "Icono de la liga",
-                                modifier = Modifier
-                                    .size(70.dp)
-                                    .clip(CircleShape)
-                                    .shadow(4.dp, CircleShape)
+                                modifier = Modifier.size(45.dp)
                             )
-                            Spacer(modifier = Modifier.width(12.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = data.liga.name.uppercase(),
                                 style = MaterialTheme.typography.titleLarge.copy(
-                                    fontSize = 28.sp,
+                                    fontSize = 20.sp,
                                     fontWeight = FontWeight.ExtraBold,
-                                    letterSpacing = 1.2.sp
+                                    letterSpacing = 0.3.sp
                                 ),
                                 color = MaterialTheme.colorScheme.onPrimary,
-                                maxLines = 1,
-                                modifier = Modifier.padding(top = 4.dp)
+                                maxLines = 1
                             )
                         }
                         IconButton(
                             onClick = { ligaViewModel.toggleShowCodeDialog() },
-                            modifier = Modifier.size(36.dp)
+                            modifier = Modifier.size(28.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Share,
@@ -132,134 +137,224 @@ fun LigaView(
                     }
                 }
 
-                // FILA con Dropdown para jornadas y botón "Crear Draft"
-                Row(
+                // SECCIÓN DE BOTONES
+                Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(
-                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f),
-                            shape = RoundedCornerShape(12.dp)
-                        )
                         .padding(horizontal = 16.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    tonalElevation = 4.dp
                 ) {
-                    JornadaDropdown(
-                        createdJornada = data.liga.created_jornada,
-                        currentJornada = currentJornada,
-                        selected = selectedJornada,
-                        onSelected = { jornada ->
-                            ligaViewModel.setSelectedJornada(jornada)
-                        }
-                    )
-                    Button(
-                        onClick = { /* TODO: Implementar Crear Draft */ },
-                        modifier = Modifier
-                            .height(42.dp)
-                            .clip(RoundedCornerShape(8.dp))
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "Crear Draft",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+                        Box(modifier = Modifier.weight(1f)) {
+                            JornadaDropdown(
+                                createdJornada = data.liga.created_jornada,
+                                currentJornada = currentJornada,
+                                selected = selectedJornada,
+                                onSelected = { jornada ->
+                                    ligaViewModel.setSelectedJornada(jornada)
+                                },
+                                textColor = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Button(
+                            onClick = { /* TODO: Implementar Crear Draft */ },
+                            modifier = Modifier.height(42.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondary
+                            )
+                        ) {
+                            Text(
+                                text = "Crear Draft",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    color = MaterialTheme.colorScheme.onSecondary
+                                )
+                            )
+                        }
                     }
                 }
 
-                // RANKING DE USUARIOS: listado estilizado en Cards
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp)
-                ) {
-                    itemsIndexed(data.users) { index, user ->
-                        val rowColor = if (index % 2 == 0)
-                            MaterialTheme.colorScheme.background
-                        else
-                            MaterialTheme.colorScheme.surfaceVariant
-                        Card(
-                            shape = RoundedCornerShape(12.dp),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 6.dp)
-                                .clickable { /* Acción al pulsar la fila, por ejemplo ver perfil */ }
-                        ) {
-                            Row(
+                LoadingTransitionScreen(isLoading = isLoading) {
+                    // RANKING DE USUARIOS (LazyColumn para scroll)
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp)
+                    ) {
+                        itemsIndexed(data.users) { index, user ->
+                            // Verifica si está entre los 3 primeros
+                            val isPodio = index < 3
+                            val rankingText = when (index) {
+                                0 -> "🥇"
+                                1 -> "🥈"
+                                2 -> "🥉"
+                                else -> "${index + 1}"
+                            }
+                            // Para los tres primeros, se define un Brush con efecto metálico
+                            val backgroundBrush = if (isPodio) metallicBrushForRanking(index)
+                            else SolidColor(Color.White)
+
+                            Card(
+                                shape = RoundedCornerShape(12.dp),
+                                elevation = if (isPodio)
+                                    CardDefaults.cardElevation(defaultElevation = 8.dp)
+                                else CardDefaults.cardElevation(defaultElevation = 4.dp),
                                 modifier = Modifier
-                                    .background(rowColor)
-                                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                    .fillMaxWidth()
+                                    .padding(vertical = 6.dp)
+                                    .clickable { /* Acción al pulsar la fila */ },
+                                // Usamos fondo transparente y luego lo manejamos en la Box interna
+                                colors = if (isPodio)
+                                    CardDefaults.cardColors(containerColor = Color.Transparent)
+                                else CardDefaults.cardColors(containerColor = Color.White)
                             ) {
-                                Text(
-                                    text = "${index + 1}",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    modifier = Modifier.width(30.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Image(
-                                    painter = painterResource(id = R.drawable.fantasydraft),
-                                    contentDescription = "Imagen de usuario",
-                                    modifier = Modifier
-                                        .size(48.dp)
-                                        .clip(CircleShape)
-                                )
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Text(
-                                    text = user.username,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                val puntos = if (selectedJornada == 0) user.puntos_acumulados else user.puntos_jornada
-                                Text(
-                                    text = "$puntos pts",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    modifier = Modifier.padding(end = 8.dp)
-                                )
+                                if (isPodio) {
+                                    // Para el podio, aplicamos el degradado y un borde para simular brillo
+                                    Box(
+                                        modifier = Modifier
+                                            .background(brush = backgroundBrush, shape = RoundedCornerShape(12.dp))
+                                            .border(width = 2.dp, brush = backgroundBrush, shape = RoundedCornerShape(12.dp))
+                                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = rankingText,
+                                                style = MaterialTheme.typography.bodyLarge.copy(
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 20.sp
+                                                ),
+                                                modifier = Modifier.width(30.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Image(
+                                                painter = painterResource(id = R.drawable.fantasydraft),
+                                                contentDescription = "Imagen de usuario",
+                                                modifier = Modifier
+                                                    .size(48.dp)
+                                                    .clip(CircleShape)
+                                            )
+                                            Spacer(modifier = Modifier.width(12.dp))
+                                            Text(
+                                                text = user.username,
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            val puntos = if (selectedJornada == 0) user.puntos_acumulados else user.puntos_jornada
+                                            Text(
+                                                text = "$puntos pts",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                modifier = Modifier.padding(end = 8.dp)
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    // Diseño de carta para el resto de usuarios
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = rankingText,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            modifier = Modifier.width(30.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Image(
+                                            painter = painterResource(id = R.drawable.fantasydraft),
+                                            contentDescription = "Imagen de usuario",
+                                            modifier = Modifier
+                                                .size(48.dp)
+                                                .clip(CircleShape)
+                                        )
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        Text(
+                                            text = user.username,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        val puntos = if (selectedJornada == 0) user.puntos_acumulados else user.puntos_jornada
+                                        Text(
+                                            text = "$puntos pts",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            modifier = Modifier.padding(end = 8.dp)
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
+        }
+        // Navbar inferior
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+        ) {
+            NavbarView(
+                navController = navController,
+                onProfileClick = { /* Acción para perfil */ },
+                onHomeClick = { navController.navigate(Routes.HomeLoged.route) },
+                onNotificationsClick = { /* Acción para notificaciones */ },
+                onSettingsClick = { navController.navigate(Routes.Settings.route) },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
 
-            // NAVBAR fija en la parte inferior
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .align(Alignment.BottomCenter)
-            ) {
-                NavbarView(
-                    navController = navController,
-                    onProfileClick = { /* Acción para perfil */ },
-                    onHomeClick = { navController.navigate(Routes.HomeLoged.route) },
-                    onNotificationsClick = { /* Acción para notificaciones */ },
-                    onSettingsClick = { navController.navigate(Routes.Settings.route) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
-            // Diálogo emergente para mostrar el código de la liga
-            if (showCodeDialog) {
-                AlertDialog(
-                    onDismissRequest = { ligaViewModel.toggleShowCodeDialog() },
-                    confirmButton = {
-                        TextButton(onClick = { ligaViewModel.toggleShowCodeDialog() }) {
-                            Text("Cerrar")
-                        }
-                    },
-                    title = {
-                        Text(
-                            "Código de la liga",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                    },
-                    text = { Text(data.liga.code, style = MaterialTheme.typography.bodyMedium) }
-                )
-            }
+        if (showCodeDialog && ligaData != null) {
+            LeagueCodeDialog(
+                leagueCode = ligaData!!.liga.code,
+                onDismiss = { ligaViewModel.toggleShowCodeDialog() }
+            )
+        }
         }
     }
+
+@Composable
+fun metallicBrushForRanking(index: Int): Brush {
+    return when (index) {
+        0 -> Brush.linearGradient(
+            colors = listOf(
+                Color(0xFFFFD700), // Oro brillante
+                Color(0xFFFFE135), // Punto intermedio más claro
+                Color(0xFFFFC200)  // Tono dorado profundo
+            )
+        )
+        1 -> Brush.linearGradient(
+            colors = listOf(
+                Color(0xFFC0C0C0), // Plateado inicial
+                Color(0xFFD3D3D3), // Punto intermedio
+                Color(0xFFC0C0C0)  // Plateado
+            )
+        )
+        2 -> Brush.linearGradient(
+            colors = listOf(
+                Color(0xFFCD7F32), // Bronce intenso
+                Color(0xFFE5B169), // Bronce más claro
+                Color(0xFFCD7F32)  // Bronce intenso
+            )
+        )
+        else -> SolidColor(Color.White)
+    }
 }
+
+
+
+
 
 /** Dropdown personalizado para seleccionar la jornada */
 @Composable
@@ -267,7 +362,8 @@ fun JornadaDropdown(
     createdJornada: Int,
     currentJornada: Int,
     selected: Int,
-    onSelected: (Int) -> Unit
+    onSelected: (Int) -> Unit,
+    textColor: Color = MaterialTheme.colorScheme.onSurface
 ) {
     var expanded by remember { mutableStateOf(false) }
     Box {
@@ -278,11 +374,12 @@ fun JornadaDropdown(
         ) {
             Text(
                 text = if (selected == 0) "Total" else "J$selected",
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium.copy(color = textColor)
             )
             Icon(
                 imageVector = Icons.Default.ArrowDropDown,
-                contentDescription = "Mostrar opciones"
+                contentDescription = "Mostrar opciones",
+                tint = textColor
             )
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {

@@ -3,9 +3,9 @@ package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Text
@@ -13,6 +13,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -21,8 +23,10 @@ import androidx.navigation.NavController
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.proyecte_aplicaci_nativa_g1markzuckerberg.viewmodel.HomeViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.ui.graphics.Color
 
-// Ajusta estos valores a tu paleta de colores y tipografías reales.
+
 private val BluePrimary @Composable
 get() = colorScheme.primary
 
@@ -45,12 +49,19 @@ fun HomeView(
             .fillMaxSize()
             .background(colorScheme.background)
     ) {
-        // CABECERA: Título más alto
+        // CABECERA: Título con gradiente (igual que en HomeLogedView)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(140.dp) // Aumenta la altura según tu wireframe
-                .background(BluePrimary), // Fondo color primario
+                .height(140.dp)
+                .background(
+                    Brush.horizontalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary,
+                            MaterialTheme.colorScheme.secondary
+                        )
+                    )
+                ),
             contentAlignment = Alignment.Center
         ) {
             Text(
@@ -79,7 +90,7 @@ fun HomeView(
             )
         }
 
-        // BOTONES INFERIORES: uno encima del otro, más grandes
+        // BOTONES INFERIORES: Botones de Crear Cuenta e Iniciar Sesión
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -87,28 +98,19 @@ fun HomeView(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Button(
+            // Botón con gradiente para Crear Cuenta
+            GradientButton(
+                text = "CREAR CUENTA",
                 onClick = {
-                    //homeViewModel.onCrearCuenta()
                     navController.navigate(Routes.Register.route)
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp), // Botón más grande
-                colors = ButtonDefaults.buttonColors(containerColor = BluePrimary)
-            ) {
-                Text(
-                    text = "CREAR CUENTA",
-                    color = OnBluePrimary,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-            Button(
-                onClick = {
-                    //homeViewModel.onIniciarSesion()
-                    navController.navigate(Routes.Login.route)
-                },
+                    .height(56.dp)
+            )
+            // Botón para Iniciar Sesión, con fondo gris
+            androidx.compose.material3.Button(
+                onClick = { navController.navigate(Routes.Login.route) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -121,6 +123,41 @@ fun HomeView(
                     fontWeight = FontWeight.SemiBold
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun GradientButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    gradient: Brush = Brush.horizontalGradient(
+        colors = listOf(
+            MaterialTheme.colorScheme.primary,
+            MaterialTheme.colorScheme.secondary
+        )
+    ),
+    textColor: Color = MaterialTheme.colorScheme.onPrimary
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier,
+        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent), // Fondo transparente para mostrar el gradiente
+        contentPadding = PaddingValues() // Quitamos el padding interno para usar el Box que lo gestione
+    ) {
+        Box(
+            modifier = Modifier
+                .background(gradient, shape = RoundedCornerShape(8.dp))
+                .fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = text,
+                color = textColor,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold
+            )
         }
     }
 }

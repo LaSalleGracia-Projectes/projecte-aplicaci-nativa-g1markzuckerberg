@@ -22,6 +22,7 @@ import androidx.navigation.NavController
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.RegisterViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.GradientHeader
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 
@@ -57,32 +58,12 @@ fun RegisterView(
             .fillMaxSize()
             .background(Color.White)
     ) {
-        // Barra superior con botón de volver atrás
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(BluePrimary)
-                .padding(horizontal = 8.dp, vertical = 16.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(
-                    onClick = { navController.popBackStack() } // Navega hacia atrás
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.arrow_back), // Icono personalizado
-                        contentDescription = "Volver",
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-                Text(
-                    text = "Crear una cuenta",
-                    modifier = Modifier.weight(1f),
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-            }
-        }
+        // Barra superior: Usando GradientHeader
+        GradientHeader(
+            title = "Crear una cuenta",
+            onBack = { navController.popBackStack() },
+            height = 140.dp
+        )
 
         // Línea divisoria gris bajo la barra
         Divider(

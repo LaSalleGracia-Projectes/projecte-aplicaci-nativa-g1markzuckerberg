@@ -1,7 +1,7 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
+import LoadingTransitionScreen
 import android.widget.Toast
-import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -10,13 +10,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
@@ -24,7 +20,6 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
@@ -37,7 +32,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
@@ -73,33 +67,45 @@ fun HomeLogedView(
     val errorMessage by homeLogedViewModel.errorMessage.observeAsState("")
     val joinLigaResult by homeLogedViewModel.joinLigaResult.observeAsState()
     val userLeagues by homeLogedViewModel.userLeagues.observeAsState(emptyList())
+    // Observa el estado de carga
+    val isLoading by homeLogedViewModel.isLoading.observeAsState(initial = true)
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
 
-    LaunchedEffect(key1 = joinLigaResult, key2 = errorMessage) {
-        if (joinLigaResult != null) {
+    LaunchedEffect(key1 = joinLigaResult) {
+        joinLigaResult?.getContentIfNotHandled()?.let {
             openJoinLigaDialog = false
-            Toast.makeText(context, "Te has unido correctamente a la liga", Toast.LENGTH_SHORT)
-                .show()
+            Toast.makeText(context, "Te has unido correctamente a la liga", Toast.LENGTH_SHORT).show()
             homeLogedViewModel.fetchUserLeagues()
-        } else if (errorMessage.isNotEmpty()) {
-            Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
         }
     }
-    LaunchedEffect(key1 = createLigaResult, key2 = errorMessage) {
-        if (createLigaResult != null) {
+
+    LaunchedEffect(key1 = createLigaResult) {
+        createLigaResult?.getContentIfNotHandled()?.let {
             openCreateLigaDialog = false
             Toast.makeText(context, "Liga creada correctamente", Toast.LENGTH_SHORT).show()
             homeLogedViewModel.fetchUserLeagues()
-        } else if (errorMessage.isNotEmpty()) {
-            Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
         }
     }
+    val errorEvent by homeLogedViewModel.errorMessage.observeAsState()
+
+    LaunchedEffect(key1 = errorEvent) {
+        errorEvent?.getContentIfNotHandled()?.let { error: String ->
+            Toast.makeText(context, error as CharSequence, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+
+
     LaunchedEffect(Unit) {
         homeLogedViewModel.fetchUserLeagues()
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -126,16 +132,6 @@ fun HomeLogedView(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    IconButton(
-                        onClick = { navController.popBackStack() },
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Volver",
-                            tint = MaterialTheme.colorScheme.onPrimary
-                        )
-                    }
                     Text(
                         text = "FantasyDraft",
                         style = MaterialTheme.typography.titleLarge.copy(
@@ -152,13 +148,12 @@ fun HomeLogedView(
                     Image(
                         painter = painterResource(id = R.drawable.fantasydraft),
                         contentDescription = "Logo FantasyDraft",
-                        modifier = Modifier
-                            .size(70.dp)
+                        modifier = Modifier.size(70.dp)
                     )
                 }
             }
 
-            /** SUBTÍTULO con fondo sutil */
+            /** SUBTÍTULO */
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -171,7 +166,8 @@ fun HomeLogedView(
                                 MaterialTheme.colorScheme.secondary
                             )
                         )
-                    )                    .padding(vertical = 12.dp, horizontal = 12.dp),
+                    )
+                    .padding(vertical = 12.dp, horizontal = 12.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -179,111 +175,110 @@ fun HomeLogedView(
                     style = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp, fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSecondary,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-
+                    overflow = TextOverflow.Ellipsis
                 )
             }
 
             HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
 
-            /** SECCIÓN: Listado de “Mis ligas” y Próximos partidos */
-            LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
-                contentPadding = PaddingValues(vertical = 4.dp)
-            ) {
-                if (userLeagues.isEmpty()) {
-                    item {
-                        Text(
-                            "No estás en ninguna liga aún",
-                            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
-                            color = MaterialTheme.colorScheme.onBackground,
-                            modifier = Modifier.padding(12.dp)
-                        )
+            /** Contenido con Loading: si isLoading es true se muestra la animación, de lo contrario se muestra la lista */
+            LoadingTransitionScreen(isLoading = isLoading) {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 20.dp),
+                    contentPadding = PaddingValues(vertical = 4.dp)
+                ) {
+                    if (userLeagues.isEmpty()) {
+                        item {
+                            Text(
+                                "No estás en ninguna liga aún",
+                                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
+                                color = MaterialTheme.colorScheme.onBackground,
+                                modifier = Modifier.padding(12.dp)
+                            )
+                        }
                     }
-                }
 
-                /** Encabezado de la sección "MIS LIGAS" con botones redondeados */
-                item {
-                    SectionHeader(
-                        title = "MIS LIGAS",
-                        buttonContent = {
-                            Row {
-                                FilledTonalButton(
-                                    onClick = { openJoinLigaDialog = true },
-                                    shape = RoundedCornerShape(50.dp),
-                                    colors = ButtonDefaults.filledTonalButtonColors(
-                                        containerColor = MaterialTheme.colorScheme.primary,
-                                        contentColor = Color.White
-                                    ),
-                                    modifier = Modifier.height(34.dp)
-                                ) {
-                                    Text("UNIRSE", style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp))
-                                }
-                                Spacer(modifier = Modifier.width(4.dp))
-                                FilledTonalButton(
-                                    onClick = { openCreateLigaDialog = true },
-                                    shape = RoundedCornerShape(50.dp),
-                                    colors = ButtonDefaults.filledTonalButtonColors(
-                                        containerColor = MaterialTheme.colorScheme.secondary,
-                                        contentColor = Color.White
-                                    ),
-                                    modifier = Modifier.height(34.dp)
-                                ) {
-                                    Text("CREAR", style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp))
+                    item {
+                        SectionHeader(
+                            title = "MIS LIGAS",
+                            buttonContent = {
+                                Row {
+                                    FilledTonalButton(
+                                        onClick = { openJoinLigaDialog = true },
+                                        shape = RoundedCornerShape(50.dp),
+                                        colors = ButtonDefaults.filledTonalButtonColors(
+                                            containerColor = MaterialTheme.colorScheme.primary,
+                                            contentColor = Color.White
+                                        ),
+                                        modifier = Modifier.height(34.dp)
+                                    ) {
+                                        Text("UNIRSE", style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp))
+                                    }
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    FilledTonalButton(
+                                        onClick = { openCreateLigaDialog = true },
+                                        shape = RoundedCornerShape(50.dp),
+                                        colors = ButtonDefaults.filledTonalButtonColors(
+                                            containerColor = MaterialTheme.colorScheme.secondary,
+                                            contentColor = Color.White
+                                        ),
+                                        modifier = Modifier.height(34.dp)
+                                    ) {
+                                        Text("CREAR", style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp))
+                                    }
                                 }
                             }
-                        }
-                    )
-                }
-
-                /** Lista de ligas (sin separación extra entre tarjetas) */
-                itemsIndexed(userLeagues) { index, liga ->
-                    LeagueRow(
-                        name = liga.name,
-                        puntos = liga.puntos_totales,
-                        leagueCode = liga.code,
-                        onClick = { navController.navigate(Routes.LigaView.createRoute(liga.code)) },
-                        onOptionsClick = {
-                            // Aquí puedes implementar la acción para el menú de opciones.
-                            // Por ejemplo, abrir un diálogo o un dropdown.
-                        }
-                    )
-                }
-
-                item { Spacer(modifier = Modifier.height(12.dp)) }
-
-                /** Encabezado de "PARTIDOS – JORNADA X" */
-                homeLogedViewModel.jornadaData.value?.let { jornada ->
-                    item {
-                        SectionHeader(title = "PARTIDOS – JORNADA ${jornada.jornada}")
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
-                    items(jornada.fixtures) { fixture ->
-                        val teams = fixture.name.split(" vs ")
-                        val team1 = teams.getOrNull(0) ?: "Equipo 1"
-                        val team2 = teams.getOrNull(1) ?: "Equipo 2"
-                        MatchRow(
-                            team1 = team1,
-                            team2 = team2,
-                            timestamp = fixture.starting_at_timestamp,
-                            localTeamImage = fixture.local_team_image ?: "",
-                            visitantTeamImage = fixture.visitant_team_image ?: ""
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+
+                    itemsIndexed(userLeagues) { index, liga ->
+                        LeagueRow(
+                            name = liga.name,
+                            puntos = liga.puntos_totales,
+                            leagueCode = liga.code,
+                            onClick = { navController.navigate(Routes.LigaView.createRoute(liga.code)) },
+                            onOptionsClick = {
+                                // Acción para menú de opciones.
+                            }
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+
+                    item { Spacer(modifier = Modifier.height(12.dp)) }
+
+                    homeLogedViewModel.jornadaData.value?.let { jornada ->
+                        item {
+                            SectionHeader(title = "PARTIDOS – JORNADA ${jornada.jornada}")
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                        items(jornada.fixtures) { fixture ->
+                            val teams = fixture.name.split(" vs ")
+                            val team1 = teams.getOrNull(0) ?: "Equipo 1"
+                            val team2 = teams.getOrNull(1) ?: "Equipo 2"
+                            MatchRow(
+                                team1 = team1,
+                                team2 = team2,
+                                timestamp = fixture.starting_at_timestamp,
+                                localTeamImage = fixture.local_team_image ?: "",
+                                visitantTeamImage = fixture.visitant_team_image ?: ""
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
                     }
                 }
             }
         }
 
-        /** NAVBAR: ocupa todo el ancho, con fondo de gradiente similar al header y estilo moderno */
+        /** NAVBAR */
         Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
+            modifier = Modifier.align(Alignment.BottomCenter)
         ) {
             NavbarView(
                 navController = navController,
                 onProfileClick = { /* Acción perfil */ },
-                onHomeClick = { navController.navigate(Routes.HomeLoged.route) },
+                onHomeClick = {},
                 onNotificationsClick = { /* Acción notificaciones */ },
                 onSettingsClick = { navController.navigate(Routes.Settings.route) },
                 modifier = Modifier.fillMaxWidth()
@@ -411,19 +406,6 @@ fun LeagueRow(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    // Campo Draft
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = "Draft:",
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = if (draftCompleted) "✅" else "❌",
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp)
-                        )
-                    }
                     // Campo Usuarios
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(

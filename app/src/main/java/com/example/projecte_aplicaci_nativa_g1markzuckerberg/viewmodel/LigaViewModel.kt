@@ -3,6 +3,7 @@ package com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel
 import androidx.lifecycle.*
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.LigaUsersResponse
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class LigaViewModel : ViewModel() {
@@ -21,6 +22,10 @@ class LigaViewModel : ViewModel() {
     private val _showCodeDialog = MutableLiveData(false)
     val showCodeDialog: LiveData<Boolean> = _showCodeDialog
 
+    // NUEVO: Estado de carga
+    private val _isLoading = MutableLiveData<Boolean>(true)
+    val isLoading: LiveData<Boolean> get() = _isLoading
+
     init {
         // Llamamos a obtener la jornada actual desde el endpoint
         fetchCurrentJornada()
@@ -28,10 +33,15 @@ class LigaViewModel : ViewModel() {
 
     fun fetchLigaInfo(ligaCode: String, jornada: Int? = null) {
         viewModelScope.launch {
-            // Llamada al endpoint de usuarios de la liga
-            val response = RetrofitClient.ligaService.getUsersByLiga(ligaCode, jornada)
-            if (response.isSuccessful) {
-                _ligaData.postValue(response.body())
+            _isLoading.value = true  // Activamos loading antes de la petición
+            try {
+                // Llamada al endpoint de usuarios de la liga
+                val response = RetrofitClient.ligaService.getUsersByLiga(ligaCode, jornada)
+                if (response.isSuccessful) {
+                    _ligaData.postValue(response.body())
+                }
+            } finally {
+                _isLoading.value = false  // Desactivamos loading al terminar
             }
         }
     }

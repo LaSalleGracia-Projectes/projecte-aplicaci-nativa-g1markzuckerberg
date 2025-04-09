@@ -11,7 +11,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -21,19 +20,19 @@ import androidx.navigation.NavController
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.GradientHeader
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.GradientOutlinedButton
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.RegisterEmailViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.factory.RegisterEmailViewModelFactory
 
-// Color principal (ajusta según tu guía de estilos)
-private val BluePrimary @Composable get() = MaterialTheme.colorScheme.primary
-
 @Composable
 fun RegisterScreen(navController: NavController) {
-    val registerViewModel : RegisterEmailViewModel = viewModel(
+    val registerViewModel: RegisterEmailViewModel = viewModel(
         factory = RegisterEmailViewModelFactory(RetrofitClient.authRepository)
     )
     RegisterEmailView(navController = navController, viewModel = registerViewModel)
 }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterEmailView(
@@ -44,55 +43,60 @@ fun RegisterEmailView(
     val email by viewModel.email.observeAsState("")
     val password by viewModel.password.observeAsState("")
     val confirmPassword by viewModel.confirmPassword.observeAsState("")
-    val isLoading by viewModel.isLoading.observeAsState(false)
-    val errorMessage by viewModel.errorMessage.observeAsState()
+
+    // Estados para las validaciones de la contraseña:
+    val isMinLength by viewModel.isMinLength.observeAsState(false)
+    val hasUppercase by viewModel.hasUppercase.observeAsState(false)
+    val hasDigit by viewModel.hasDigit.observeAsState(false)
 
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
     var termsAccepted by remember { mutableStateOf(false) }
+
+    // Se habilita el botón solo si:
+    // - Todos los campos tienen contenido.
+    // - El checkbox está marcado.
+    // - La contraseña cumple con los requisitos y coincide con la confirmación.
+    val isButtonEnabled = username.isNotBlank() &&
+            email.isNotBlank() &&
+            password.isNotBlank() &&
+            confirmPassword.isNotBlank() &&
+            termsAccepted &&
+            (password == confirmPassword) &&
+            isMinLength && hasUppercase && hasDigit
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
     ) {
-        // Barra superior con botón de volver atrás
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(BluePrimary)
-                .padding(horizontal = 8.dp, vertical = 16.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(
-                    onClick = { navController.popBackStack() } // Navega hacia atrás
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.arrow_back), // Icono personalizado
-                        contentDescription = "Volver",
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-                Text(
-                    text = "Crear una cuenta",
-                    modifier = Modifier.weight(1f),
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-            }
-        }
+        // Barra superior: usando GradientHeader
+        GradientHeader(
+            title = "Crear una cuenta",
+            onBack = { navController.popBackStack() },
+            height = 140.dp
+        )
+        Spacer(modifier = Modifier.height(24.dp))
         Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-            Divider(modifier = Modifier.fillMaxWidth(), thickness = 1.dp, color = Color.Gray)
             Spacer(modifier = Modifier.height(8.dp))
-            Text(text = "Rellena los datos para crear tu cuenta", fontSize = 14.sp, color = Color.Gray)
+            Text(
+                text = "Rellena los datos para crear tu cuenta",
+                fontSize = 14.sp,
+                color = Color.Gray
+            )
             Spacer(modifier = Modifier.height(24.dp))
 
             // Campo para username
             OutlinedTextField(
                 value = username,
                 onValueChange = { viewModel.onUsernameChange(it) },
-                label = { Text("Nombre de usuario") },
+                label = {
+                    Text(
+                        text = "Nombre de usuario",
+                        modifier = Modifier.padding(bottom = 4.dp),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                },
                 leadingIcon = {
                     Image(
                         painter = painterResource(id = R.drawable.ic_profile),
@@ -100,7 +104,9 @@ fun RegisterEmailView(
                         modifier = Modifier.size(24.dp)
                     )
                 },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(59.dp),
                 shape = RoundedCornerShape(8.dp),
                 singleLine = true
             )
@@ -110,7 +116,13 @@ fun RegisterEmailView(
             OutlinedTextField(
                 value = email,
                 onValueChange = { viewModel.onEmailChange(it) },
-                label = { Text("Correo") },
+                label = {
+                    Text(
+                        text = "Correo",
+                        modifier = Modifier.padding(bottom = 4.dp),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                },
                 leadingIcon = {
                     Image(
                         painter = painterResource(id = R.drawable.emailicon),
@@ -118,7 +130,9 @@ fun RegisterEmailView(
                         modifier = Modifier.size(24.dp)
                     )
                 },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(59.dp),
                 shape = RoundedCornerShape(8.dp),
                 singleLine = true
             )
@@ -128,7 +142,13 @@ fun RegisterEmailView(
             OutlinedTextField(
                 value = password,
                 onValueChange = { viewModel.onPasswordChange(it) },
-                label = { Text("Contraseña") },
+                label = {
+                    Text(
+                        text = "Contraseña",
+                        modifier = Modifier.padding(bottom = 4.dp),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                },
                 leadingIcon = {
                     Image(
                         painter = painterResource(id = R.drawable.password),
@@ -136,12 +156,16 @@ fun RegisterEmailView(
                         modifier = Modifier.size(24.dp)
                     )
                 },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(59.dp),
                 shape = RoundedCornerShape(8.dp),
                 singleLine = true,
-                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                visualTransformation = if (passwordVisible)
+                    VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
-                    val iconRes = if (passwordVisible) R.drawable.visibility_on else R.drawable.visibility_off
+                    val iconRes =
+                        if (passwordVisible) R.drawable.visibility_on else R.drawable.visibility_off
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Image(
                             painter = painterResource(id = iconRes),
@@ -157,7 +181,13 @@ fun RegisterEmailView(
             OutlinedTextField(
                 value = confirmPassword,
                 onValueChange = { viewModel.onConfirmPasswordChange(it) },
-                label = { Text("Repetir Contraseña") },
+                label = {
+                    Text(
+                        text = "Repetir Contraseña",
+                        modifier = Modifier.padding(bottom = 4.dp),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                },
                 leadingIcon = {
                     Image(
                         painter = painterResource(id = R.drawable.password),
@@ -165,12 +195,16 @@ fun RegisterEmailView(
                         modifier = Modifier.size(24.dp)
                     )
                 },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(59.dp),
                 shape = RoundedCornerShape(8.dp),
                 singleLine = true,
-                visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                visualTransformation = if (confirmPasswordVisible)
+                    VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
-                    val iconRes = if (confirmPasswordVisible) R.drawable.visibility_on else R.drawable.visibility_off
+                    val iconRes =
+                        if (confirmPasswordVisible) R.drawable.visibility_on else R.drawable.visibility_off
                     IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
                         Image(
                             painter = painterResource(id = iconRes),
@@ -182,11 +216,23 @@ fun RegisterEmailView(
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Requisitos de la contraseña
+            // Requisitos de la contraseña con validación dinámica
             Column(modifier = Modifier.padding(bottom = 8.dp)) {
-                Text(text = "• Debe incluir una mayúscula", fontSize = 12.sp, color = Color.Gray)
-                Text(text = "• Debe incluir números", fontSize = 12.sp, color = Color.Gray)
-                Text(text = "• La contraseña debe ser de al menos 6 caracteres", fontSize = 12.sp, color = Color.Gray)
+                Text(
+                    text = "• La contraseña debe ser de al menos 6 caracteres",
+                    fontSize = 12.sp,
+                    color = if (isMinLength) Color.Green else Color.Gray
+                )
+                Text(
+                    text = "• Debe incluir una mayúscula",
+                    fontSize = 12.sp,
+                    color = if (hasUppercase) Color.Green else Color.Gray
+                )
+                Text(
+                    text = "• Debe incluir números",
+                    fontSize = 12.sp,
+                    color = if (hasDigit) Color.Green else Color.Gray
+                )
             }
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -206,22 +252,26 @@ fun RegisterEmailView(
             }
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Botón para crear cuenta
-            Button(
+            // Botón "Crear cuenta"
+            GradientOutlinedButton(
                 onClick = {
-                    viewModel.register {
-                        navController.navigate(Routes.HomeLoged.route)
+                    if (isButtonEnabled) {
+                        viewModel.register {
+                            navController.navigate(Routes.HomeLoged.route)
+                        }
                     }
                 },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = BluePrimary,
-                    contentColor = Color.White
-                )
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
             ) {
-                Text(text = "Crear cuenta", fontSize = 16.sp)
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "Crear cuenta",
+                    fontSize = 16.sp
+                )
             }
+
             Spacer(modifier = Modifier.height(32.dp))
         }
     }

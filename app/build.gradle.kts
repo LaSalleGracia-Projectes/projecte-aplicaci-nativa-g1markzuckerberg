@@ -41,6 +41,7 @@ android {
 }
 
 dependencies {
+    implementation ("com.airbnb.android:lottie-compose:6.0.0")
     //URL IMAGES
     implementation ("io.coil-kt:coil-compose:2.2.2")
 
