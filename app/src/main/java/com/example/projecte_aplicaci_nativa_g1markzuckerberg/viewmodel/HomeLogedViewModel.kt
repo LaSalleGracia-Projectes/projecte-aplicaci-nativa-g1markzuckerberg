@@ -48,6 +48,9 @@ class HomeLogedViewModel(private val authRepository: AuthRepository) : ViewModel
     private val _isLoading = MutableLiveData<Boolean>(true)
     val isLoading: LiveData<Boolean> get() = _isLoading
 
+    // Abandonar Liga
+    private val _leaveLigaResult = MutableLiveData<Event<String>>()
+    val leaveLigaResult: LiveData<Event<String>> = _leaveLigaResult
     init {
         // Cargar la jornada actual al iniciar.
         fetchCurrentJornada()
@@ -94,37 +97,83 @@ class HomeLogedViewModel(private val authRepository: AuthRepository) : ViewModel
         }
     }
 
-    fun createLiga(name: String) {
-        viewModelScope.launch {
-            try {
-                _isLoading.value = true
-                val request = CreateLigaRequest(name = name)
-                val response = RetrofitClient.ligaService.createLiga(request)
-                if (response.isSuccessful) {
-                    _createLigaResult.value = Event(response.body())
-                } else {
-                    _errorMessage.value = Event("Error: ${response.code()}")
-                }
-            } catch (e: Exception) {
-                _errorMessage.value = Event(e.message ?: "Error desconocido")
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
-
     fun joinLiga(code: String) {
         _isLoading.value = true
         viewModelScope.launch {
             try {
                 val response = RetrofitClient.ligaService.joinLiga(code)
                 if (response.isSuccessful) {
-                    _joinLigaResult.value = Event(response.body())
+                    fetchUserLeagues()
                 } else {
-                    _errorMessage.value = Event("Error: ${response.code()}")
+                    // Aquí puedes verificar el código de error
+                    when (response.code()) {
+                        404 -> {
+                            _errorMessage.value = Event("Error: Liga no encontrada.")
+                        }
+                        409 -> {
+                            _errorMessage.value = Event("Error: Ya estás en esta liga.")
+                        }
+                        422 -> {
+                            _errorMessage.value = Event("Error: Código de liga inválido.")
+                        }
+                        403 -> {
+                            _errorMessage.value = Event("Error: No tienes permiso para unirte a esta liga.")
+                        }
+                        401 -> {
+                            _errorMessage.value = Event("Error: No estás autenticado.")
+                        }
+                        500 -> {
+                            _errorMessage.value = Event("Error del servidor. Intenta más tarde.")
+                        }
+                        else -> {
+                            _errorMessage.value = Event("Error desconocido: ${response.code()}.")
+                        }
+                    }
                 }
             } catch (e: Exception) {
-                _errorMessage.value = Event(e.message ?: "Error desconocido")
+                _errorMessage.value = Event("Error al conectarse con el servidor: ${e.message}")
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun createLiga(name: String) {
+        _isLoading.value = true
+        viewModelScope.launch {
+            try {
+                val request = CreateLigaRequest(name = name)
+                val response = RetrofitClient.ligaService.createLiga(request)
+                if (response.isSuccessful) {
+                    fetchUserLeagues()
+                } else {
+                    // Mismo caso aquí
+                    when (response.code()) {
+                        404 -> {
+                            _errorMessage.value = Event("Error: No se pudo crear la liga.")
+                        }
+                        409 -> {
+                            _errorMessage.value = Event("Error: Liga ya existe.")
+                        }
+                        422 -> {
+                            _errorMessage.value = Event("Error: Datos inválidos.")
+                        }
+                        403 -> {
+                            _errorMessage.value = Event("Error: No tienes permiso para crear una liga.")
+                        }
+                        401 -> {
+                            _errorMessage.value = Event("Error: No estás autenticado.")
+                        }
+                        500 -> {
+                            _errorMessage.value = Event("Error del servidor al crear la liga. Intenta más tarde.")
+                        }
+                        else -> {
+                            _errorMessage.value = Event("Error desconocido: ${response.code()}.")
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = Event("Error al conectar con el servidor: ${e.message}")
             } finally {
                 _isLoading.value = false
             }
@@ -140,6 +189,24 @@ class HomeLogedViewModel(private val authRepository: AuthRepository) : ViewModel
                     _userLeagues.value = response.body()?.leagues ?: emptyList()
                 } else {
                     _errorMessage.value = Event("Error al cargar ligas: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = Event(e.message ?: "Error desconocido")
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+    fun leaveLiga(ligaId: String) {
+        _isLoading.value = true
+        viewModelScope.launch {
+            try {
+                val response = RetrofitClient.ligaService.leaveLiga(ligaId)
+                if (response.isSuccessful) {
+                    _leaveLigaResult.value = Event("Liga abandonada")
+                    fetchUserLeagues() // Actualiza la lista de ligas
+                } else {
+                    _errorMessage.value = Event("El capitán no puede abandonar la liga")
                 }
             } catch (e: Exception) {
                 _errorMessage.value = Event(e.message ?: "Error desconocido")

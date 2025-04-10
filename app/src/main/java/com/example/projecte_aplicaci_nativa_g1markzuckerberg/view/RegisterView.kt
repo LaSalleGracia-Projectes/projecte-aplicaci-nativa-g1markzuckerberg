@@ -96,7 +96,7 @@ fun RegisterView(
                 )
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.emailicon),
+                    painter = painterResource(id = R.drawable.ic_email),
                     contentDescription = "Email icon",
                     modifier = Modifier.size(24.dp)
                 )

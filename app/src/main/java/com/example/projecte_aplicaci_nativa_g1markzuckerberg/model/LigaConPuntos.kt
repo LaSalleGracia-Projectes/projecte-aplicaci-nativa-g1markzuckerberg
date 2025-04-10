@@ -7,5 +7,7 @@ data class LigaConPuntos(
     val created_by: String,
     val created_jornada: Int,
     val code: String,
+    val total_users: String,
     val puntos_totales: String
+
 )

@@ -197,8 +197,7 @@ fun LigaView(
                                 else -> "${index + 1}"
                             }
                             // Para los tres primeros, se define un Brush con efecto metálico
-                            val backgroundBrush = if (isPodio) metallicBrushForRanking(index)
-                            else SolidColor(Color.White)
+                            val backgroundBrush = if (isPodio) metallicBrushForRanking(index) else SolidColor(Color.White)
 
                             Card(
                                 shape = RoundedCornerShape(12.dp),
@@ -235,8 +234,13 @@ fun LigaView(
                                                 modifier = Modifier.width(30.dp)
                                             )
                                             Spacer(modifier = Modifier.width(8.dp))
+                                            // Cargar la imagen del usuario usando el campo imageUrl
                                             Image(
-                                                painter = painterResource(id = R.drawable.fantasydraft),
+                                                painter = rememberAsyncImagePainter(
+                                                    model = "${RetrofitClient.BASE_URL}${user.imageUrl}",
+                                                    placeholder = painterResource(id = R.drawable.fantasydraft),
+                                                    error = painterResource(id = R.drawable.fantasydraft)
+                                                ),
                                                 contentDescription = "Imagen de usuario",
                                                 modifier = Modifier
                                                     .size(48.dp)
@@ -271,8 +275,13 @@ fun LigaView(
                                             modifier = Modifier.width(30.dp)
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))
+                                        // Cargar la imagen del usuario usando el campo imageUrl
                                         Image(
-                                            painter = painterResource(id = R.drawable.fantasydraft),
+                                            painter = rememberAsyncImagePainter(
+                                                model = "${RetrofitClient.BASE_URL}${user.imageUrl}",
+                                                placeholder = painterResource(id = R.drawable.fantasydraft),
+                                                error = painterResource(id = R.drawable.fantasydraft)
+                                            ),
                                             contentDescription = "Imagen de usuario",
                                             modifier = Modifier
                                                 .size(48.dp)
@@ -296,6 +305,7 @@ fun LigaView(
                             }
                         }
                     }
+
                 }
             }
         }

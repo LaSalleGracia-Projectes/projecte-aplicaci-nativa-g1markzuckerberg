@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.repository.AuthRepository
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 
 class RegisterEmailViewModel(private val authRepository: AuthRepository) : ViewModel() {
 
@@ -21,7 +22,7 @@ class RegisterEmailViewModel(private val authRepository: AuthRepository) : ViewM
     private val _confirmPassword = MutableLiveData("")
     val confirmPassword: LiveData<String> = _confirmPassword
 
-    // NUEVAS VARIABLES PARA VALIDAR LA CONTRASEÑA
+    // Variables para validar la contraseña
     private val _isMinLength = MutableLiveData(false)
     val isMinLength: LiveData<Boolean> = _isMinLength
 
@@ -34,12 +35,23 @@ class RegisterEmailViewModel(private val authRepository: AuthRepository) : ViewM
     private val _isPasswordValid = MutableLiveData(false)
     val isPasswordValid: LiveData<Boolean> = _isPasswordValid
 
-    // Estados de carga y error
-    private val _isLoading = MutableLiveData<Boolean>(false)
+    // Estados de carga, error y éxito
+    private val _isLoading = MutableLiveData(false)
     val isLoading: LiveData<Boolean> get() = _isLoading
 
     private val _errorMessage = MutableLiveData<String?>()
     val errorMessage: LiveData<String?> get() = _errorMessage
+
+    private val _successMessage = MutableLiveData<String?>()
+    val successMessage: LiveData<String?> get() = _successMessage
+
+    fun clearError() {
+        _errorMessage.value = null
+    }
+
+    fun clearSuccess() {
+        _successMessage.value = null
+    }
 
     fun onUsernameChange(newUsername: String) {
         _username.value = newUsername
@@ -51,7 +63,7 @@ class RegisterEmailViewModel(private val authRepository: AuthRepository) : ViewM
 
     fun onPasswordChange(newPassword: String) {
         _password.value = newPassword
-        // Realizamos las validaciones:
+        // Validamos la contraseña
         val minLength = newPassword.length >= 6
         val uppercase = newPassword.any { it.isUpperCase() }
         val digit = newPassword.any { it.isDigit() }
@@ -71,15 +83,15 @@ class RegisterEmailViewModel(private val authRepository: AuthRepository) : ViewM
         val password = _password.value ?: ""
         val confirmPassword = _confirmPassword.value ?: ""
 
-        // Validamos que la contraseña y su confirmación sean iguales
+        // Validamos que las contraseñas coincidan
         if (password != confirmPassword) {
             _errorMessage.value = "Las contraseñas no coinciden"
             return
         }
-
-        // Validamos que la contraseña cumpla con todos los requisitos
+        // Validamos los requisitos de la contraseña
         if (_isPasswordValid.value != true) {
-            _errorMessage.value = "La contraseña no cumple con los requisitos (mínimo 6 caracteres, una mayúscula y números)"
+            _errorMessage.value =
+                "La contraseña no cumple con los requisitos (mínimo 6 caracteres, una mayúscula y números)"
             return
         }
 
@@ -88,9 +100,20 @@ class RegisterEmailViewModel(private val authRepository: AuthRepository) : ViewM
             val result = authRepository.register(username, email, password)
             _isLoading.value = false
             result.onSuccess {
+                _successMessage.value = "Cuenta registrada exitosamente."
                 onSuccess()
             }.onFailure { error ->
-                _errorMessage.value = error.message
+                // Verificamos si el error es de tipo HttpException para obtener el código
+                val message = if (error is HttpException) {
+                    when (error.code()) {
+                        400 -> "Datos inválidos. Revisa la información e intenta nuevamente."
+                        409 -> "El usuario o correo ya está registrado, por favor intenta con otro."
+                        else -> "Error al crear la cuenta. Código: ${error.code()}"
+                    }
+                } else {
+                    error.message ?: "Error al crear la cuenta."
+                }
+                _errorMessage.value = message
             }
         }
     }
