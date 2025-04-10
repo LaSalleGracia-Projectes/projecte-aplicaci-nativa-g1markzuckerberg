@@ -20,6 +20,8 @@ import androidx.navigation.NavController
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialog
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialogSingleButton
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.GradientHeader
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.GradientOutlinedButton
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.RegisterEmailViewModel
@@ -33,7 +35,6 @@ fun RegisterScreen(navController: NavController) {
     RegisterEmailView(navController = navController, viewModel = registerViewModel)
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterEmailView(
     navController: NavController,
@@ -44,7 +45,6 @@ fun RegisterEmailView(
     val password by viewModel.password.observeAsState("")
     val confirmPassword by viewModel.confirmPassword.observeAsState("")
 
-    // Estados para las validaciones de la contraseña:
     val isMinLength by viewModel.isMinLength.observeAsState(false)
     val hasUppercase by viewModel.hasUppercase.observeAsState(false)
     val hasDigit by viewModel.hasDigit.observeAsState(false)
@@ -53,10 +53,7 @@ fun RegisterEmailView(
     var confirmPasswordVisible by remember { mutableStateOf(false) }
     var termsAccepted by remember { mutableStateOf(false) }
 
-    // Se habilita el botón solo si:
-    // - Todos los campos tienen contenido.
-    // - El checkbox está marcado.
-    // - La contraseña cumple con los requisitos y coincide con la confirmación.
+    // Se habilita el botón solo si se cumplen todas las condiciones
     val isButtonEnabled = username.isNotBlank() &&
             email.isNotBlank() &&
             password.isNotBlank() &&
@@ -65,12 +62,16 @@ fun RegisterEmailView(
             (password == confirmPassword) &&
             isMinLength && hasUppercase && hasDigit
 
+    // Observar el mensaje de error
+    val errorMessage by viewModel.errorMessage.observeAsState()
+    val successMessage by viewModel.successMessage.observeAsState()
+
+    // El resto del contenido
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
     ) {
-        // Barra superior: usando GradientHeader
         GradientHeader(
             title = "Crear una cuenta",
             onBack = { navController.popBackStack() },
@@ -85,8 +86,7 @@ fun RegisterEmailView(
                 color = Color.Gray
             )
             Spacer(modifier = Modifier.height(24.dp))
-
-            // Campo para username
+            // Campo de username
             OutlinedTextField(
                 value = username,
                 onValueChange = { viewModel.onUsernameChange(it) },
@@ -99,7 +99,7 @@ fun RegisterEmailView(
                 },
                 leadingIcon = {
                     Image(
-                        painter = painterResource(id = R.drawable.ic_profile),
+                        painter = painterResource(id = R.drawable.ic_profile_black),
                         contentDescription = "Icono de usuario",
                         modifier = Modifier.size(24.dp)
                     )
@@ -111,8 +111,7 @@ fun RegisterEmailView(
                 singleLine = true
             )
             Spacer(modifier = Modifier.height(16.dp))
-
-            // Campo para correo
+            // Campo de correo
             OutlinedTextField(
                 value = email,
                 onValueChange = { viewModel.onEmailChange(it) },
@@ -125,7 +124,7 @@ fun RegisterEmailView(
                 },
                 leadingIcon = {
                     Image(
-                        painter = painterResource(id = R.drawable.emailicon),
+                        painter = painterResource(id = R.drawable.ic_email),
                         contentDescription = "Icono de correo",
                         modifier = Modifier.size(24.dp)
                     )
@@ -137,7 +136,6 @@ fun RegisterEmailView(
                 singleLine = true
             )
             Spacer(modifier = Modifier.height(16.dp))
-
             // Campo para contraseña
             OutlinedTextField(
                 value = password,
@@ -176,7 +174,6 @@ fun RegisterEmailView(
                 }
             )
             Spacer(modifier = Modifier.height(16.dp))
-
             // Campo para repetir contraseña
             OutlinedTextField(
                 value = confirmPassword,
@@ -215,8 +212,7 @@ fun RegisterEmailView(
                 }
             )
             Spacer(modifier = Modifier.height(16.dp))
-
-            // Requisitos de la contraseña con validación dinámica
+            // Requisitos de la contraseña
             Column(modifier = Modifier.padding(bottom = 8.dp)) {
                 Text(
                     text = "• La contraseña debe ser de al menos 6 caracteres",
@@ -235,7 +231,6 @@ fun RegisterEmailView(
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
-
             // Checkbox para términos
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(
@@ -251,7 +246,6 @@ fun RegisterEmailView(
                 )
             }
             Spacer(modifier = Modifier.height(24.dp))
-
             // Botón "Crear cuenta"
             GradientOutlinedButton(
                 onClick = {
@@ -271,8 +265,15 @@ fun RegisterEmailView(
                     fontSize = 16.sp
                 )
             }
-
             Spacer(modifier = Modifier.height(32.dp))
         }
+    }
+
+    if (errorMessage != null) {
+        CustomAlertDialogSingleButton(
+            title = "Error al crear cuenta",
+            message = "Este username o correo ya existen, por favor intenta con otros.",
+            onAccept = { viewModel.clearError() }
+        )
     }
 }

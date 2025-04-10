@@ -2,9 +2,11 @@ package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
 import LoadingTransitionScreen
 import android.widget.Toast
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -22,12 +24,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -36,6 +38,8 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CreateLigaDialog
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialog
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialogSingleButton
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.JoinLigaDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.NavbarView
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.HomeLogedViewModel
@@ -63,39 +67,51 @@ fun HomeLogedView(
 ) {
     var openCreateLigaDialog by remember { mutableStateOf(false) }
     var openJoinLigaDialog by remember { mutableStateOf(false) }
+
+    // Estados para el CustomAlertDialog
+    var showCustomAlert by remember { mutableStateOf(false) }
+    var alertTitle by remember { mutableStateOf("") }
+    var alertMessage by remember { mutableStateOf("") }
+    var alertOnConfirm by remember { mutableStateOf<() -> Unit>({}) }
+
     val createLigaResult by homeLogedViewModel.createLigaResult.observeAsState()
-    val errorMessage by homeLogedViewModel.errorMessage.observeAsState("")
     val joinLigaResult by homeLogedViewModel.joinLigaResult.observeAsState()
     val userLeagues by homeLogedViewModel.userLeagues.observeAsState(emptyList())
-    // Observa el estado de carga
     val isLoading by homeLogedViewModel.isLoading.observeAsState(initial = true)
     val context = LocalContext.current
-    val configuration = LocalConfiguration.current
 
+    // Al recibir el resultado de unirse a una liga
     LaunchedEffect(key1 = joinLigaResult) {
         joinLigaResult?.getContentIfNotHandled()?.let {
-            openJoinLigaDialog = false
-            Toast.makeText(context, "Te has unido correctamente a la liga", Toast.LENGTH_SHORT).show()
+            alertTitle = "Unirse a Liga"
+            alertMessage = "Te has unido correctamente a la liga."
+            alertOnConfirm = { showCustomAlert = false }
+            showCustomAlert = true
             homeLogedViewModel.fetchUserLeagues()
         }
     }
 
+    // Al recibir el resultado de crear una liga
     LaunchedEffect(key1 = createLigaResult) {
         createLigaResult?.getContentIfNotHandled()?.let {
-            openCreateLigaDialog = false
-            Toast.makeText(context, "Liga creada correctamente", Toast.LENGTH_SHORT).show()
+            alertTitle = "Crear Liga"
+            alertMessage = "Liga creada correctamente."
+            alertOnConfirm = { showCustomAlert = false }
+            showCustomAlert = true
             homeLogedViewModel.fetchUserLeagues()
         }
     }
-    val errorEvent by homeLogedViewModel.errorMessage.observeAsState()
 
+    // Para mostrar errores en un modal
+    val errorEvent by homeLogedViewModel.errorMessage.observeAsState()
     LaunchedEffect(key1 = errorEvent) {
         errorEvent?.getContentIfNotHandled()?.let { error: String ->
-            Toast.makeText(context, error as CharSequence, Toast.LENGTH_SHORT).show()
+            alertTitle = "Error"
+            alertMessage = error
+            alertOnConfirm = { showCustomAlert = false }
+            showCustomAlert = true
         }
     }
-
-
 
     LaunchedEffect(Unit) {
         homeLogedViewModel.fetchUserLeagues()
@@ -172,7 +188,10 @@ fun HomeLogedView(
             ) {
                 Text(
                     text = "¡Crea una liga con tus amigos!",
-                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp, fontWeight = FontWeight.SemiBold),
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
+                    ),
                     color = MaterialTheme.colorScheme.onSecondary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -181,7 +200,7 @@ fun HomeLogedView(
 
             HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
 
-            /** Contenido con Loading: si isLoading es true se muestra la animación, de lo contrario se muestra la lista */
+            /** Contenido con Loading */
             LoadingTransitionScreen(isLoading = isLoading) {
                 LazyColumn(
                     modifier = Modifier
@@ -214,7 +233,12 @@ fun HomeLogedView(
                                         ),
                                         modifier = Modifier.height(34.dp)
                                     ) {
-                                        Text("UNIRSE", style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp))
+                                        Text(
+                                            "UNIRSE",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 12.sp
+                                            )
+                                        )
                                     }
                                     Spacer(modifier = Modifier.width(4.dp))
                                     FilledTonalButton(
@@ -226,7 +250,12 @@ fun HomeLogedView(
                                         ),
                                         modifier = Modifier.height(34.dp)
                                     ) {
-                                        Text("CREAR", style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp))
+                                        Text(
+                                            "CREAR",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 12.sp
+                                            )
+                                        )
                                     }
                                 }
                             }
@@ -238,9 +267,25 @@ fun HomeLogedView(
                             name = liga.name,
                             puntos = liga.puntos_totales,
                             leagueCode = liga.code,
-                            onClick = { navController.navigate(Routes.LigaView.createRoute(liga.code)) },
-                            onOptionsClick = {
-                                // Acción para menú de opciones.
+                            totalUsers = liga.total_users,
+                            onClick = {
+                                navController.navigate(Routes.LigaView.createRoute(liga.code))
+                            },
+                            onLeaveLiga = {
+                                // Antes de llamar a leaveLiga, nos aseguramos de cerrar cualquier otro diálogo
+                                alertTitle = "Abandonar Liga"
+                                alertMessage = "¿Estás seguro que deseas abandonar la liga?"
+                                alertOnConfirm = {
+                                    homeLogedViewModel.leaveLiga(liga.id.toString())
+                                    showCustomAlert = false
+                                }
+                                showCustomAlert = true
+                            },
+                            onEditLiga = {
+                                alertTitle = "Editar Liga"
+                                alertMessage = "Funcionalidad de edición no implementada aún."
+                                alertOnConfirm = { showCustomAlert = false }
+                                showCustomAlert = true
                             }
                         )
                         Spacer(modifier = Modifier.height(4.dp))
@@ -285,23 +330,55 @@ fun HomeLogedView(
             )
         }
 
-        /** Diálogos con estilo refinado */
+        /** Diálogos: al enviar, se cierra el diálogo correspondiente antes de llamar a la acción */
         if (openCreateLigaDialog) {
             CreateLigaDialog(
                 onDismiss = { openCreateLigaDialog = false },
-                onCreateLiga = { leagueName -> homeLogedViewModel.createLiga(leagueName) },
+                onCreateLiga = { leagueName ->
+                    // Cerrar el diálogo antes de la acción
+                    openCreateLigaDialog = false
+                    homeLogedViewModel.createLiga(leagueName)
+                },
             )
         }
         if (openJoinLigaDialog) {
             JoinLigaDialog(
                 onDismiss = { openJoinLigaDialog = false },
-                onJoinLiga = { leagueCode -> homeLogedViewModel.joinLiga(leagueCode) },
+                onJoinLiga = { leagueCode ->
+                    openJoinLigaDialog = false
+                    homeLogedViewModel.joinLiga(leagueCode)
+                },
+            )
+        }
+    }
+
+    // Mostrar nuestro modal de alerta personalizado
+    if (showCustomAlert) {
+        if (alertTitle == "Abandonar Liga") {
+            // Utilizamos el CustomAlertDialog de dos botones para confirmación
+            CustomAlertDialog(
+                title = alertTitle,
+                message = alertMessage,
+                onDismiss = { showCustomAlert = false },
+                onConfirm = alertOnConfirm
+            )
+        } else {
+            // Para los demás mensajes se usa el de un solo botón
+            CustomAlertDialogSingleButton(
+                title = alertTitle,
+                message = alertMessage,
+                onAccept = {
+                    showCustomAlert = false
+                    alertOnConfirm()
+                }
             )
         }
     }
 }
 
-/** Encabezado de sección con título y contenido opcional de botón */
+
+
+    /** Encabezado de sección con título y contenido opcional de botón */
 @Composable
 fun SectionHeader(
     title: String,
@@ -328,14 +405,12 @@ fun LeagueRow(
     name: String,
     puntos: String,
     leagueCode: String,
+    totalUsers: String,
     onClick: () -> Unit,
-    onOptionsClick: () -> Unit
+    onLeaveLiga: () -> Unit,
+    onEditLiga: () -> Unit
 ) {
-    // Variables placeholder: reemplaza estas con los datos reales de tu lógica
-    val draftCompleted = false  // false -> no completado ("❌"), true -> completado ("✅")
-    val userCount = 10          // Ejemplo: 10 usuarios en la liga
-
-    // Convertir los puntos a entero para evitar decimales (si es posible)
+    var expanded by remember { mutableStateOf(false) }
     val ptsInt = puntos.toDoubleOrNull()?.toInt() ?: puntos
 
     Card(
@@ -347,93 +422,126 @@ fun LeagueRow(
             .clickable { onClick() },
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Row(modifier = Modifier.background(MaterialTheme.colorScheme.surfaceVariant)) {
-            // Contenedor para la imagen con márgenes laterales y verticales
-            Box(
-                modifier = Modifier
-                    .padding(vertical = 8.dp, horizontal = 4.dp)
-                    .fillMaxHeight()
-                    .width(80.dp)
-            ) {
-                AsyncImage(
-                    model = "${RetrofitClient.BASE_URL}api/v1/liga/image/$leagueCode",
-                    contentDescription = "Imagen Liga",
+        Box {
+            Row(modifier = Modifier.background(MaterialTheme.colorScheme.surfaceVariant)) {
+                Box(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .clip(RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp)),
-                    placeholder = painterResource(id = R.drawable.fantasydraft),
-                    error = painterResource(id = R.drawable.fantasydraft)
-                )
-            }
-            // Contenido a la derecha, con padding para alinear el título y la fila inferior
-            Column(
-                modifier = Modifier
-                    .padding(vertical = 8.dp, horizontal = 8.dp)
-                    .fillMaxHeight()
-                    .weight(1f),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                // Fila superior: Nombre de la liga y botón de opciones
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
+                        .padding(vertical = 8.dp, horizontal = 4.dp)
+                        .fillMaxHeight()
+                        .width(80.dp)
                 ) {
-                    Text(
-                        text = name,
-                        style = MaterialTheme.typography.titleSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
-                        ),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
+                    AsyncImage(
+                        model = "${RetrofitClient.BASE_URL}api/v1/liga/image/$leagueCode",
+                        contentDescription = "Imagen Liga",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp)),
+                        placeholder = painterResource(id = R.drawable.fantasydraft),
+                        error = painterResource(id = R.drawable.fantasydraft)
                     )
-                    IconButton(
-                        onClick = onOptionsClick,
-                        modifier = Modifier.size(24.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.MoreVert,
-                            contentDescription = "Opciones",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
                 }
-                // Fila inferior: "Draft", usuarios y puntos
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceEvenly
+
+                Column(
+                    modifier = Modifier
+                        .padding(vertical = 8.dp, horizontal = 8.dp)
+                        .fillMaxHeight()
+                        .weight(1f),
+                    verticalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Campo Usuarios
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Text(
-                            text = "👥",
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp)
-                        )
-                        Spacer(modifier = Modifier.width(2.dp))
-                        Text(
-                            text = "$userCount",
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            text = name,
+                            style = MaterialTheme.typography.titleSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            ),
+                            color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        // Box que alinea menú justo con el botón
+                        Box {
+                            IconButton(
+                                onClick = { expanded = true },
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .padding(0.dp) // Elimina padding interno
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.MoreVert,
+                                    contentDescription = "Opciones",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+
+                            DropdownMenu(
+                                expanded = expanded,
+                                onDismissRequest = { expanded = false },
+                                modifier = Modifier
+                                    .wrapContentSize()
+                                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .padding(0.dp) // Quita espacio superior e inferior del menú
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Editar liga") },
+                                    onClick = {
+                                        expanded = false
+                                        onEditLiga()
+                                    },
+                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)
+                                )
+                                DropdownMenuItem(
+                                    modifier = Modifier
+                                        .background(
+                                            Brush.horizontalGradient(
+                                                listOf(Color(0xFFFF5252), Color(0xFFB71C1C))
+                                            )
+                                        ),
+                                    text = { Text("Abandonar liga", color = Color.White) },
+                                    onClick = {
+                                        expanded = false
+                                        onLeaveLiga()
+                                    },
+                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("👥", style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp))
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Text(
+                                text = totalUsers,
+                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        Text(
+                            text = "$ptsInt pts",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 16.sp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    // Campo Puntos, con fuente más grande
-                    Text(
-                        text = "$ptsInt pts",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 16.sp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
                 }
             }
         }
     }
 }
+
 
 
 

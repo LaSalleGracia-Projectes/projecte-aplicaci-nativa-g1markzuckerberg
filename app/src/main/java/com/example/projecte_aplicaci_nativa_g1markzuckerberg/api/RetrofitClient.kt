@@ -14,6 +14,7 @@ object RetrofitClient {
     // Ip para el emulador de Android, localhost es 10.0.2.2
     // Ip para el dispositivo físico, 192.168.1.41:3000
     const val BASE_URL = "http://192.168.1.41:3000/"
+    //const val BASE_URL = "http://172.20.10.5:3000/"
 
     // Este repositorio se asignará desde tu Application o mediante DI
     lateinit var authRepository: AuthRepository

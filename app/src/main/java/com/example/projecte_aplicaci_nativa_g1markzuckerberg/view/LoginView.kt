@@ -119,7 +119,7 @@ fun LoginView(
                 label = { Text("Correo") },
                 leadingIcon = {
                     Image(
-                        painter = painterResource(id = R.drawable.emailicon),
+                        painter = painterResource(id = R.drawable.ic_email),
                         contentDescription = "Correo",
                         modifier = Modifier.size(24.dp)
                     )

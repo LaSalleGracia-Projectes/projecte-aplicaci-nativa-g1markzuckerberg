@@ -7,6 +7,7 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.LigaUsersResp
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
@@ -33,4 +34,8 @@ interface LigaService {
         @Path("ligaId") ligaId: String
     ): Response<ResponseBody>
 
+    @DELETE("api/v1/liga/leave/{ligaId}")
+    suspend fun leaveLiga(
+        @Path("ligaId") ligaId: String
+    ): Response<ResponseBody>
 }
