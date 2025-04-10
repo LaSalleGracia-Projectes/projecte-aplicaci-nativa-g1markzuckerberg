@@ -76,6 +76,7 @@ fun HomeLogedView(
     val joinLigaResult by homeLogedViewModel.joinLigaResult.observeAsState()
     val userLeagues by homeLogedViewModel.userLeagues.observeAsState(emptyList())
     val isLoading by homeLogedViewModel.isLoading.observeAsState(initial = true)
+    val userEmail by homeLogedViewModel.userEmail.observeAsState(initial = "")
 
     // Al recibir el resultado de unirse a una liga
     LaunchedEffect(key1 = joinLigaResult) {
@@ -264,6 +265,7 @@ fun HomeLogedView(
                             name = liga.name,
                             puntos = liga.puntos_totales,
                             leagueCode = liga.code,
+                            leagueId = liga.id.toString(),
                             totalUsers = liga.total_users,
                             onClick = { navController.navigate(Routes.LigaView.createRoute(liga.code)) },
                             onShareLiga = {
@@ -272,10 +274,15 @@ fun HomeLogedView(
                                 selectedLeagueCode = liga.code
                             },
                             onEditLiga = {
-                                alertTitle = "Editar Liga"
-                                alertMessage = "Funcionalidad de edición no implementada aún."
-                                alertOnConfirm = { showCustomAlert = false }
-                                showCustomAlert = true
+                                // Comprobación: si el correo del usuario actual NO coincide con el del creador (capitán)...
+                                if (userEmail != liga.created_by) {
+                                    alertTitle = "Editar Liga"
+                                    alertMessage = "Solo el capitán puede editar la liga"
+                                    alertOnConfirm = { showCustomAlert = false }
+                                    showCustomAlert = true
+                                } else {
+                                    // /TODO: implementar funcionalidad de edición de la liga
+                                }
                             },
                             onLeaveLiga = {
                                 alertTitle = "Abandonar Liga"
@@ -412,9 +419,10 @@ fun LeagueRow(
     name: String,
     puntos: String,
     leagueCode: String,
+    leagueId: String,
     totalUsers: String,
     onClick: () -> Unit,
-    onShareLiga: () -> Unit, // NUEVO parámetro para compartir liga
+    onShareLiga: () -> Unit,
     onEditLiga: () -> Unit,
     onLeaveLiga: () -> Unit
 ) {
@@ -439,7 +447,7 @@ fun LeagueRow(
                         .width(80.dp)
                 ) {
                     AsyncImage(
-                        model = "${RetrofitClient.BASE_URL}api/v1/liga/image/$leagueCode",
+                        model = "${RetrofitClient.BASE_URL}api/v1/liga/image/$leagueId",
                         contentDescription = "Imagen Liga",
                         modifier = Modifier
                             .fillMaxSize()

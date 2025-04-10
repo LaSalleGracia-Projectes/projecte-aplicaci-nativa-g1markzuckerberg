@@ -8,8 +8,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.factory.HomeLogedViewModelFactory
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
@@ -23,8 +25,10 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.view.RegisterScreen
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.view.RegisterView
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.view.SettingsScreen
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.view.LigaView
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.view.UserDraftView
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.HomeLogedViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.LigaViewModel
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.UserDraftViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.factory.LoginViewModelFactory
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.factory.RegisterEmailViewModelFactory
 import com.example.proyecte_aplicaci_nativa_g1markzuckerberg.viewmodel.HomeViewModel
@@ -107,7 +111,26 @@ fun EntryPoint(
             LigaView(
                 navController = navigationController,
                 ligaCode = ligaCode,
-                ligaViewModel = ligaViewModel
+                ligaViewModel = ligaViewModel,
+            )
+        }
+        composable(
+            route = Routes.UserDraftView.route,
+            arguments = listOf(
+                navArgument("userId") { type = NavType.StringType },
+                navArgument("userName") { type = NavType.StringType },
+                navArgument("userPhotoUrl") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+            val userName = backStackEntry.arguments?.getString("userName") ?: ""
+            val userPhotoUrl = backStackEntry.arguments?.getString("userPhotoUrl") ?: ""
+            UserDraftView(
+                navController = navigationController,
+                userDraftViewModel = UserDraftViewModel(), // o viewModel() si usas Hilt
+                userId = userId,
+                userName = userName,
+                userPhotoUrl = userPhotoUrl
             )
         }
     }

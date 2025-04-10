@@ -36,13 +36,18 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.Navb
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.LigaViewModel
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.style.TextAlign
+import coil.ImageLoader
+import coil.compose.AsyncImage
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.network.AuthInterceptor
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.LeagueCodeDialog
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.UserImage
+import okhttp3.OkHttpClient
 
 @Composable
 fun LigaView(
     navController: NavController,
     ligaCode: String,
-    ligaViewModel: LigaViewModel
+    ligaViewModel: LigaViewModel,
 ) {
     val ligaData by ligaViewModel.ligaData.observeAsState()
     val createdJornada = ligaData?.liga?.created_jornada ?: 0
@@ -185,6 +190,7 @@ fun LigaView(
                                 2 -> "🥉"
                                 else -> "${index + 1}"
                             }
+                            val fullUserImageUrl = RetrofitClient.BASE_URL.trimEnd('/') + "/" + user.imageUrl.trimStart('/')
                             // Para los tres primeros, se define un Brush con efecto metálico
                             val backgroundBrush = if (isPodio) metallicBrushForRanking(index) else SolidColor(Color.White)
 
@@ -196,7 +202,15 @@ fun LigaView(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 6.dp)
-                                    .clickable { /* Acción al pulsar la fila */ },
+                                    .clickable {
+                                        navController.navigate(
+                                            Routes.UserDraftView.createRoute(
+                                                user.usuario_id.toString(),
+                                                user.username,
+                                                fullUserImageUrl
+                                            )
+                                        )
+                                    },
                                 // Usamos fondo transparente y luego lo manejamos en la Box interna
                                 colors = if (isPodio)
                                     CardDefaults.cardColors(containerColor = Color.Transparent)
@@ -224,17 +238,10 @@ fun LigaView(
                                             )
                                             Spacer(modifier = Modifier.width(8.dp))
                                             // Cargar la imagen del usuario usando el campo imageUrl
-                                            Image(
-                                                painter = rememberAsyncImagePainter(
-                                                    model = "${RetrofitClient.BASE_URL}${user.imageUrl}",
-                                                    placeholder = painterResource(id = R.drawable.fantasydraft),
-                                                    error = painterResource(id = R.drawable.fantasydraft)
-                                                ),
-                                                contentDescription = "Imagen de usuario",
-                                                modifier = Modifier
-                                                    .size(48.dp)
-                                                    .clip(CircleShape)
-                                            )
+                                            // Dentro de tu LazyColumn, en cada elemento del usuario:
+                                            UserImage(url = fullUserImageUrl)
+
+
                                             Spacer(modifier = Modifier.width(12.dp))
                                             Text(
                                                 text = user.username,
@@ -265,17 +272,11 @@ fun LigaView(
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))
                                         // Cargar la imagen del usuario usando el campo imageUrl
-                                        Image(
-                                            painter = rememberAsyncImagePainter(
-                                                model = "${RetrofitClient.BASE_URL}${user.imageUrl}",
-                                                placeholder = painterResource(id = R.drawable.fantasydraft),
-                                                error = painterResource(id = R.drawable.fantasydraft)
-                                            ),
-                                            contentDescription = "Imagen de usuario",
-                                            modifier = Modifier
-                                                .size(48.dp)
-                                                .clip(CircleShape)
-                                        )
+
+                                        val fullUserImageUrl = RetrofitClient.BASE_URL.trimEnd('/') + "/" + user.imageUrl.trimStart('/')
+                                        UserImage(url = fullUserImageUrl)
+
+
                                         Spacer(modifier = Modifier.width(12.dp))
                                         Text(
                                             text = user.username,
@@ -401,3 +402,4 @@ fun JornadaDropdown(
         }
     }
 }
+

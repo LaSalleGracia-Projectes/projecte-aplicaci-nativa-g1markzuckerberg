@@ -51,9 +51,13 @@ class HomeLogedViewModel(private val authRepository: AuthRepository) : ViewModel
     // Abandonar Liga
     private val _leaveLigaResult = MutableLiveData<Event<String>>()
     val leaveLigaResult: LiveData<Event<String>> = _leaveLigaResult
+
+    private val _userEmail = MutableLiveData<String>()
+    val userEmail: LiveData<String> = _userEmail
     init {
         // Cargar la jornada actual al iniciar.
         fetchCurrentJornada()
+        fetchUserInfo()
     }
 
     private fun fetchCurrentJornada() {
@@ -212,6 +216,20 @@ class HomeLogedViewModel(private val authRepository: AuthRepository) : ViewModel
                 _errorMessage.value = Event(e.message ?: "Error desconocido")
             } finally {
                 _isLoading.value = false
+            }
+        }
+    }
+    fun fetchUserInfo() {
+        viewModelScope.launch {
+            try {
+                val response = RetrofitClient.userService.getMe() // Asegúrate de que este método exista
+                if (response.isSuccessful) {
+                    _userEmail.value = response.body()?.user?.correo ?: ""
+                } else {
+                    _errorMessage.value = Event("Error al obtener información de usuario: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = Event(e.message ?: "Error desconocido al obtener información del usuario")
             }
         }
     }
