@@ -13,7 +13,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -36,6 +35,7 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.NavbarView
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.LigaViewModel
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.style.TextAlign
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.LeagueCodeDialog
 
 @Composable
@@ -66,6 +66,7 @@ fun LigaView(
                     .padding(bottom = 56.dp) // Padding inferior igual a la altura de la Navbar
             ) {
                 // HEADER (igual que en HomeView)
+                // HEADER modificado en LigaView
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -86,6 +87,7 @@ fun LigaView(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
+                        // Botón de volver
                         IconButton(
                             onClick = { navController.popBackStack() },
                             modifier = Modifier.size(28.dp)
@@ -96,44 +98,31 @@ fun LigaView(
                                 tint = MaterialTheme.colorScheme.onPrimary
                             )
                         }
-                        Row(
+                        // Título centrado (con weight para ocupar el espacio y quedar centrado)
+                        Text(
+                            text = data.liga.name.uppercase(),
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                letterSpacing = 0.3.sp
+                            ),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            maxLines = 1,
                             modifier = Modifier.weight(1f),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Image(
-                                painter = rememberAsyncImagePainter(
-                                    model = ImageRequest.Builder(LocalContext.current)
-                                        .data(imageUrl)
-                                        .placeholder(R.drawable.fantasydraft)
-                                        .error(R.drawable.fantasydraft)
-                                        .build()
-                                ),
-                                contentDescription = "Icono de la liga",
-                                modifier = Modifier.size(45.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = data.liga.name.uppercase(),
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    letterSpacing = 0.3.sp
-                                ),
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                maxLines = 1
-                            )
-                        }
-                        IconButton(
-                            onClick = { ligaViewModel.toggleShowCodeDialog() },
-                            modifier = Modifier.size(28.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Share,
-                                contentDescription = "Compartir código",
-                                tint = MaterialTheme.colorScheme.onPrimary
-                            )
-                        }
+                            textAlign = TextAlign.Center
+                        )
+                        // Imagen de la liga
+                        Image(
+                            painter = rememberAsyncImagePainter(
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data(imageUrl)
+                                    .placeholder(R.drawable.fantasydraft)
+                                    .error(R.drawable.fantasydraft)
+                                    .build()
+                            ),
+                            contentDescription = "Icono de la liga",
+                            modifier = Modifier.size(45.dp)
+                        )
                     }
                 }
 
