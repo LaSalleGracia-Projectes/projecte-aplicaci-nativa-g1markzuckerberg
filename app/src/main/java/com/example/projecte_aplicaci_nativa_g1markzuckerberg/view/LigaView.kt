@@ -69,7 +69,7 @@ fun LigaView(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(140.dp)
+                        .height(110.dp)
                         .background(
                             Brush.horizontalGradient(
                                 colors = listOf(

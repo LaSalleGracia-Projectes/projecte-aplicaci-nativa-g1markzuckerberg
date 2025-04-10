@@ -49,10 +49,6 @@ class RegisterEmailViewModel(private val authRepository: AuthRepository) : ViewM
         _errorMessage.value = null
     }
 
-    fun clearSuccess() {
-        _successMessage.value = null
-    }
-
     fun onUsernameChange(newUsername: String) {
         _username.value = newUsername
     }

@@ -41,7 +41,7 @@ fun CreateLigaDialog(
             modifier = Modifier.fillMaxWidth(0.9f)
         ) {
             Column {
-                // Header con gradiente azul (usando el primary y secondary de la app)
+                // Header con gradiente azul
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -66,10 +66,12 @@ fun CreateLigaDialog(
                 Column(modifier = Modifier.padding(16.dp)) {
                     OutlinedTextField(
                         value = leagueName,
-                        onValueChange = { leagueName = it },
+                        onValueChange = {},
                         label = { Text("Nombre de la liga") },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = true,
+                        maxLines = 1
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     // Botones: Cancelar y Crear
@@ -100,6 +102,7 @@ fun CreateLigaDialog(
         }
     }
 }
+
 
 @Composable
 fun JoinLigaDialog(
@@ -141,10 +144,15 @@ fun JoinLigaDialog(
                 Column(modifier = Modifier.padding(16.dp)) {
                     OutlinedTextField(
                         value = ligaCode,
-                        onValueChange = { ligaCode = it },
+                        onValueChange = {
+                            val filtered = it.replace(" ", "")
+                            ligaCode = filtered.take(30)
+                        },
                         label = { Text("Código de la liga") },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = true,
+                        maxLines = 1
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Row(
@@ -173,13 +181,14 @@ fun JoinLigaDialog(
     }
 }
 
+
 @Composable
 fun ForgotPasswordDialog(
     onDismiss: () -> Unit,
     onSubmit: (String) -> Unit
 ) {
     var email by remember { mutableStateOf("") }
-    // Habilitado solo si se ha escrito algo
+    // Se habilita solo si se ha escrito algo
     val isSubmitEnabled = email.isNotBlank()
 
     Dialog(onDismissRequest = onDismiss) {
@@ -214,7 +223,11 @@ fun ForgotPasswordDialog(
                 Column(modifier = Modifier.padding(16.dp)) {
                     OutlinedTextField(
                         value = email,
-                        onValueChange = { email = it },
+                        onValueChange = {
+                            // Para el correo se eliminan espacios y se limita a 30 caracteres
+                            val filtered = it.replace(" ", "")
+                            email = filtered.take(30)
+                        },
                         label = { Text("Correo") },
                         leadingIcon = {
                             Icon(
@@ -223,7 +236,9 @@ fun ForgotPasswordDialog(
                             )
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = true,
+                        maxLines = 1
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
@@ -256,6 +271,7 @@ fun ForgotPasswordDialog(
         }
     }
 }
+
 
 @Composable
 fun LeagueCodeDialog(
