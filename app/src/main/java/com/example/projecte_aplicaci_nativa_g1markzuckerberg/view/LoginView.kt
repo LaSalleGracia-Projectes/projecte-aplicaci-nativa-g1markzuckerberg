@@ -26,6 +26,7 @@ import androidx.navigation.NavController
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialogSingleButton
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.ForgotPasswordDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.GradientHeader
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.GradientOutlinedButton
@@ -56,21 +57,24 @@ fun LoginView(
     var showForgotPasswordDialog by remember { mutableStateOf(false) }
     val forgotPasswordMessage by viewModel.forgotPasswordMessage.observeAsState()
     val context = LocalContext.current
+    val errorMessage by viewModel.errorMessage.observeAsState()
+    var showErrorDialog by remember { mutableStateOf(false) }
 
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-        try {
-            val account = task.getResult(ApiException::class.java)
-            val idToken = account.idToken
-            if (idToken != null) {
-                viewModel.handleGoogleToken(idToken) {
-                    navController.navigate(Routes.HomeLoged.route)
+    val launcher =
+        rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            try {
+                val account = task.getResult(ApiException::class.java)
+                val idToken = account.idToken
+                if (idToken != null) {
+                    viewModel.handleGoogleToken(idToken) {
+                        navController.navigate(Routes.HomeLoged.route)
+                    }
                 }
+            } catch (e: ApiException) {
+                Log.e("GoogleSignIn", "Error: ${e.message}")
             }
-        } catch (e: ApiException) {
-            Log.e("GoogleSignIn", "Error: ${e.message}")
         }
-    }
 
     LaunchedEffect(forgotPasswordMessage) {
         forgotPasswordMessage?.let {
@@ -82,7 +86,9 @@ fun LoginView(
     LaunchedEffect(Unit) {
         viewModel.initGoogle(context)
     }
-
+    LaunchedEffect(errorMessage) {
+        showErrorDialog = errorMessage != null
+    }
 
     Column(
         modifier = Modifier
@@ -146,13 +152,10 @@ fun LoginView(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(8.dp),
                 singleLine = true,
-                visualTransformation = if (passwordVisible) {
-                    VisualTransformation.None
-                } else {
-                    PasswordVisualTransformation()
-                },
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
-                    val iconRes = if (passwordVisible) R.drawable.visibility_on else R.drawable.visibility_off
+                    val iconRes =
+                        if (passwordVisible) R.drawable.visibility_on else R.drawable.visibility_off
                     IconButton(onClick = { viewModel.togglePasswordVisibility() }) {
                         Image(
                             painter = painterResource(id = iconRes),
@@ -171,27 +174,19 @@ fun LoginView(
                 modifier = Modifier
                     .align(Alignment.End)
                     .padding(top = 8.dp)
-                    .clickable {
-                        showForgotPasswordDialog = true
-                    }
+                    .clickable { showForgotPasswordDialog = true }
             )
 
             Spacer(modifier = Modifier.height(24.dp))
+
             // Indicador de carga
             if (viewModel.isLoading.value == true) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
             }
 
-            // Mostrar error si lo hay
-            viewModel.errorMessage.value?.let { error ->
-                Text(text = error, color = MaterialTheme.colorScheme.error)
-            }
             // Botón "Iniciar sesión"
             GradientOutlinedButton(
-                onClick = {
-                    viewModel.login {
-                        navController.navigate(Routes.HomeLoged.route)
-                    }                },
+                onClick = { viewModel.login { navController.navigate(Routes.HomeLoged.route) } },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
@@ -203,14 +198,11 @@ fun LoginView(
                 )
             }
 
-
             Spacer(modifier = Modifier.height(24.dp))
 
             // Botón "Iniciar sesión con Google"
             OutlinedButton(
-                onClick = {
-                    launcher.launch(viewModel.getGoogleSignInIntent())
-                },
+                onClick = { launcher.launch(viewModel.getGoogleSignInIntent()) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -232,13 +224,23 @@ fun LoginView(
                 )
             }
         }
+
         if (showForgotPasswordDialog) {
             ForgotPasswordDialog(
                 onDismiss = { showForgotPasswordDialog = false },
-                onSubmit = { email ->
-                    viewModel.forgotPassword(email)
-                }
+                onSubmit = { email -> viewModel.forgotPassword(email) }
             )
         }
+    }
+
+    if (showErrorDialog && errorMessage != null) {
+        CustomAlertDialogSingleButton(
+            title = "Error de autenticación",
+            message = "Usuario o contraseña incorrectos.",
+            onAccept = {
+                showErrorDialog = false
+                viewModel.clearError()
+            }
+        )
     }
 }

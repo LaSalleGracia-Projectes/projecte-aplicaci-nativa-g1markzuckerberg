@@ -101,6 +101,10 @@ class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
         }
     }
 
+    fun clearError() {
+        _errorMessage.value = null
+    }
+
 
 }
 
