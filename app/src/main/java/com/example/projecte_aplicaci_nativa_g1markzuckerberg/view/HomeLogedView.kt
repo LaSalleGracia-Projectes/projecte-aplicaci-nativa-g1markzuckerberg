@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -32,10 +33,12 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.LigaConPuntos
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CreateLigaDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialogSingleButton
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.EditLigaDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.JoinLigaDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.LeagueCodeDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.NavbarView
@@ -77,6 +80,8 @@ fun HomeLogedView(
     val userLeagues by homeLogedViewModel.userLeagues.observeAsState(emptyList())
     val isLoading by homeLogedViewModel.isLoading.observeAsState(initial = true)
     val userEmail by homeLogedViewModel.userEmail.observeAsState(initial = "")
+    val lastImageUpdateTs by homeLogedViewModel.lastImageUpdateTs.observeAsState(initial = 0L)
+
 
     // Al recibir el resultado de unirse a una liga
     LaunchedEffect(key1 = joinLigaResult) {
@@ -110,6 +115,25 @@ fun HomeLogedView(
             showCustomAlert = true
         }
     }
+
+    var editingLiga by remember { mutableStateOf<LigaConPuntos?>(null) }
+    val context = LocalContext.current
+
+    editingLiga?.let { liga ->
+        EditLigaDialog(
+            ligaId = liga.id.toString(),
+            currentName = liga.name,
+            onDismiss = { editingLiga = null },
+            onSave = { newName, imageUri ->
+                editingLiga = null
+                imageUri?.let {
+                    homeLogedViewModel.updateLigaWithImage(liga.id.toString(), it, context)
+                }
+                // Aquí podrías agregar la lógica adicional para editar nombre si lo implementas.
+            }
+        )
+    }
+
 
     LaunchedEffect(Unit) {
         homeLogedViewModel.fetchUserLeagues()
@@ -267,6 +291,7 @@ fun HomeLogedView(
                             leagueCode = liga.code,
                             leagueId = liga.id.toString(),
                             totalUsers = liga.total_users,
+                            lastImageUpdateTs = lastImageUpdateTs.toString(),
                             onClick = { navController.navigate(Routes.LigaView.createRoute(liga.code)) },
                             onShareLiga = {
                                 // Aquí puedes implementar la acción para compartir, por ejemplo:
@@ -274,14 +299,13 @@ fun HomeLogedView(
                                 selectedLeagueCode = liga.code
                             },
                             onEditLiga = {
-                                // Comprobación: si el correo del usuario actual NO coincide con el del creador (capitán)...
                                 if (userEmail != liga.created_by) {
                                     alertTitle = "Editar Liga"
                                     alertMessage = "Solo el capitán puede editar la liga"
                                     alertOnConfirm = { showCustomAlert = false }
                                     showCustomAlert = true
                                 } else {
-                                    // /TODO: implementar funcionalidad de edición de la liga
+                                    editingLiga = liga // Aquí abre el nuevo diálogo si eres el creador
                                 }
                             },
                             onLeaveLiga = {
@@ -292,7 +316,7 @@ fun HomeLogedView(
                                     showCustomAlert = false
                                 }
                                 showCustomAlert = true
-                            }
+                            },
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                     }
@@ -424,7 +448,8 @@ fun LeagueRow(
     onClick: () -> Unit,
     onShareLiga: () -> Unit,
     onEditLiga: () -> Unit,
-    onLeaveLiga: () -> Unit
+    onLeaveLiga: () -> Unit,
+    lastImageUpdateTs: String
 ) {
     var expanded by remember { mutableStateOf(false) }
     val ptsInt = puntos.toDoubleOrNull()?.toInt() ?: puntos
@@ -447,7 +472,7 @@ fun LeagueRow(
                         .width(80.dp)
                 ) {
                     AsyncImage(
-                        model = "${RetrofitClient.BASE_URL}api/v1/liga/image/$leagueId",
+                        model = "${RetrofitClient.BASE_URL}api/v1/liga/image/$leagueId?ts=$lastImageUpdateTs",
                         contentDescription = "Imagen Liga",
                         modifier = Modifier
                             .fillMaxSize()

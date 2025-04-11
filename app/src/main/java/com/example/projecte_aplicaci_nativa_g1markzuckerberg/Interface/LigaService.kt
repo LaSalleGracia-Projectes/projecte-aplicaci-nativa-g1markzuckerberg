@@ -4,12 +4,16 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.CreateLigaReq
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.CreateLigaResponse
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.JoinLigaResponse
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.LigaUsersResponse
+import okhttp3.MultipartBody
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -38,4 +42,12 @@ interface LigaService {
     suspend fun leaveLiga(
         @Path("ligaId") ligaId: String
     ): Response<ResponseBody>
+
+    @Multipart
+    @PUT("api/v1/liga/{ligaId}/upload-image")
+    suspend fun uploadLeagueImage(
+        @Path("ligaId") ligaId: String,
+        @Part image: MultipartBody.Part
+    ): Response<ResponseBody>
+
 }
