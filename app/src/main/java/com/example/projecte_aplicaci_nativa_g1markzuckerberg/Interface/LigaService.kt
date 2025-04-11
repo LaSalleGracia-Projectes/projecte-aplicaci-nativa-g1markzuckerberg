@@ -3,6 +3,7 @@ package com.example.projecte_aplicaci_nativa_g1markzuckerberg.Interface
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.CreateLigaRequest
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.CreateLigaResponse
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.JoinLigaResponse
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.LeagueUserResponse
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.LigaUsersResponse
 import okhttp3.MultipartBody
 import okhttp3.ResponseBody
@@ -49,5 +50,11 @@ interface LigaService {
         @Path("ligaId") ligaId: String,
         @Part image: MultipartBody.Part
     ): Response<ResponseBody>
+
+    @GET("api/v1/liga/{leagueId}/user/{userId}")
+    suspend fun getUserFromLeague(
+        @Path("leagueId") leagueId: String,
+        @Path("userId") userId: String
+    ): Response<LeagueUserResponse>
 
 }

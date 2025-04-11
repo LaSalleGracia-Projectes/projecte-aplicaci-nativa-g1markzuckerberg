@@ -115,23 +115,27 @@ fun EntryPoint(
             )
         }
         composable(
-            route = Routes.UserDraftView.route,
+            Routes.UserDraftView.route,
             arguments = listOf(
+                navArgument("leagueId") { type = NavType.StringType },
                 navArgument("userId") { type = NavType.StringType },
                 navArgument("userName") { type = NavType.StringType },
                 navArgument("userPhotoUrl") { type = NavType.StringType }
             )
         ) { backStackEntry ->
+            val leagueId = backStackEntry.arguments?.getString("leagueId") ?: ""
             val userId = backStackEntry.arguments?.getString("userId") ?: ""
             val userName = backStackEntry.arguments?.getString("userName") ?: ""
             val userPhotoUrl = backStackEntry.arguments?.getString("userPhotoUrl") ?: ""
             UserDraftView(
                 navController = navigationController,
-                userDraftViewModel = UserDraftViewModel(), // o viewModel() si usas Hilt
+                userDraftViewModel = UserDraftViewModel(), // O viewModel() si usas Hilt u otro inyector
+                leagueId = leagueId,
                 userId = userId,
                 userName = userName,
                 userPhotoUrl = userPhotoUrl
             )
         }
+
     }
 }

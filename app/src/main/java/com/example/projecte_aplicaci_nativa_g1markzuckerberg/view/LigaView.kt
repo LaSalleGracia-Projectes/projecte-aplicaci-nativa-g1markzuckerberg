@@ -205,6 +205,7 @@ fun LigaView(
                                     .clickable {
                                         navController.navigate(
                                             Routes.UserDraftView.createRoute(
+                                                data.liga.id.toString(),
                                                 user.usuario_id.toString(),
                                                 user.username,
                                                 fullUserImageUrl
