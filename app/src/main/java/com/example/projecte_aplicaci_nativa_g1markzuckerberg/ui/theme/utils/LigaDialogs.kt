@@ -71,7 +71,7 @@ fun CreateLigaDialog(
                 Column(modifier = Modifier.padding(16.dp)) {
                     OutlinedTextField(
                         value = leagueName,
-                        onValueChange = {},
+                        onValueChange = { leagueName = it },
                         label = { Text("Nombre de la liga") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
@@ -107,6 +107,7 @@ fun CreateLigaDialog(
         }
     }
 }
+
 
 
 @Composable
