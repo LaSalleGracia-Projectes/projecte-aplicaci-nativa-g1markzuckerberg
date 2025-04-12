@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
@@ -467,20 +468,32 @@ fun LeagueRow(
             Row(modifier = Modifier.background(MaterialTheme.colorScheme.surfaceVariant)) {
                 Box(
                     modifier = Modifier
-                        .padding(vertical = 8.dp, horizontal = 4.dp)
-                        .fillMaxHeight()
-                        .width(80.dp)
+                        .padding(vertical = 8.dp, horizontal = 12.dp)
+                        .size(54.dp) // Tamaño total del contenedor circular
+                        .background(
+                            brush = Brush.horizontalGradient(
+                                colors = listOf(
+                                    MaterialTheme.colorScheme.primary,
+                                    MaterialTheme.colorScheme.secondary
+                                )
+                            ),
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
                 ) {
                     AsyncImage(
                         model = "${RetrofitClient.BASE_URL}api/v1/liga/image/$leagueId?ts=$lastImageUpdateTs",
                         contentDescription = "Imagen Liga",
                         modifier = Modifier
-                            .fillMaxSize()
-                            .clip(RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp)),
+                            .size(48.dp) // Imagen más pequeña dentro del borde
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceVariant) // Fondo por si la imagen no llena
+                            .padding(2.dp), // Ajuste fino si lo deseas
                         placeholder = painterResource(id = R.drawable.fantasydraft),
                         error = painterResource(id = R.drawable.fantasydraft)
                     )
                 }
+
 
                 Column(
                     modifier = Modifier
