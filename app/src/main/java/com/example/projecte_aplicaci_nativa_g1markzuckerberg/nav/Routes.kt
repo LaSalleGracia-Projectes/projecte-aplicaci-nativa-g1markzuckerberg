@@ -20,4 +20,8 @@ sealed class Routes(val route: String) {
             userPhotoUrl: String
         ) = "userdraft/$leagueId/$userId/${Uri.encode(userName)}/${Uri.encode(userPhotoUrl)}"
     }
+    object DraftScreen : Routes("draft_screen") {
+        fun createRoute() = "draft_screen"
+    }
+
 }

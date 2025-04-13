@@ -1,6 +1,7 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
 import LoadingTransitionScreen
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -83,6 +84,7 @@ fun HomeLogedView(
     val userEmail by homeLogedViewModel.userEmail.observeAsState(initial = "")
     val lastImageUpdateTs by homeLogedViewModel.lastImageUpdateTs.observeAsState(initial = 0L)
 
+    BackHandler {}
 
     // Al recibir el resultado de unirse a una liga
     LaunchedEffect(key1 = joinLigaResult) {

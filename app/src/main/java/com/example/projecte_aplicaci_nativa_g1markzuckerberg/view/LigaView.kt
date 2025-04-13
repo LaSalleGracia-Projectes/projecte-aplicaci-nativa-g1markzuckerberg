@@ -1,6 +1,7 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
 import LoadingTransitionScreen
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -19,35 +20,41 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.toSize
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.NavbarView
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.LigaViewModel
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.text.style.TextAlign
-import coil.ImageLoader
-import coil.compose.AsyncImage
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.network.AuthInterceptor
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.repository.AuthRepository
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.PrimaryColor
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.SecondaryColor
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.LeagueCodeDialog
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.NavbarView
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.TokenManager
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.UserImage
-import okhttp3.OkHttpClient
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.DraftViewModel
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.LigaViewModel
 
 @Composable
 fun LigaView(
     navController: NavController,
     ligaCode: String,
     ligaViewModel: LigaViewModel,
+    draftViewModel: DraftViewModel
 ) {
     val ligaData by ligaViewModel.ligaData.observeAsState()
     val createdJornada = ligaData?.liga?.created_jornada ?: 0
@@ -56,22 +63,42 @@ fun LigaView(
     val showCodeDialog by ligaViewModel.showCodeDialog.observeAsState(false)
     val isLoading by ligaViewModel.isLoading.observeAsState(initial = true)
 
+    val context = LocalContext.current
+    // Instancia tu TokenManager; se asume que la clase TokenManager ya está implementada
+    val tokenManager = TokenManager(context)
+    // Instancia AuthRepository (se utiliza RetrofitClient.authService)
+    val authRepository = AuthRepository(service = RetrofitClient.authService, tokenManager = tokenManager)
+    // Obtén el id del usuario actual
+    val currentUserId = authRepository.getCurrentUserId()
+
     LaunchedEffect(key1 = selectedJornada) {
         val jornadaParam = if (selectedJornada == 0) null else selectedJornada
         ligaViewModel.fetchLigaInfo(ligaCode, jornadaParam)
     }
+    LaunchedEffect(key1 = draftViewModel.tempDraft.value) {
+        draftViewModel.tempDraft.value?.let {
+            navController.navigate(Routes.DraftScreen.createRoute())
+        }
+    }
+
+    // Estado para mostrar el diálogo de creación de draft
+    var showCreateDraftDialog by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        LoadingTransitionScreen(isLoading = ligaData == null) {
+        if (ligaData == null) {
+            LoadingTransitionScreen(isLoading = true) {
+                // Pantalla de carga
+            }
+        } else {
+            // Definimos "data" en este bloque
             val data = ligaData!!
             val imageUrl = "${RetrofitClient.BASE_URL}api/v1/liga/image/${data.liga.id}"
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = 56.dp) // Padding inferior igual a la altura de la Navbar
+                    .padding(bottom = 56.dp) // Espacio para la Navbar
             ) {
-                // HEADER (igual que en HomeView)
-                // HEADER modificado en LigaView
+                // HEADER
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -92,7 +119,6 @@ fun LigaView(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        // Botón de volver
                         IconButton(
                             onClick = { navController.popBackStack() },
                             modifier = Modifier.size(28.dp)
@@ -103,7 +129,6 @@ fun LigaView(
                                 tint = MaterialTheme.colorScheme.onPrimary
                             )
                         }
-                        // Título centrado (con weight para ocupar el espacio y quedar centrado)
                         Text(
                             text = data.liga.name.uppercase(),
                             style = MaterialTheme.typography.titleLarge.copy(
@@ -116,7 +141,6 @@ fun LigaView(
                             modifier = Modifier.weight(1f),
                             textAlign = TextAlign.Center
                         )
-                        // Imagen de la liga
                         Image(
                             painter = rememberAsyncImagePainter(
                                 model = ImageRequest.Builder(LocalContext.current)
@@ -126,11 +150,12 @@ fun LigaView(
                                     .build()
                             ),
                             contentDescription = "Icono de la liga",
-                            modifier = Modifier.size(45.dp)
+                            modifier = Modifier
+                                .size(45.dp)
+                                .clip(CircleShape)
                         )
                     }
                 }
-
                 // SECCIÓN DE BOTONES
                 Surface(
                     modifier = Modifier
@@ -157,7 +182,7 @@ fun LigaView(
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Button(
-                            onClick = { /* TODO: Implementar Crear Draft */ },
+                            onClick = { showCreateDraftDialog = true },
                             modifier = Modifier.height(42.dp),
                             shape = RoundedCornerShape(8.dp),
                             colors = ButtonDefaults.buttonColors(
@@ -173,16 +198,14 @@ fun LigaView(
                         }
                     }
                 }
-
+                // CONTENIDO: Ranking de usuarios
                 LoadingTransitionScreen(isLoading = isLoading) {
-                    // RANKING DE USUARIOS (LazyColumn para scroll)
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(horizontal = 16.dp)
                     ) {
                         itemsIndexed(data.users) { index, user ->
-                            // Verifica si está entre los 3 primeros
                             val isPodio = index < 3
                             val rankingText = when (index) {
                                 0 -> "🥇"
@@ -191,58 +214,183 @@ fun LigaView(
                                 else -> "${index + 1}"
                             }
                             val fullUserImageUrl = RetrofitClient.BASE_URL.trimEnd('/') + "/" + user.imageUrl.trimStart('/')
-                            // Para los tres primeros, se define un Brush con efecto metálico
                             val backgroundBrush = if (isPodio) metallicBrushForRanking(index) else SolidColor(Color.White)
 
-                            Card(
-                                shape = RoundedCornerShape(12.dp),
-                                elevation = if (isPodio)
-                                    CardDefaults.cardElevation(defaultElevation = 8.dp)
-                                else CardDefaults.cardElevation(defaultElevation = 4.dp),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 6.dp)
-                                    .clickable {
-                                        navController.navigate(
-                                            Routes.UserDraftView.createRoute(
-                                                data.liga.id.toString(),
-                                                user.usuario_id.toString(),
-                                                user.username,
-                                                fullUserImageUrl
-                                            )
+                            // Declaramos nuestro cardModifier para la navegación sin el padding de separación,
+                            val cardModifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    navController.navigate(
+                                        Routes.UserDraftView.createRoute(
+                                            data.liga.id.toString(),
+                                            user.usuario_id.toString(),
+                                            user.username,
+                                            fullUserImageUrl
                                         )
-                                    },
-                                // Usamos fondo transparente y luego lo manejamos en la Box interna
-                                colors = if (isPodio)
-                                    CardDefaults.cardColors(containerColor = Color.Transparent)
-                                else CardDefaults.cardColors(containerColor = Color.White)
-                            ) {
-                                if (isPodio) {
-                                    // Para el podio, aplicamos el degradado y un borde para simular brillo
-                                    Box(
-                                        modifier = Modifier
-                                            .background(brush = backgroundBrush, shape = RoundedCornerShape(12.dp))
-                                            .border(width = 2.dp, brush = backgroundBrush, shape = RoundedCornerShape(12.dp))
-                                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                                    )
+                                }
+
+// Comparar el id del usuario actual con el id del usuario de la tarjeta
+                            val isCurrentUser = (currentUserId != null) && (user.usuario_id == currentUserId)
+
+                            if (isCurrentUser) {
+                                // El padding vertical para separar tarjetas se aplica aquí, en el Box contenedor.
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 6.dp)  // Esto aplica el espacio entre tarjetas
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .border(
+                                            width = 2.dp,
+                                            brush = Brush.horizontalGradient(
+                                                colors = listOf(
+                                                    MaterialTheme.colorScheme.primary,  // O puedes usar PrimaryColor si lo tienes definido
+                                                    MaterialTheme.colorScheme.secondary // O SecondaryColor
+                                                )
+                                            ),
+                                            shape = RoundedCornerShape(12.dp)
+                                        )
+                                ) {
+                                    Card(
+                                        shape = RoundedCornerShape(12.dp),
+                                        elevation = if (isPodio)
+                                            CardDefaults.cardElevation(defaultElevation = 8.dp)
+                                        else CardDefaults.cardElevation(defaultElevation = 4.dp),
+                                        modifier = cardModifier, // Sin padding vertical aquí (se usa el que tiene el Box)
+                                        colors = if (isPodio)
+                                            CardDefaults.cardColors(containerColor = Color.Transparent)
+                                        else CardDefaults.cardColors(containerColor = Color.White)
                                     ) {
+                                        // Dentro de la Card, aplicas el padding que necesites para el contenido interno
+                                        if (isPodio) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .background(brush = backgroundBrush, shape = RoundedCornerShape(12.dp))
+                                                    .border(width = 2.dp, brush = backgroundBrush, shape = RoundedCornerShape(12.dp))
+                                                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Text(
+                                                        text = rankingText,
+                                                        style = MaterialTheme.typography.bodyLarge.copy(
+                                                            fontWeight = FontWeight.Bold,
+                                                            fontSize = 20.sp
+                                                        ),
+                                                        modifier = Modifier.width(30.dp)
+                                                    )
+                                                    Spacer(modifier = Modifier.width(8.dp))
+                                                    UserImage(url = fullUserImageUrl)
+                                                    Spacer(modifier = Modifier.width(12.dp))
+                                                    Text(
+                                                        text = user.username,
+                                                        style = MaterialTheme.typography.bodyLarge,
+                                                        modifier = Modifier.weight(1f)
+                                                    )
+                                                    Spacer(modifier = Modifier.width(8.dp))
+                                                    val puntos = if (selectedJornada == 0) user.puntos_acumulados else user.puntos_jornada
+                                                    Text(
+                                                        text = "$puntos pts",
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        modifier = Modifier.padding(end = 8.dp)
+                                                    )
+                                                }
+                                            }
+                                        } else {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    text = rankingText,
+                                                    style = MaterialTheme.typography.bodyLarge,
+                                                    modifier = Modifier.width(30.dp)
+                                                )
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                UserImage(url = fullUserImageUrl)
+                                                Spacer(modifier = Modifier.width(12.dp))
+                                                Text(
+                                                    text = user.username,
+                                                    style = MaterialTheme.typography.bodyLarge,
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                val puntos = if (selectedJornada == 0) user.puntos_acumulados else user.puntos_jornada
+                                                Text(
+                                                    text = "$puntos pts",
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    modifier = Modifier.padding(end = 8.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
+                                // Tarjeta normal para otros usuarios (con el mismo cardModifier que incluye padding vertical)
+                                Card(
+                                    shape = RoundedCornerShape(12.dp),
+                                    elevation = if (isPodio)
+                                        CardDefaults.cardElevation(defaultElevation = 8.dp)
+                                    else CardDefaults.cardElevation(defaultElevation = 4.dp),
+                                    modifier = cardModifier.padding(vertical = 6.dp),
+                                    colors = if (isPodio)
+                                        CardDefaults.cardColors(containerColor = Color.Transparent)
+                                    else CardDefaults.cardColors(containerColor = Color.White)
+                                ) {
+                                    if (isPodio) {
+                                        Box(
+                                            modifier = Modifier
+                                                .background(brush = backgroundBrush, shape = RoundedCornerShape(12.dp))
+                                                .border(width = 2.dp, brush = backgroundBrush, shape = RoundedCornerShape(12.dp))
+                                                .padding(horizontal = 16.dp, vertical = 12.dp)
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    text = rankingText,
+                                                    style = MaterialTheme.typography.bodyLarge.copy(
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 20.sp
+                                                    ),
+                                                    modifier = Modifier.width(30.dp)
+                                                )
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                UserImage(url = fullUserImageUrl)
+                                                Spacer(modifier = Modifier.width(12.dp))
+                                                Text(
+                                                    text = user.username,
+                                                    style = MaterialTheme.typography.bodyLarge,
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                val puntos = if (selectedJornada == 0) user.puntos_acumulados else user.puntos_jornada
+                                                Text(
+                                                    text = "$puntos pts",
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    modifier = Modifier.padding(end = 8.dp)
+                                                )
+                                            }
+                                        }
+                                    } else {
                                         Row(
-                                            modifier = Modifier.fillMaxWidth(),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 16.dp, vertical = 12.dp),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Text(
                                                 text = rankingText,
-                                                style = MaterialTheme.typography.bodyLarge.copy(
-                                                    fontWeight = FontWeight.Bold,
-                                                    fontSize = 20.sp
-                                                ),
+                                                style = MaterialTheme.typography.bodyLarge,
                                                 modifier = Modifier.width(30.dp)
                                             )
                                             Spacer(modifier = Modifier.width(8.dp))
-                                            // Cargar la imagen del usuario usando el campo imageUrl
-                                            // Dentro de tu LazyColumn, en cada elemento del usuario:
                                             UserImage(url = fullUserImageUrl)
-
-
                                             Spacer(modifier = Modifier.width(12.dp))
                                             Text(
                                                 text = user.username,
@@ -258,46 +406,24 @@ fun LigaView(
                                             )
                                         }
                                     }
-                                } else {
-                                    // Diseño de carta para el resto de usuarios
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            text = rankingText,
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            modifier = Modifier.width(30.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        // Cargar la imagen del usuario usando el campo imageUrl
-
-                                        val fullUserImageUrl = RetrofitClient.BASE_URL.trimEnd('/') + "/" + user.imageUrl.trimStart('/')
-                                        UserImage(url = fullUserImageUrl)
-
-
-                                        Spacer(modifier = Modifier.width(12.dp))
-                                        Text(
-                                            text = user.username,
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            modifier = Modifier.weight(1f)
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        val puntos = if (selectedJornada == 0) user.puntos_acumulados else user.puntos_jornada
-                                        Text(
-                                            text = "$puntos pts",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            modifier = Modifier.padding(end = 8.dp)
-                                        )
-                                    }
                                 }
                             }
                         }
                     }
-
                 }
+            } // fin de Column
+            if (showCreateDraftDialog) {
+                CreateDraftDialog(
+                    draftViewModel = draftViewModel,
+                    onDismiss = { showCreateDraftDialog = false },
+                    onConfirm = { formation ->
+                        showCreateDraftDialog = false
+                        draftViewModel.createDraft(
+                            formation = formation,
+                            ligaId = data.liga.id
+                        )
+                    }
+                )
             }
         }
         // Navbar inferior
@@ -315,49 +441,43 @@ fun LigaView(
                 modifier = Modifier.fillMaxWidth()
             )
         }
-
         if (showCodeDialog && ligaData != null) {
             LeagueCodeDialog(
                 leagueCode = ligaData!!.liga.code,
                 onDismiss = { ligaViewModel.toggleShowCodeDialog() }
             )
         }
-        }
     }
+}
 
 @Composable
 fun metallicBrushForRanking(index: Int): Brush {
     return when (index) {
         0 -> Brush.linearGradient(
             colors = listOf(
-                Color(0xFFFFD700), // Oro brillante
-                Color(0xFFFFE135), // Punto intermedio más claro
-                Color(0xFFFFC200)  // Tono dorado profundo
+                Color(0xFFFFD700),
+                Color(0xFFFFE135),
+                Color(0xFFFFC200)
             )
         )
         1 -> Brush.linearGradient(
             colors = listOf(
-                Color(0xFFC0C0C0), // Plateado inicial
-                Color(0xFFD3D3D3), // Punto intermedio
-                Color(0xFFC0C0C0)  // Plateado
+                Color(0xFFC0C0C0),
+                Color(0xFFD3D3D3),
+                Color(0xFFC0C0C0)
             )
         )
         2 -> Brush.linearGradient(
             colors = listOf(
-                Color(0xFFCD7F32), // Bronce intenso
-                Color(0xFFE5B169), // Bronce más claro
-                Color(0xFFCD7F32)  // Bronce intenso
+                Color(0xFFCD7F32),
+                Color(0xFFE5B169),
+                Color(0xFFCD7F32)
             )
         )
         else -> SolidColor(Color.White)
     }
 }
 
-
-
-
-
-/** Dropdown personalizado para seleccionar la jornada */
 @Composable
 fun JornadaDropdown(
     createdJornada: Int,
@@ -400,6 +520,139 @@ fun JornadaDropdown(
                     expanded = false
                 }
             )
+        }
+    }
+}
+
+@Composable
+fun CreateDraftDialog(
+    draftViewModel: DraftViewModel,
+    onDismiss: () -> Unit,
+    onConfirm: (formation: String) -> Unit
+) {
+    val selectedFormation by draftViewModel.selectedFormation
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(8.dp),
+            modifier = Modifier.fillMaxWidth(0.9f)
+        ) {
+            Column {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                colors = listOf(
+                                    MaterialTheme.colorScheme.primary,
+                                    MaterialTheme.colorScheme.secondary
+                                )
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Crear Draft",
+                        color = Color.White,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Vas a proceder a la creación del draft, por favor elige la alineación antes de continuar.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    // Dropdown customizado para seleccionar la alineación
+                    CustomFormationDropdown(
+                        options = listOf("4-3-3", "4-4-2", "3-4-3"),
+                        selectedOption = selectedFormation,
+                        onOptionSelected = { draftViewModel.setSelectedFormation(it) }
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(onClick = onDismiss) {
+                            Text(
+                                text = "Cancelar",
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        TextButton(onClick = { onConfirm(selectedFormation) }) {
+                            Text(
+                                text = "Aceptar",
+                                color = MaterialTheme.colorScheme.primary,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CustomFormationDropdown(
+    options: List<String>,
+    selectedOption: String,
+    onOptionSelected: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    var buttonSize by remember { mutableStateOf(Size.Zero) }
+    val density = LocalDensity.current
+
+    Box {
+        Button(
+            onClick = { expanded = true },
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+            modifier = Modifier
+                .fillMaxWidth()
+                .onGloballyPositioned { coordinates ->
+                    buttonSize = coordinates.size.toSize()
+                }
+        ) {
+            Text(
+                text = selectedOption,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSecondary
+                ),
+                modifier = Modifier.weight(1f)
+            )
+            Icon(
+                imageVector = Icons.Default.ArrowDropDown,
+                contentDescription = "Seleccionar alineación",
+                tint = MaterialTheme.colorScheme.onSecondary
+            )
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.width(with(density) { buttonSize.width.toDp() })
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            text = option,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    },
+                    onClick = {
+                        onOptionSelected(option)
+                        expanded = false
+                    }
+                )
+            }
         }
     }
 }

@@ -12,7 +12,7 @@ import androidx.core.view.WindowCompat
 import androidx.annotation.RequiresApi
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.repository.AuthRepository
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.utils.TokenManager
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.TokenManager
 import android.app.Activity
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalView

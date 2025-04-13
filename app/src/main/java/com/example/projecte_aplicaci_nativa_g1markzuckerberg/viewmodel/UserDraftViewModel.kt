@@ -18,7 +18,6 @@ class UserDraftViewModel : ViewModel() {
     private val _selectedTab = MutableLiveData(Tab.USER)
     val selectedTab: LiveData<Tab> = _selectedTab
 
-    // Nueva variable LiveData para almacenar la respuesta del endpoint
     private val _leagueUserResponse = MutableLiveData<LeagueUserResponse>()
     val leagueUserResponse: LiveData<LeagueUserResponse> = _leagueUserResponse
 
@@ -26,13 +25,10 @@ class UserDraftViewModel : ViewModel() {
         _selectedTab.value = tab
     }
 
-    // Función para llamar al endpoint y obtener la información del usuario en la liga
     fun fetchUserInfo(leagueId: String, userId: String) {
         viewModelScope.launch {
             try {
-                // 🔍 Aquí imprimimos los valores que se están usando
                 Log.d("UserDraft", "Calling URL: /liga/$leagueId/user/$userId")
-
                 val response = RetrofitClient.ligaService.getUserFromLeague(leagueId, userId)
                 if (response.isSuccessful) {
                     response.body()?.let { info ->
@@ -47,5 +43,38 @@ class UserDraftViewModel : ViewModel() {
             }
         }
     }
+
+    // Llamada al endpoint para expulsar a un usuario
+    fun kickUser(leagueId: String, userId: String, onResult: (success: Boolean, message: String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val response = RetrofitClient.ligaService.kickUser(leagueId, userId)
+                if (response.isSuccessful) {
+                    onResult(true, "Usuario expulsado correctamente")
+                } else {
+                    onResult(false, "Solo el capitán de la liga puede hacer esta acción")
+                }
+            } catch (e: Exception) {
+                onResult(false, "Error: ${e.message}")
+            }
+        }
+    }
+
+    // Función para asignar nuevo capitán, con callback de resultado
+    fun makeCaptain(leagueId: String, newCaptainId: String, onResult: (success: Boolean, message: String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val response = RetrofitClient.ligaService.makeCaptain(leagueId, newCaptainId)
+                if (response.isSuccessful) {
+                    onResult(true, "Nuevo capitán asignado correctamente")
+                } else {
+                    onResult(false, "Solo el capitán de la liga puede hacer esta acción")
+                }
+            } catch (e: Exception) {
+                onResult(false, "Error: ${e.message}")
+            }
+        }
+    }
 }
+
 

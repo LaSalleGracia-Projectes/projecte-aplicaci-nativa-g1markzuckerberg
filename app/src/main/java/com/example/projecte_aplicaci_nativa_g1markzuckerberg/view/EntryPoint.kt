@@ -15,6 +15,7 @@ import androidx.navigation.navArgument
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.factory.HomeLogedViewModelFactory
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.view.DraftScreen
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.LoginViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.RegisterEmailViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.RegisterViewModel
@@ -26,6 +27,7 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.view.RegisterView
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.view.SettingsScreen
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.view.LigaView
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.view.UserDraftView
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.DraftViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.HomeLogedViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.LigaViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.UserDraftViewModel
@@ -108,10 +110,12 @@ fun EntryPoint(
         composable(Routes.LigaView.route) { backStackEntry ->
             val ligaCode = backStackEntry.arguments?.getString("ligaCode") ?: ""
             val ligaViewModel: LigaViewModel = viewModel()
+            val draftViewModel: DraftViewModel = viewModel() // Asegúrate de que draftViewModel esté disponible aquí
             LigaView(
                 navController = navigationController,
                 ligaCode = ligaCode,
                 ligaViewModel = ligaViewModel,
+                draftViewModel = draftViewModel // Asegúrate de que draftViewModel esté disponible aquí
             )
         }
         composable(
@@ -134,6 +138,11 @@ fun EntryPoint(
                 userId = userId,
                 userName = userName,
                 userPhotoUrl = userPhotoUrl
+            )
+        }
+        composable(Routes.DraftScreen.route) {
+            DraftScreen(navController = navigationController,
+                viewModel = DraftViewModel()
             )
         }
 

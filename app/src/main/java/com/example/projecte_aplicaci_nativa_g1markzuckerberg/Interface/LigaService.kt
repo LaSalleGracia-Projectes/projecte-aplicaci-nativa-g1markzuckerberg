@@ -1,5 +1,6 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.Interface
 
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.ApiResponse
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.CreateLigaRequest
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.CreateLigaResponse
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.JoinLigaResponse
@@ -56,5 +57,17 @@ interface LigaService {
         @Path("leagueId") leagueId: String,
         @Path("userId") userId: String
     ): Response<LeagueUserResponse>
+
+    @DELETE("/api/v1/liga/kickUser/{ligaId}/{userId}")
+    suspend fun kickUser(
+        @Path("ligaId") leagueId: String,
+        @Path("userId") userId: String
+    ): Response<ApiResponse>
+
+    @PUT("/api/v1/liga/make-captain/{ligaId}/{newCaptainId}")
+    suspend fun makeCaptain(
+        @Path("ligaId") leagueId: String,
+        @Path("newCaptainId") newCaptainId: String
+    ): Response<ApiResponse>
 
 }
