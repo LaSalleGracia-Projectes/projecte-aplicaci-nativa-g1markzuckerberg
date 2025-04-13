@@ -11,14 +11,9 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
-    // Ip para el emulador de Android, localhost es 10.0.2.2
-    // Ip para el dispositivo físico, 192.168.1.41:3000
-    //WIFI de casa
-    const val BASE_URL = "http://192.168.1.41:3000/"
-    //Datos mobiles
-    //const val BASE_URL = "http://172.20.10.5:3000/"
 
-    // Este repositorio se asignará desde tu Application o mediante DI
+    const val BASE_URL = "http://192.168.1.41:3000/"
+
     lateinit var authRepository: AuthRepository
 
     private val okHttpClient by lazy {
@@ -59,5 +54,13 @@ object RetrofitClient {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(UserService::class.java)
+    }
+    val draftService: DraftService by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(DraftService::class.java)
     }
 }
