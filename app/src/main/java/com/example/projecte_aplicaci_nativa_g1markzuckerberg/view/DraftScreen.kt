@@ -78,7 +78,6 @@ fun DraftScreen(
     val selectedPlayers = remember { mutableStateMapOf<String, PlayerOption?>() }
 
 
-
     // Directamente obtenemos la lista de opciones (ya convertida a List<List<PlayerOption>>)
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -106,7 +105,10 @@ fun DraftScreen(
                 .align(Alignment.TopEnd)
         ) {
             FilledTonalButton(
-                onClick = { //TODO: Guardar el draft
+                onClick = { viewModel.saveDraft(selectedPlayers) {
+                    // Por ejemplo, navegamos a la pantalla de Home al guardar correctamente.
+                    navController.navigate(Routes.HomeLoged.route)
+                }
                 },
                 shape = RoundedCornerShape(50.dp),
                 colors = ButtonDefaults.filledTonalButtonColors(
@@ -132,7 +134,8 @@ fun DraftScreen(
         ) {
             DraftLayout(
                 formation = viewModel.selectedFormation.value,
-                playerOptions = playerOptions
+                playerOptions = playerOptions,
+                selectedPlayers = selectedPlayers
             )
         }
 
@@ -203,11 +206,10 @@ fun DraftScreen(
 
 @SuppressLint("RememberReturnType")
 @Composable
-fun DraftLayout(formation: String, playerOptions: List<List<PlayerOption>>) {
+fun DraftLayout(formation: String, playerOptions: List<List<PlayerOption>>, selectedPlayers: MutableMap<String, PlayerOption?>) {
     // Muestra el número total de grupos recibidos
     Log.d("DraftLayout", "Total de grupos de jugadores: ${playerOptions.size}")
 
-    val selectedPlayers = remember { mutableStateMapOf<String, PlayerOption?>() }
     val rows: List<Pair<String, Int>> = when (formation) {
         "4-3-3" -> listOf("Delantero" to 3, "Mediocentro" to 3, "Defensa" to 4, "Portero" to 1)
         "4-4-2" -> listOf("Delantero" to 2, "Mediocampista" to 4, "Defensa" to 4, "Portero" to 1)

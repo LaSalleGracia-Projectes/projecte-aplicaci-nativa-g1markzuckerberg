@@ -39,14 +39,6 @@ data class UpdateDraftRequest(
     val plantillaId: Int,
     val playerOptions: List<PositionOptions>
 )
-
-// Petición para guardar el draft final.
-data class SaveDraftRequest(
-    @SerializedName("tempDraft")
-    val tempDraft: TempDraftFinal
-)
-
-
 // Respuesta genérica para algunas operaciones (por ejemplo, update o save).
 data class ApiResponse(
     val message: String
@@ -81,16 +73,18 @@ data class TempDraftData(
     val playerOptions: List<List<Any>>
 )
 
-data class SaveDraftData(
+data class SaveDraftRequest(
     @SerializedName("tempDraft")
-    val tempDraft: TempDraftData
+    val tempDraft: TempDraftFinal
 )
+
 data class TempDraftFinal(
     @SerializedName("id_plantilla")
     val idPlantilla: Int,
     @SerializedName("playerOptions")
     val playerOptions: List<List<Any>> // Cada grupo: [jugador0, jugador1, jugador2, jugador3, índiceSeleccionado]
 )
+
 
 
 
