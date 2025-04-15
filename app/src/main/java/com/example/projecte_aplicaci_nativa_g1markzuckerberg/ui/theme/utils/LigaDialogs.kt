@@ -3,6 +3,12 @@ package com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -29,6 +35,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.PlayerOption
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.view.StyledPlayerCard
 
 @Composable
 fun CreateLigaDialog(
@@ -582,4 +590,74 @@ fun EditLigaDialog(
         }
     }
 }
+@Composable
+fun PlayerSelectionDialog(
+    players: List<PlayerOption?>,
+    onDismiss: () -> Unit,
+    onPlayerSelected: (PlayerOption) -> Unit
+) {
+    val validPlayers = players.filterNotNull()
+    val cardWidth = 150.dp
+    val cardHeight = 220.dp
+
+    val blueGradient = Brush.verticalGradient(
+        colors = listOf(Color(0xFF0D47A1), Color(0xFF1976D2))
+    )
+
+    Dialog(onDismissRequest = onDismiss) {
+        AnimatedVisibility(
+            visible = true,
+            enter = fadeIn(tween(300)) + scaleIn(tween(300)),
+            exit = fadeOut(tween(200)) + scaleOut(tween(200))
+        ) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth(0.95f)
+                    .wrapContentHeight(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                elevation = CardDefaults.cardElevation(8.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .background(blueGradient)
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = "Elige un jugador",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    val rows = validPlayers.chunked(2)
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        rows.forEach { row ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                row.forEach { player ->
+                                    StyledPlayerCard(
+                                        player = player,
+                                        onClick = { onPlayerSelected(player) },
+                                        cardWidth = cardWidth,
+                                        cardHeight = cardHeight
+                                    )
+                                }
+                                if (row.size == 1) {
+                                    Spacer(modifier = Modifier.width(cardWidth + 12.dp))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 

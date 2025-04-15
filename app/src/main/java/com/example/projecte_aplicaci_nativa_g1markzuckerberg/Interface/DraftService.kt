@@ -7,14 +7,11 @@ import retrofit2.http.*
 interface DraftService {
 
     @POST("api/v1/draft/create")
-    suspend fun createDraft(@Body request: CreateDraftRequest): Response<TempPlantillaResponse>
+    suspend fun createDraft(@Body request: CreateDraftRequest): Response<CreateDraftResponse>
 
-    @PUT("api/v1/draft/update")
-    suspend fun updateDraft(@Body request: UpdateDraftRequest): Response<ApiResponse>
+    @GET("api/v1/draft/tempDraft/{plantillaId}")
+    suspend fun getTempDraft(@Path("plantillaId") plantillaId: Int): Response<CreateDraftResponse>
 
     @POST("api/v1/draft/saveDraft")
     suspend fun saveDraft(@Body request: SaveDraftRequest): Response<ApiResponse>
-
-    @GET("api/v1/draft/getuserDraft")
-    suspend fun getUserDraft(@Query("roundName") roundName: String? = null): Response<GetDraftResponse>
 }

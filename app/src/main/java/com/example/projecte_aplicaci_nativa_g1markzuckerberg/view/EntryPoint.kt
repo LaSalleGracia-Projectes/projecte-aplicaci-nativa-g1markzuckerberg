@@ -49,7 +49,9 @@ fun EntryPoint(
     ),
     homeLogedViewModel: HomeLogedViewModel = viewModel(
         factory = HomeLogedViewModelFactory(RetrofitClient.authRepository)
-    )
+    ),
+    draftViewModel: DraftViewModel = viewModel()
+
 ) {
     // Comprobación del token al arrancar la app
     LaunchedEffect(Unit) {
@@ -110,12 +112,11 @@ fun EntryPoint(
         composable(Routes.LigaView.route) { backStackEntry ->
             val ligaCode = backStackEntry.arguments?.getString("ligaCode") ?: ""
             val ligaViewModel: LigaViewModel = viewModel()
-            val draftViewModel: DraftViewModel = viewModel() // Asegúrate de que draftViewModel esté disponible aquí
             LigaView(
                 navController = navigationController,
                 ligaCode = ligaCode,
                 ligaViewModel = ligaViewModel,
-                draftViewModel = draftViewModel // Asegúrate de que draftViewModel esté disponible aquí
+                draftViewModel = draftViewModel
             )
         }
         composable(
@@ -141,10 +142,10 @@ fun EntryPoint(
             )
         }
         composable(Routes.DraftScreen.route) {
-            DraftScreen(navController = navigationController,
-                viewModel = DraftViewModel()
-            )
+            // Obtén el ViewModel usando el scope actual de la navegación
+            DraftScreen(navController = navigationController, viewModel = draftViewModel)
         }
+
 
     }
 }

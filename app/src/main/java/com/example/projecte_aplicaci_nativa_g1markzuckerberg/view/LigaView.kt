@@ -421,7 +421,9 @@ fun LigaView(
                         draftViewModel.createDraft(
                             formation = formation,
                             ligaId = data.liga.id
-                        )
+                        ){
+                            navController.navigate(Routes.DraftScreen.createRoute())
+                        }
                     }
                 )
             }
