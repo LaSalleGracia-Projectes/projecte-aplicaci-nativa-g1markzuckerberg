@@ -21,6 +21,9 @@ class DraftViewModel : ViewModel() {
     private val _selectedFormation = mutableStateOf("4-3-3")
     val selectedFormation: State<String> = _selectedFormation
 
+    var currentLigaId: Int = 0
+        private set
+
     fun setSelectedFormation(formation: String) {
         _selectedFormation.value = formation
     }
@@ -43,6 +46,7 @@ class DraftViewModel : ViewModel() {
 
                 if (response.isSuccessful) {
                     _tempDraft.value = response.body()!!.tempDraft
+                    currentLigaId = ligaId  // Asigna la liga recibida
                     Log.d("DraftViewModel", "TempDraft recibido y guardado en LiveData: ${_tempDraft.value}")
                     Log.d("DraftViewModel", "Se recibieron ${_tempDraft.value?.playerOptions?.size ?: 0} grupos de jugadores")
 
@@ -57,6 +61,38 @@ class DraftViewModel : ViewModel() {
             }
         }
     }
+    fun updateDraft(
+        ligaId: Int,
+        updatedPlayerOptions: List<List<Any?>>,
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+            val currentDraft = _tempDraft.value ?: run {
+                _errorMessage.value = "Draft no encontrado."
+                Log.e("DraftViewModel", "updateDraft: Draft no encontrado")
+                return@launch
+            }
+            try {
+                val updateRequest = UpdateDraftRequest(
+                    plantillaId = currentDraft.idPlantilla,
+                    playerOptions = updatedPlayerOptions
+                )
+                Log.d("DraftViewModel", "updateDraft request: $updateRequest")
+                val response = RetrofitClient.draftService.updateDraft(ligaId, updateRequest)
+                Log.d("DraftViewModel", "updateDraft response code: ${response.code()} - body: ${response.body()}")
+                if (response.isSuccessful) {
+                    onSuccess()
+                } else {
+                    _errorMessage.value = "Error al actualizar el draft: ${response.code()} ${response.message()}"
+                    Log.e("DraftViewModel", "updateDraft error: ${response.code()} - ${response.message()}")
+                }
+            } catch (ex: Exception) {
+                _errorMessage.value = "Error de conexión: ${ex.message}"
+                Log.e("DraftViewModel", "updateDraft exception: ${ex.message}", ex)
+            }
+        }
+    }
+
 
     fun saveDraft(
         selectedPlayers: Map<String, PlayerOption?>,

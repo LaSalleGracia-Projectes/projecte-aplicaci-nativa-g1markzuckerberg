@@ -66,6 +66,7 @@ fun splitDateTime(timestamp: Long): Pair<String, String> {
 fun HomeLogedView(
     navController: NavController,
     homeLogedViewModel: HomeLogedViewModel,
+    contentPadding: PaddingValues = PaddingValues(0.dp)
 ) {
     var openCreateLigaDialog by remember { mutableStateOf(false) }
     var openJoinLigaDialog by remember { mutableStateOf(false) }
@@ -150,7 +151,7 @@ fun HomeLogedView(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = 56.dp)
+                .padding(contentPadding)
         ) {
             /** CABECERA */
             Box(
@@ -348,20 +349,6 @@ fun HomeLogedView(
                     }
                 }
             }
-        }
-
-        /** NAVBAR */
-        Box(
-            modifier = Modifier.align(Alignment.BottomCenter)
-        ) {
-            NavbarView(
-                navController = navController,
-                onProfileClick = { /* Acción perfil */ },
-                onHomeClick = {},
-                onNotificationsClick = { /* Acción notificaciones */ },
-                onSettingsClick = { navController.navigate(Routes.Settings.route) },
-                modifier = Modifier.fillMaxWidth()
-            )
         }
 
         /** Diálogos: al enviar, se cierra el diálogo correspondiente antes de llamar a la acción */

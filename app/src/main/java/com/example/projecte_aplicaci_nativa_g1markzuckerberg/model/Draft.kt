@@ -13,7 +13,6 @@ data class TempPlantillaResponse(
 )
 
 
-
 data class PlayerOption(
     val id: Int,
     val displayName: String,
@@ -37,8 +36,9 @@ data class PositionOptions(
 // Petición para actualizar el draft.
 data class UpdateDraftRequest(
     val plantillaId: Int,
-    val playerOptions: List<PositionOptions>
+    val playerOptions: List<List<Any?>>
 )
+
 // Respuesta genérica para algunas operaciones (por ejemplo, update o save).
 data class ApiResponse(
     val message: String
@@ -84,6 +84,7 @@ data class TempDraftFinal(
     @SerializedName("playerOptions")
     val playerOptions: List<List<Any>> // Cada grupo: [jugador0, jugador1, jugador2, jugador3, índiceSeleccionado]
 )
+
 
 
 

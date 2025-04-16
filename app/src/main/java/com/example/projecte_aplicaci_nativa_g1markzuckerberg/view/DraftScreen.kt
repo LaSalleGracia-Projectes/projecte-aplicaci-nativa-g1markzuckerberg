@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -51,99 +52,75 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.times
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.Player
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.PlayerOption
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.PositionOptions
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.UIPlayer
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.NavbarView
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.DraftViewModel
 
-@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun DraftScreen(
     viewModel: DraftViewModel,
-    navController: NavController
+    navController: NavController,
+    innerPadding: PaddingValues,
 ) {
-    // Obtenemos el draft desde el viewModel.
     val tempDraftResponse by viewModel.tempDraft.observeAsState()
-    Log.d("DraftScreen", "TempDraftResponse en vista: $tempDraftResponse")
-
     val playerOptions: List<List<PlayerOption>> = tempDraftResponse?.playerOptions ?: emptyList()
-    Log.d("DraftScreen", "Lista de grupos en DraftScreen: ${playerOptions.size}")
-
     val selectedPlayers = remember { mutableStateMapOf<String, PlayerOption?>() }
 
-
-    // Directamente obtenemos la lista de opciones (ya convertida a List<List<PlayerOption>>)
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        // Fondo: imagen de campo de fútbol.
-        BoxWithConstraints(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 130.dp, bottom = 72.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.futbol_pitch_background),
-                contentDescription = "Campo de fútbol",
-                contentScale = ContentScale.Fit,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(9f / 16f)
-                    .graphicsLayer { scaleX = 1.25f } // Aumenta el ancho en un 25%
-            )
-        }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 120.dp, end = 16.dp)
-                .align(Alignment.TopEnd)
-        ) {
-            FilledTonalButton(
-                onClick = { viewModel.saveDraft(selectedPlayers) {
-                    // Por ejemplo, navegamos a la pantalla de Home al guardar correctamente.
-                    navController.navigate(Routes.HomeLoged.route)
-                }
-                },
-                shape = RoundedCornerShape(50.dp),
-                colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = Color.White
-                ),
-                modifier = Modifier.height(34.dp)
-            ) {
-                Text(
-                    "Guardar",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 12.sp
-                    )
-                )
+    // Alturas fijas para el header y el botón
+    val headerHeight = 110.dp
+    val buttonHeight = 34.dp
+    // Función para convertir las selecciones actuales en una lista de PositionOptions
+    fun buildPositionOptions(): List<List<Any?>> {
+        // Define las claves en el mismo orden que aparecen en el layout
+        val keys = listOf(
+            "Delantero_0", "Delantero_1", "Delantero_2",
+            "Mediocentro_0", "Mediocentro_1", "Mediocentro_2",
+            "Defensa_0", "Defensa_1", "Defensa_2", "Defensa_3",
+            "Portero_0"
+        )
+        val options = playerOptions.mapIndexed { index, group ->
+            val key = keys.getOrElse(index) { "grupo_$index" }
+            val chosenIndex = selectedPlayers[key]?.let { selected ->
+                group.take(4).indexOfFirst { it.id == selected.id }
             }
+            listOf(group[0], group[1], group[2], group[3], chosenIndex)
         }
+        Log.d("DraftScreen", "buildPositionOptions: $options")
+        return options
+    }
 
-        // Contenido principal (por ejemplo, la lista de posiciones y sus candidatos)
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 130.dp, bottom = 72.dp)
-        ) {
-            DraftLayout(
-                formation = viewModel.selectedFormation.value,
-                playerOptions = playerOptions,
-                selectedPlayers = selectedPlayers
-            )
+
+
+
+    // Función para llamar al update en el servidor usando el ViewModel
+    fun updateDraftOnServer() {
+        Log.d("DraftScreen", "Current liga id: ${viewModel.currentLigaId}")
+        viewModel.updateDraft(viewModel.currentLigaId, buildPositionOptions()) {
+            Log.d("DraftScreen", "Draft actualizado en el servidor")
         }
+    }
 
-        // HEADER
+
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(innerPadding)
+    ) {
+        // HEADER: contiene el título, el botón volver y el botón guardar
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(110.dp)
+                .height(headerHeight)
                 .background(
                     Brush.horizontalGradient(
                         colors = listOf(
@@ -181,32 +158,81 @@ fun DraftScreen(
                     textAlign = TextAlign.Center,
                     modifier = Modifier.weight(1f)
                 )
-                Spacer(modifier = Modifier.size(45.dp))
+                FilledTonalButton(
+                    onClick = {
+                        viewModel.saveDraft(selectedPlayers) {
+                            navController.navigate(Routes.HomeLoged.route)
+                        }
+                    },
+                    shape = RoundedCornerShape(50.dp),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = Color.White
+                    ),
+                    modifier = Modifier.height(buttonHeight)
+                ) {
+                    Text(
+                        "Guardar",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp)
+                    )
+                }
             }
         }
 
-        // Navbar inferior
+        // CONTENIDO: ocupa todo el espacio restante (entre header y navbar)
         Box(
             modifier = Modifier
+                .weight(1f)
                 .fillMaxWidth()
-                .align(Alignment.BottomCenter)
         ) {
-            NavbarView(
-                navController = navController,
-                onProfileClick = { /* Acción para perfil */ },
-                onHomeClick = { navController.navigate(Routes.HomeLoged.route) },
-                onNotificationsClick = { /* Acción para notificaciones */ },
-                onSettingsClick = { navController.navigate(Routes.Settings.route) },
-                modifier = Modifier.fillMaxWidth()
+            // La imagen de fondo se estira para ocupar toda la altura disponible
+            Image(
+                painter = painterResource(id = R.drawable.futbol_pitch_background),
+                contentDescription = "Campo de fútbol",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer { scaleX = 1.25f }
+            )
+            // Se ubica el layout de jugadores sobre la imagen
+            DraftLayout(
+                formation = viewModel.selectedFormation.value,
+                playerOptions = playerOptions,
+                selectedPlayers = selectedPlayers,
+                onPlayerSelectedWithUpdate = { key, chosenPlayer ->
+                    selectedPlayers[key] = chosenPlayer
+                    updateDraftOnServer()
+                },
+                updateDraftOnServer = { updateDraftOnServer() } // 👈 Aquí la pasas
             )
         }
     }
 }
 
+@Composable
+fun getPlayerCardDimensions(): Pair<Dp, Dp> {
+    val configuration = LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp.dp
+    // Se resta el padding horizontal de 12.dp a cada lado (24.dp en total)
+    val availableWidth = screenWidth - 24.dp
+    // Se asume que el máximo de cartas en una fila es 4 y hay 3 espacios de 8.dp entre ellas
+    val cardWidth = (availableWidth - (3 * 8.dp)) / 4
+    // Manteniendo la relación de aspecto 80:122
+    val cardHeight = cardWidth * 122f / 80f
+    return Pair(cardWidth, cardHeight)
+}
+
+
 
 @SuppressLint("RememberReturnType")
 @Composable
-fun DraftLayout(formation: String, playerOptions: List<List<PlayerOption>>, selectedPlayers: MutableMap<String, PlayerOption?>) {
+fun DraftLayout(
+    formation: String,
+    playerOptions: List<List<PlayerOption>>,
+    selectedPlayers: MutableMap<String, PlayerOption?>,
+    onPlayerSelectedWithUpdate: (key: String, chosenPlayer: PlayerOption) -> Unit,
+    updateDraftOnServer: () -> Unit // 👈 Añadir esto
+) {
     // Muestra el número total de grupos recibidos
     Log.d("DraftLayout", "Total de grupos de jugadores: ${playerOptions.size}")
 
@@ -220,7 +246,7 @@ fun DraftLayout(formation: String, playerOptions: List<List<PlayerOption>>, sele
     var groupIndex = 0
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(vertical = 24.dp),
+        modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.SpaceEvenly
     ) {
         rows.forEach { (positionName, count) ->
@@ -245,8 +271,10 @@ fun DraftLayout(formation: String, playerOptions: List<List<PlayerOption>>, sele
                         selectedPlayer = selectedPlayers[key],
                         candidates = candidates,
                         onPlayerSelected = { chosenPlayer ->
-                            selectedPlayers[key] = chosenPlayer
-                        }
+                            // Actualiza la selección en el mapa local y llama al callback de nivel superior
+                            onPlayerSelectedWithUpdate(key, chosenPlayer)
+                        },
+                        updateDraftInServer = { updateDraftOnServer() } // Aquí se pasa la función de update
                     )
                     groupIndex++
                 }
@@ -255,16 +283,15 @@ fun DraftLayout(formation: String, playerOptions: List<List<PlayerOption>>, sele
     }
 }
 
-
 @Composable
 fun PositionCard(
     positionName: String,
     selectedPlayer: PlayerOption?,
     candidates: List<PlayerOption>,
-    onPlayerSelected: (PlayerOption) -> Unit
+    onPlayerSelected: (PlayerOption) -> Unit,
+    updateDraftInServer: () -> Unit
 ) {
     var showDialog by remember { mutableStateOf(false) }
-
     if (showDialog) {
         PlayerSelectionDialog(
             players = candidates,
@@ -272,14 +299,17 @@ fun PositionCard(
             onPlayerSelected = { selected ->
                 onPlayerSelected(selected)
                 showDialog = false
+                updateDraftInServer()
             }
         )
     }
 
+    val (cardWidth, cardHeight) = getPlayerCardDimensions()
+
     Box(
         modifier = Modifier
-            .width(80.dp)
-            .height(122.dp) // Igual al tamaño por defecto de CompactPlayerCard
+            .width(cardWidth)
+            .height(cardHeight)
             .clickable { showDialog = true },
         contentAlignment = Alignment.Center
     ) {
@@ -300,15 +330,13 @@ fun PositionCard(
             } else {
                 CompactPlayerCard(
                     player = player,
-                    width = 80.dp,
-                    height = 122.dp,
+                    width = cardWidth,
+                    height = cardHeight,
                     onClick = { showDialog = true }
                 )
             }
         }
-
     }
-
 }
 
 @Composable
@@ -318,10 +346,10 @@ fun PlayerSelectionDialog(
     onPlayerSelected: (PlayerOption) -> Unit
 ) {
     val validPlayers = players.filterNotNull()
-
     val blueGradient = Brush.verticalGradient(
         colors = listOf(Color(0xFF0D47A1), Color(0xFF1976D2))
     )
+    val (cardWidth, cardHeight) = getPlayerCardDimensions()
 
     Dialog(onDismissRequest = onDismiss) {
         AnimatedVisibility(
@@ -357,6 +385,7 @@ fun PlayerSelectionDialog(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // Se muestran los jugadores usando las dimensiones calculadas
                     val rows = validPlayers.chunked(2)
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         rows.forEach { row ->
@@ -367,8 +396,8 @@ fun PlayerSelectionDialog(
                                 row.forEach { player ->
                                     CompactPlayerCard(
                                         player = player,
-                                        width = 100.dp,
-                                        height = 122.dp,
+                                        width = cardWidth,
+                                        height = cardHeight,
                                         onClick = { onPlayerSelected(player) }
                                     )
                                     Spacer(modifier = Modifier.width(12.dp))
@@ -381,6 +410,7 @@ fun PlayerSelectionDialog(
         }
     }
 }
+
 
 @Composable
 fun StyledPlayerCard(

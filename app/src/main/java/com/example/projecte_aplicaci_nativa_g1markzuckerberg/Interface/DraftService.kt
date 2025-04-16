@@ -9,9 +9,13 @@ interface DraftService {
     @POST("api/v1/draft/create")
     suspend fun createDraft(@Body request: CreateDraftRequest): Response<CreateDraftResponse>
 
-    @GET("api/v1/draft/tempDraft/{plantillaId}")
-    suspend fun getTempDraft(@Path("plantillaId") plantillaId: Int): Response<CreateDraftResponse>
+    @PUT("api/v1/draft/update/{ligaId}")
+    suspend fun updateDraft(
+        @Path("ligaId") ligaId: Int,
+        @Body request: UpdateDraftRequest
+    ): Response<ApiResponse>
 
     @POST("api/v1/draft/saveDraft")
     suspend fun saveDraft(@Body request: SaveDraftRequest): Response<ApiResponse>
+
 }

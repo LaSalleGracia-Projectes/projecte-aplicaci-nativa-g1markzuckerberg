@@ -64,22 +64,17 @@ fun LigaView(
     val isLoading by ligaViewModel.isLoading.observeAsState(initial = true)
 
     val context = LocalContext.current
-    // Instancia tu TokenManager; se asume que la clase TokenManager ya está implementada
+    // Instancia tu TokenManager y AuthRepository
     val tokenManager = TokenManager(context)
-    // Instancia AuthRepository (se utiliza RetrofitClient.authService)
     val authRepository = AuthRepository(service = RetrofitClient.authService, tokenManager = tokenManager)
-    // Obtén el id del usuario actual
     val currentUserId = authRepository.getCurrentUserId()
 
     LaunchedEffect(key1 = selectedJornada) {
         val jornadaParam = if (selectedJornada == 0) null else selectedJornada
         ligaViewModel.fetchLigaInfo(ligaCode, jornadaParam)
     }
-    LaunchedEffect(key1 = draftViewModel.tempDraft.value) {
-        draftViewModel.tempDraft.value?.let {
-            navController.navigate(Routes.DraftScreen.createRoute())
-        }
-    }
+    // Se ha eliminado el LaunchedEffect que navegaba automáticamente al detectar un draft creado.
+    // Ahora la navegación a DraftScreen se realizará solo en el callback del diálogo.
 
     // Estado para mostrar el diálogo de creación de draft
     var showCreateDraftDialog by remember { mutableStateOf(false) }
@@ -90,7 +85,6 @@ fun LigaView(
                 // Pantalla de carga
             }
         } else {
-            // Definimos "data" en este bloque
             val data = ligaData!!
             val imageUrl = "${RetrofitClient.BASE_URL}api/v1/liga/image/${data.liga.id}"
             Column(
@@ -216,7 +210,6 @@ fun LigaView(
                             val fullUserImageUrl = RetrofitClient.BASE_URL.trimEnd('/') + "/" + user.imageUrl.trimStart('/')
                             val backgroundBrush = if (isPodio) metallicBrushForRanking(index) else SolidColor(Color.White)
 
-                            // Declaramos nuestro cardModifier para la navegación sin el padding de separación,
                             val cardModifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
@@ -230,22 +223,20 @@ fun LigaView(
                                     )
                                 }
 
-// Comparar el id del usuario actual con el id del usuario de la tarjeta
                             val isCurrentUser = (currentUserId != null) && (user.usuario_id == currentUserId)
 
                             if (isCurrentUser) {
-                                // El padding vertical para separar tarjetas se aplica aquí, en el Box contenedor.
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(vertical = 6.dp)  // Esto aplica el espacio entre tarjetas
+                                        .padding(vertical = 6.dp)
                                         .clip(RoundedCornerShape(12.dp))
                                         .border(
                                             width = 2.dp,
                                             brush = Brush.horizontalGradient(
                                                 colors = listOf(
-                                                    MaterialTheme.colorScheme.primary,  // O puedes usar PrimaryColor si lo tienes definido
-                                                    MaterialTheme.colorScheme.secondary // O SecondaryColor
+                                                    MaterialTheme.colorScheme.primary,
+                                                    MaterialTheme.colorScheme.secondary
                                                 )
                                             ),
                                             shape = RoundedCornerShape(12.dp)
@@ -256,12 +247,11 @@ fun LigaView(
                                         elevation = if (isPodio)
                                             CardDefaults.cardElevation(defaultElevation = 8.dp)
                                         else CardDefaults.cardElevation(defaultElevation = 4.dp),
-                                        modifier = cardModifier, // Sin padding vertical aquí (se usa el que tiene el Box)
+                                        modifier = cardModifier,
                                         colors = if (isPodio)
                                             CardDefaults.cardColors(containerColor = Color.Transparent)
                                         else CardDefaults.cardColors(containerColor = Color.White)
                                     ) {
-                                        // Dentro de la Card, aplicas el padding que necesites para el contenido interno
                                         if (isPodio) {
                                             Box(
                                                 modifier = Modifier
@@ -330,7 +320,6 @@ fun LigaView(
                                     }
                                 }
                             } else {
-                                // Tarjeta normal para otros usuarios (con el mismo cardModifier que incluye padding vertical)
                                 Card(
                                     shape = RoundedCornerShape(12.dp),
                                     elevation = if (isPodio)
@@ -412,6 +401,7 @@ fun LigaView(
                     }
                 }
             } // fin de Column
+
             if (showCreateDraftDialog) {
                 CreateDraftDialog(
                     draftViewModel = draftViewModel,
@@ -421,27 +411,13 @@ fun LigaView(
                         draftViewModel.createDraft(
                             formation = formation,
                             ligaId = data.liga.id
-                        ){
+                        ) {
+                            // Navegamos a DraftScreen SOLO al confirmar la creación del draft.
                             navController.navigate(Routes.DraftScreen.createRoute())
                         }
                     }
                 )
             }
-        }
-        // Navbar inferior
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.BottomCenter)
-        ) {
-            NavbarView(
-                navController = navController,
-                onProfileClick = { /* Acción para perfil */ },
-                onHomeClick = { navController.navigate(Routes.HomeLoged.route) },
-                onNotificationsClick = { /* Acción para notificaciones */ },
-                onSettingsClick = { navController.navigate(Routes.Settings.route) },
-                modifier = Modifier.fillMaxWidth()
-            )
         }
         if (showCodeDialog && ligaData != null) {
             LeagueCodeDialog(
@@ -568,7 +544,6 @@ fun CreateDraftDialog(
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    // Dropdown customizado para seleccionar la alineación
                     CustomFormationDropdown(
                         options = listOf("4-3-3", "4-4-2", "3-4-3"),
                         selectedOption = selectedFormation,
@@ -658,4 +633,3 @@ fun CustomFormationDropdown(
         }
     }
 }
-
