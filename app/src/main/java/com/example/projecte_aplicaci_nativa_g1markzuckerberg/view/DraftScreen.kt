@@ -4,17 +4,11 @@ import android.annotation.SuppressLint
 import android.util.Log
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -22,8 +16,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -57,14 +49,64 @@ import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.Player
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.PlayerOption
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.PositionOptions
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.UIPlayer
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.TempPlantillaResponse
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.NavbarView
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.DraftViewModel
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 
+// Función para obtener las claves (ej. "Delantero_0", "Delantero_1", …)
+fun getPositionKeys(formation: String): List<String> {
+    val formationRows = when (formation) {
+        "4-3-3" -> listOf("Delantero" to 3, "Mediocentro" to 3, "Defensa" to 4, "Portero" to 1)
+        "4-4-2" -> listOf("Delantero" to 2, "Mediocampista" to 4, "Defensa" to 4, "Portero" to 1)
+        "3-4-3" -> listOf("Delantero" to 3, "Mediocampista" to 4, "Defensa" to 3, "Portero" to 1)
+        else -> emptyList()
+    }
+    return formationRows.flatMap { (positionName, count) ->
+        (0 until count).map { index -> "${positionName}_$index" }
+    }
+}
+
+// Función para parsear el String JSON de playerOptions a una lista de listas
+fun parsePlayerOptions(raw: String): List<List<Any?>> {
+    return try {
+        Gson().fromJson(raw, object : TypeToken<List<List<Any?>>>() {}.type)
+    } catch (e: Exception) {
+        Log.e("DraftScreen", "Error al parsear playerOptions: ${e.message}")
+        emptyList()
+    }
+}
+
+// Inicializa el mapa de jugadores seleccionados usando la versión parseada
+fun initializeSelectedPlayersFromDraft(
+    draft: TempPlantillaResponse,
+    formation: String,
+    parsedOptions: List<List<Any?>>
+): MutableMap<String, PlayerOption?> {
+    val selected = mutableMapOf<String, PlayerOption?>()
+    val keys = getPositionKeys(formation)
+    parsedOptions.forEachIndexed { index, group ->
+        // Se asume que el quinto elemento es el índice seleccionado (puede ser null)
+        val chosenIndex = if (group.size >= 5 && group[4] is Number) {
+            (group[4] as Number).toInt()
+        } else null
+        val selectedPlayer = if (chosenIndex != null && chosenIndex in 0..3) {
+            val item = group[chosenIndex]
+            if (item is Map<*, *>) {
+                Gson().fromJson(Gson().toJson(item), PlayerOption::class.java)
+            } else if (item is PlayerOption) {
+                item
+            } else null
+        } else null
+        val key = keys.getOrElse(index) { "grupo_$index" }
+        selected[key] = selectedPlayer
+    }
+    return selected
+}
+
+@SuppressLint("UnusedTransitionTargetStateParameter")
 @Composable
 fun DraftScreen(
     viewModel: DraftViewModel,
@@ -72,51 +114,81 @@ fun DraftScreen(
     innerPadding: PaddingValues,
 ) {
     val tempDraftResponse by viewModel.tempDraft.observeAsState()
-    val playerOptions: List<List<PlayerOption>> = tempDraftResponse?.playerOptions ?: emptyList()
+    // Si tempDraftResponse no es nulo, parseamos el campo playerOptions (que viene como String).
+    // Usamos derivedStateOf dentro de remember para calcular parsedPlayerOptions sin invocar llamadas composables directamente.
+    val parsedPlayerOptions by remember(tempDraftResponse) {
+        derivedStateOf {
+            tempDraftResponse?.playerOptions?.let { raw ->
+                parsePlayerOptions(raw)
+            } ?: emptyList()
+        }
+    }
+    // Para mostrar las cartas, convertimos cada grupo (los 4 primeros elementos) a PlayerOption.
+    val playerOptionsForDisplay: List<List<PlayerOption>> = remember(parsedPlayerOptions) {
+        parsedPlayerOptions.mapNotNull { group ->
+            if (group.size >= 4) {
+                group.take(4).mapNotNull { item ->
+                    if (item is Map<*, *>) {
+                        Gson().fromJson(Gson().toJson(item), PlayerOption::class.java)
+                    } else if (item is PlayerOption) {
+                        item
+                    } else null
+                }
+            } else {
+                null
+            }
+        }
+    }
+    // Mapa de jugadores seleccionados.
     val selectedPlayers = remember { mutableStateMapOf<String, PlayerOption?>() }
+    LaunchedEffect(tempDraftResponse, parsedPlayerOptions) {
+        if (parsedPlayerOptions.isNotEmpty() && tempDraftResponse != null) {
+            selectedPlayers.clear()
+            selectedPlayers.putAll(
+                initializeSelectedPlayersFromDraft(
+                    tempDraftResponse!!,
+                    viewModel.selectedFormation.value,
+                    parsedPlayerOptions
+                )
+            )
+        }
+    }
 
-    // Alturas fijas para el header y el botón
     val headerHeight = 110.dp
     val buttonHeight = 34.dp
-    // Función para convertir las selecciones actuales en una lista de PositionOptions
+
+    // Función para construir la estructura que se enviará en el update.
     fun buildPositionOptions(): List<List<Any?>> {
-        // Define las claves en el mismo orden que aparecen en el layout
-        val keys = listOf(
-            "Delantero_0", "Delantero_1", "Delantero_2",
-            "Mediocentro_0", "Mediocentro_1", "Mediocentro_2",
-            "Defensa_0", "Defensa_1", "Defensa_2", "Defensa_3",
-            "Portero_0"
-        )
-        val options = playerOptions.mapIndexed { index, group ->
+        val keys = getPositionKeys(viewModel.selectedFormation.value)
+        val options = parsedPlayerOptions.mapIndexed { index, group ->
             val key = keys.getOrElse(index) { "grupo_$index" }
-            val chosenIndex = selectedPlayers[key]?.let { selected ->
-                group.take(4).indexOfFirst { it.id == selected.id }
+            // Convertir los 4 primeros elementos a PlayerOption
+            val players = group.take(4).mapNotNull { item ->
+                when (item) {
+                    is Map<*, *> -> Gson().fromJson(Gson().toJson(item), PlayerOption::class.java)
+                    is PlayerOption -> item
+                    else -> null
+                }
             }
-            listOf(group[0], group[1], group[2], group[3], chosenIndex)
+            val chosenIndex = selectedPlayers[key]?.let { sel ->
+                players.indexOfFirst { it.id == sel.id }
+            }
+            listOf(players[0], players[1], players[2], players[3], chosenIndex)
         }
         Log.d("DraftScreen", "buildPositionOptions: $options")
         return options
     }
 
-
-
-
-    // Función para llamar al update en el servidor usando el ViewModel
     fun updateDraftOnServer() {
         Log.d("DraftScreen", "Current liga id: ${viewModel.currentLigaId}")
         viewModel.updateDraft(viewModel.currentLigaId, buildPositionOptions()) {
             Log.d("DraftScreen", "Draft actualizado en el servidor")
         }
     }
-
-
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(innerPadding)
-    ) {
-        // HEADER: contiene el título, el botón volver y el botón guardar
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .padding(innerPadding)) {
+        // HEADER
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -160,7 +232,9 @@ fun DraftScreen(
                 )
                 FilledTonalButton(
                     onClick = {
+                        Log.d("DraftScreen", "Botón Guardar pulsado")
                         viewModel.saveDraft(selectedPlayers) {
+                            Log.d("DraftScreen", "Draft guardado correctamente, navegando a Home")
                             navController.navigate(Routes.HomeLoged.route)
                         }
                     },
@@ -178,14 +252,12 @@ fun DraftScreen(
                 }
             }
         }
-
-        // CONTENIDO: ocupa todo el espacio restante (entre header y navbar)
+        // CONTENIDO
         Box(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
         ) {
-            // La imagen de fondo se estira para ocupar toda la altura disponible
             Image(
                 painter = painterResource(id = R.drawable.futbol_pitch_background),
                 contentDescription = "Campo de fútbol",
@@ -194,16 +266,15 @@ fun DraftScreen(
                     .fillMaxSize()
                     .graphicsLayer { scaleX = 1.25f }
             )
-            // Se ubica el layout de jugadores sobre la imagen
             DraftLayout(
                 formation = viewModel.selectedFormation.value,
-                playerOptions = playerOptions,
+                playerOptions = playerOptionsForDisplay,
                 selectedPlayers = selectedPlayers,
                 onPlayerSelectedWithUpdate = { key, chosenPlayer ->
                     selectedPlayers[key] = chosenPlayer
                     updateDraftOnServer()
                 },
-                updateDraftOnServer = { updateDraftOnServer() } // 👈 Aquí la pasas
+                updateDraftOnServer = { updateDraftOnServer() }
             )
         }
     }
@@ -213,16 +284,11 @@ fun DraftScreen(
 fun getPlayerCardDimensions(): Pair<Dp, Dp> {
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
-    // Se resta el padding horizontal de 12.dp a cada lado (24.dp en total)
     val availableWidth = screenWidth - 24.dp
-    // Se asume que el máximo de cartas en una fila es 4 y hay 3 espacios de 8.dp entre ellas
     val cardWidth = (availableWidth - (3 * 8.dp)) / 4
-    // Manteniendo la relación de aspecto 80:122
     val cardHeight = cardWidth * 122f / 80f
     return Pair(cardWidth, cardHeight)
 }
-
-
 
 @SuppressLint("RememberReturnType")
 @Composable
@@ -231,50 +297,44 @@ fun DraftLayout(
     playerOptions: List<List<PlayerOption>>,
     selectedPlayers: MutableMap<String, PlayerOption?>,
     onPlayerSelectedWithUpdate: (key: String, chosenPlayer: PlayerOption) -> Unit,
-    updateDraftOnServer: () -> Unit // 👈 Añadir esto
+    updateDraftOnServer: () -> Unit
 ) {
-    // Muestra el número total de grupos recibidos
-    Log.d("DraftLayout", "Total de grupos de jugadores: ${playerOptions.size}")
-
-    val rows: List<Pair<String, Int>> = when (formation) {
+    val keys = getPositionKeys(formation)
+    val formationRows = when (formation) {
         "4-3-3" -> listOf("Delantero" to 3, "Mediocentro" to 3, "Defensa" to 4, "Portero" to 1)
         "4-4-2" -> listOf("Delantero" to 2, "Mediocampista" to 4, "Defensa" to 4, "Portero" to 1)
         "3-4-3" -> listOf("Delantero" to 3, "Mediocampista" to 4, "Defensa" to 3, "Portero" to 1)
         else -> emptyList()
     }
-
     var groupIndex = 0
-
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.SpaceEvenly
     ) {
-        rows.forEach { (positionName, count) ->
+        formationRows.forEach { (positionName, count) ->
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 repeat(count) { index ->
                     val key = "${positionName}_$index"
-                    // Verifica si groupIndex se encuentra dentro del tamaño de playerOptions
                     val candidates = if (groupIndex < playerOptions.size) {
                         playerOptions[groupIndex]
                     } else {
                         emptyList()
                     }
-
                     Log.d("DraftLayout", "Posición: $key, grupo: $groupIndex, candidatos: ${candidates.size}")
-
                     PositionCard(
                         positionName = "$positionName ${index + 1}",
                         selectedPlayer = selectedPlayers[key],
                         candidates = candidates,
                         onPlayerSelected = { chosenPlayer ->
-                            // Actualiza la selección en el mapa local y llama al callback de nivel superior
                             onPlayerSelectedWithUpdate(key, chosenPlayer)
                         },
-                        updateDraftInServer = { updateDraftOnServer() } // Aquí se pasa la función de update
+                        updateDraftOnServer = { updateDraftOnServer() }
                     )
                     groupIndex++
                 }
@@ -289,7 +349,7 @@ fun PositionCard(
     selectedPlayer: PlayerOption?,
     candidates: List<PlayerOption>,
     onPlayerSelected: (PlayerOption) -> Unit,
-    updateDraftInServer: () -> Unit
+    updateDraftOnServer: () -> Unit
 ) {
     var showDialog by remember { mutableStateOf(false) }
     if (showDialog) {
@@ -299,13 +359,11 @@ fun PositionCard(
             onPlayerSelected = { selected ->
                 onPlayerSelected(selected)
                 showDialog = false
-                updateDraftInServer()
+                updateDraftOnServer()
             }
         )
     }
-
     val (cardWidth, cardHeight) = getPlayerCardDimensions()
-
     Box(
         modifier = Modifier
             .width(cardWidth)
@@ -350,18 +408,11 @@ fun PlayerSelectionDialog(
         colors = listOf(Color(0xFF0D47A1), Color(0xFF1976D2))
     )
     val (cardWidth, cardHeight) = getPlayerCardDimensions()
-
     Dialog(onDismissRequest = onDismiss) {
         AnimatedVisibility(
             visible = true,
-            enter = slideInVertically(
-                initialOffsetY = { -it },
-                animationSpec = tween(300)
-            ) + fadeIn(tween(300)),
-            exit = slideOutVertically(
-                targetOffsetY = { -it },
-                animationSpec = tween(200)
-            ) + fadeOut(tween(200))
+            enter = slideInHorizontally(tween(300)) + fadeIn(tween(300)),
+            exit = slideOutHorizontally(tween(300)) + fadeOut(tween(200))
         ) {
             Card(
                 modifier = Modifier
@@ -384,8 +435,6 @@ fun PlayerSelectionDialog(
                         modifier = Modifier.align(Alignment.CenterHorizontally)
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-
-                    // Se muestran los jugadores usando las dimensiones calculadas
                     val rows = validPlayers.chunked(2)
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         rows.forEach { row ->
@@ -411,7 +460,6 @@ fun PlayerSelectionDialog(
     }
 }
 
-
 @Composable
 fun StyledPlayerCard(
     player: PlayerOption,
@@ -428,7 +476,6 @@ fun StyledPlayerCard(
         5 -> Brush.verticalGradient(listOf(Color(0xFFFFD700), Color(0xFFFFF59D)))
         else -> Brush.verticalGradient(listOf(Color.LightGray, Color.White))
     }
-
     Card(
         modifier = modifier
             .width(cardWidth)
@@ -461,9 +508,7 @@ fun StyledPlayerCard(
                         contentScale = ContentScale.Crop
                     )
                 }
-
                 Spacer(modifier = Modifier.height(6.dp))
-
                 Text(
                     text = player.displayName,
                     fontSize = 12.sp,
@@ -472,14 +517,12 @@ fun StyledPlayerCard(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-
                 Text(
                     text = "${player.puntos_totales} pts",
                     fontSize = 10.sp,
                     color = Color.DarkGray,
                     textAlign = TextAlign.Center
                 )
-
                 Row(
                     modifier = Modifier
                         .padding(top = 2.dp)
@@ -505,14 +548,13 @@ fun CompactPlayerCard(
     onClick: () -> Unit
 ) {
     val gradientBackground = when (player.estrellas) {
-        1 -> Brush.verticalGradient(listOf(Color(0xFFB0B0B0), Color(0xFFE0E0E0))) // Gris metálico
-        2 -> Brush.verticalGradient(listOf(Color(0xFF4CAF50), Color(0xFFA5D6A7))) // Verde metálico
-        3 -> Brush.verticalGradient(listOf(Color(0xFF2196F3), Color(0xFF90CAF9))) // Azul metálico
-        4 -> Brush.verticalGradient(listOf(Color(0xFF9C27B0), Color(0xFFE1BEE7))) // Lila metálico
-        5 -> Brush.verticalGradient(listOf(Color(0xFFFFD700), Color(0xFFFFF59D))) // Dorado metálico
+        1 -> Brush.verticalGradient(listOf(Color(0xFFB0B0B0), Color(0xFFE0E0E0)))
+        2 -> Brush.verticalGradient(listOf(Color(0xFF4CAF50), Color(0xFFA5D6A7)))
+        3 -> Brush.verticalGradient(listOf(Color(0xFF2196F3), Color(0xFF90CAF9)))
+        4 -> Brush.verticalGradient(listOf(Color(0xFF9C27B0), Color(0xFFE1BEE7)))
+        5 -> Brush.verticalGradient(listOf(Color(0xFFFFD700), Color(0xFFFFF59D)))
         else -> Brush.verticalGradient(listOf(Color.LightGray, Color.White))
     }
-
     Card(
         modifier = modifier
             .width(width)
@@ -531,10 +573,9 @@ fun CompactPlayerCard(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top
             ) {
-                // Imagen con fondo blanco y margen visible
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth(0.85f) // No ocupa todo el ancho
+                        .fillMaxWidth(0.85f)
                         .height(70.dp)
                         .background(Color.White, shape = RoundedCornerShape(8.dp))
                         .clip(RoundedCornerShape(8.dp))
@@ -542,14 +583,11 @@ fun CompactPlayerCard(
                     Image(
                         painter = rememberAsyncImagePainter(model = player.imagePath),
                         contentDescription = player.displayName,
-                        modifier = Modifier
-                            .fillMaxSize(),
+                        modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
                 }
-
                 Spacer(modifier = Modifier.height(4.dp))
-
                 Text(
                     text = player.displayName,
                     fontSize = 10.sp,
@@ -558,14 +596,12 @@ fun CompactPlayerCard(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-
                 Text(
                     text = "${player.puntos_totales} pts",
                     fontSize = 9.sp,
                     color = Color.DarkGray,
                     textAlign = TextAlign.Center
                 )
-
                 Row(
                     modifier = Modifier
                         .padding(top = 2.dp)
@@ -581,6 +617,3 @@ fun CompactPlayerCard(
         }
     }
 }
-
-
-

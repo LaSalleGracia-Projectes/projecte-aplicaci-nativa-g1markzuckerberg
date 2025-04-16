@@ -18,4 +18,9 @@ interface DraftService {
     @POST("api/v1/draft/saveDraft")
     suspend fun saveDraft(@Body request: SaveDraftRequest): Response<ApiResponse>
 
+    @GET("api/v1/draft/tempDraft/{ligaId}")
+    suspend fun getTempDraft(
+        @Path("ligaId") ligaId: Int,
+        @Query("roundName") roundName: String? = null
+    ): Response<GetTempDraftResponse>
 }

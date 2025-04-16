@@ -175,8 +175,23 @@ fun LigaView(
                             )
                         }
                         Spacer(modifier = Modifier.width(12.dp))
+                        // Al pulsar el botón "Crear Draft"
+                        // Al pulsar el botón "Crear Draft"
                         Button(
-                            onClick = { showCreateDraftDialog = true },
+                            onClick = {
+                                // Primero, intenta recuperar un draft existente.
+                                draftViewModel.createOrFetchDraft(
+                                    ligaId = data.liga.id,
+                                    onSuccess = {
+                                        // Si se recupera el draft, navega a DraftScreen y se mostrarán las posiciones tal como estaban.
+                                        navController.navigate(Routes.DraftScreen.createRoute())
+                                    },
+                                    onRequestFormation = {
+                                        // Si no se encontró draft, muestra el diálogo para solicitar la formación (y luego crear un draft nuevo).
+                                        showCreateDraftDialog = true
+                                    }
+                                )
+                            },
                             modifier = Modifier.height(42.dp),
                             shape = RoundedCornerShape(8.dp),
                             colors = ButtonDefaults.buttonColors(
@@ -190,6 +205,8 @@ fun LigaView(
                                 )
                             )
                         }
+
+
                     }
                 }
                 // CONTENIDO: Ranking de usuarios
@@ -407,12 +424,7 @@ fun LigaView(
                     draftViewModel = draftViewModel,
                     onDismiss = { showCreateDraftDialog = false },
                     onConfirm = { formation ->
-                        showCreateDraftDialog = false
-                        draftViewModel.createDraft(
-                            formation = formation,
-                            ligaId = data.liga.id
-                        ) {
-                            // Navegamos a DraftScreen SOLO al confirmar la creación del draft.
+                        draftViewModel.createDraft(formation, data.liga.id) {
                             navController.navigate(Routes.DraftScreen.createRoute())
                         }
                     }

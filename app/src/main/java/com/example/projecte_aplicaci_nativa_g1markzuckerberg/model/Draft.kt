@@ -9,8 +9,11 @@ data class CreateDraftRequest(
 
 data class TempPlantillaResponse(
     @SerializedName("id_plantilla") val idPlantilla: Int,
-    @SerializedName("playerOptions") val playerOptions: List<List<PlayerOption>>?
+    @SerializedName("playerOptions") val playerOptions: String?, // Cambiado a String
+    @SerializedName("formation") val formation: String
 )
+
+
 
 
 data class PlayerOption(
@@ -82,7 +85,11 @@ data class TempDraftFinal(
     @SerializedName("id_plantilla")
     val idPlantilla: Int,
     @SerializedName("playerOptions")
-    val playerOptions: List<List<Any>> // Cada grupo: [jugador0, jugador1, jugador2, jugador3, índiceSeleccionado]
+    val playerOptions: List<List<Any?>> // Ahora acepta Any? en vez de solo Any
+)
+data class GetTempDraftResponse(
+    @SerializedName("tempDraft")
+    val tempDraft: TempPlantillaResponse
 )
 
 
