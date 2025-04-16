@@ -6,5 +6,5 @@ data class LigaDetails(
     val jornada_id: Int,
     val created_by: String,
     val created_jornada: Int,
-    val code: String
+    val code: String,
 )

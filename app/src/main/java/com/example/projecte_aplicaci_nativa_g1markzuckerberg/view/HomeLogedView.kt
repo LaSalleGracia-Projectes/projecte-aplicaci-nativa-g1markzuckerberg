@@ -1,8 +1,7 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
 import LoadingTransitionScreen
-import android.widget.Toast
-import androidx.compose.animation.animateContentSize
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -12,6 +11,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
@@ -29,18 +29,20 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.LigaConPuntos
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CreateLigaDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialogSingleButton
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.EditLigaDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.JoinLigaDialog
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.LeagueCodeDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.NavbarView
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.HomeLogedViewModel
 import java.text.SimpleDateFormat
@@ -64,21 +66,26 @@ fun splitDateTime(timestamp: Long): Pair<String, String> {
 fun HomeLogedView(
     navController: NavController,
     homeLogedViewModel: HomeLogedViewModel,
+    contentPadding: PaddingValues = PaddingValues(0.dp)
 ) {
     var openCreateLigaDialog by remember { mutableStateOf(false) }
     var openJoinLigaDialog by remember { mutableStateOf(false) }
+    var selectedLeagueCode by remember { mutableStateOf<String?>(null) }
 
     // Estados para el CustomAlertDialog
     var showCustomAlert by remember { mutableStateOf(false) }
     var alertTitle by remember { mutableStateOf("") }
     var alertMessage by remember { mutableStateOf("") }
-    var alertOnConfirm by remember { mutableStateOf<() -> Unit>({}) }
+    var alertOnConfirm by remember { mutableStateOf({}) }
 
     val createLigaResult by homeLogedViewModel.createLigaResult.observeAsState()
     val joinLigaResult by homeLogedViewModel.joinLigaResult.observeAsState()
     val userLeagues by homeLogedViewModel.userLeagues.observeAsState(emptyList())
     val isLoading by homeLogedViewModel.isLoading.observeAsState(initial = true)
-    val context = LocalContext.current
+    val userEmail by homeLogedViewModel.userEmail.observeAsState(initial = "")
+    val lastImageUpdateTs by homeLogedViewModel.lastImageUpdateTs.observeAsState(initial = 0L)
+
+    BackHandler {}
 
     // Al recibir el resultado de unirse a una liga
     LaunchedEffect(key1 = joinLigaResult) {
@@ -113,6 +120,25 @@ fun HomeLogedView(
         }
     }
 
+    var editingLiga by remember { mutableStateOf<LigaConPuntos?>(null) }
+    val context = LocalContext.current
+
+    editingLiga?.let { liga ->
+        EditLigaDialog(
+            ligaId = liga.id.toString(),
+            currentName = liga.name,
+            onDismiss = { editingLiga = null },
+            onSave = { newName, imageUri ->
+                editingLiga = null
+                imageUri?.let {
+                    homeLogedViewModel.updateLigaWithImage(liga.id.toString(), it, context)
+                }
+                // Aquí podrías agregar la lógica adicional para editar nombre si lo implementas.
+            }
+        )
+    }
+
+
     LaunchedEffect(Unit) {
         homeLogedViewModel.fetchUserLeagues()
     }
@@ -125,7 +151,7 @@ fun HomeLogedView(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = 56.dp)
+                .padding(contentPadding)
         ) {
             /** CABECERA */
             Box(
@@ -262,17 +288,31 @@ fun HomeLogedView(
                         )
                     }
 
-                    itemsIndexed(userLeagues) { index, liga ->
+                    itemsIndexed(userLeagues) { _, liga ->
                         LeagueRow(
                             name = liga.name,
                             puntos = liga.puntos_totales,
                             leagueCode = liga.code,
+                            leagueId = liga.id.toString(),
                             totalUsers = liga.total_users,
-                            onClick = {
-                                navController.navigate(Routes.LigaView.createRoute(liga.code))
+                            lastImageUpdateTs = lastImageUpdateTs.toString(),
+                            onClick = { navController.navigate(Routes.LigaView.createRoute(liga.code)) },
+                            onShareLiga = {
+                                // Aquí puedes implementar la acción para compartir, por ejemplo:
+                                // Mostrar un Toast o abrir un diálogo similar a LeagueCodeDialog
+                                selectedLeagueCode = liga.code
+                            },
+                            onEditLiga = {
+                                if (userEmail != liga.created_by) {
+                                    alertTitle = "Editar Liga"
+                                    alertMessage = "Solo el capitán puede editar la liga"
+                                    alertOnConfirm = { showCustomAlert = false }
+                                    showCustomAlert = true
+                                } else {
+                                    editingLiga = liga // Aquí abre el nuevo diálogo si eres el creador
+                                }
                             },
                             onLeaveLiga = {
-                                // Antes de llamar a leaveLiga, nos aseguramos de cerrar cualquier otro diálogo
                                 alertTitle = "Abandonar Liga"
                                 alertMessage = "¿Estás seguro que deseas abandonar la liga?"
                                 alertOnConfirm = {
@@ -281,15 +321,10 @@ fun HomeLogedView(
                                 }
                                 showCustomAlert = true
                             },
-                            onEditLiga = {
-                                alertTitle = "Editar Liga"
-                                alertMessage = "Funcionalidad de edición no implementada aún."
-                                alertOnConfirm = { showCustomAlert = false }
-                                showCustomAlert = true
-                            }
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                     }
+
 
                     item { Spacer(modifier = Modifier.height(12.dp)) }
 
@@ -316,20 +351,6 @@ fun HomeLogedView(
             }
         }
 
-        /** NAVBAR */
-        Box(
-            modifier = Modifier.align(Alignment.BottomCenter)
-        ) {
-            NavbarView(
-                navController = navController,
-                onProfileClick = { /* Acción perfil */ },
-                onHomeClick = {},
-                onNotificationsClick = { /* Acción notificaciones */ },
-                onSettingsClick = { navController.navigate(Routes.Settings.route) },
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-
         /** Diálogos: al enviar, se cierra el diálogo correspondiente antes de llamar a la acción */
         if (openCreateLigaDialog) {
             CreateLigaDialog(
@@ -348,6 +369,13 @@ fun HomeLogedView(
                     openJoinLigaDialog = false
                     homeLogedViewModel.joinLiga(leagueCode)
                 },
+            )
+        }
+        // Muestra el LeagueCodeDialog cuando selectedLeagueCode tiene un valor
+        selectedLeagueCode?.let { code ->
+            LeagueCodeDialog(
+                leagueCode = code,
+                onDismiss = { selectedLeagueCode = null }
             )
         }
     }
@@ -405,10 +433,13 @@ fun LeagueRow(
     name: String,
     puntos: String,
     leagueCode: String,
+    leagueId: String,
     totalUsers: String,
     onClick: () -> Unit,
+    onShareLiga: () -> Unit,
+    onEditLiga: () -> Unit,
     onLeaveLiga: () -> Unit,
-    onEditLiga: () -> Unit
+    lastImageUpdateTs: String
 ) {
     var expanded by remember { mutableStateOf(false) }
     val ptsInt = puntos.toDoubleOrNull()?.toInt() ?: puntos
@@ -426,20 +457,32 @@ fun LeagueRow(
             Row(modifier = Modifier.background(MaterialTheme.colorScheme.surfaceVariant)) {
                 Box(
                     modifier = Modifier
-                        .padding(vertical = 8.dp, horizontal = 4.dp)
-                        .fillMaxHeight()
-                        .width(80.dp)
+                        .padding(vertical = 8.dp, horizontal = 12.dp)
+                        .size(54.dp) // Tamaño total del contenedor circular
+                        .background(
+                            brush = Brush.horizontalGradient(
+                                colors = listOf(
+                                    MaterialTheme.colorScheme.primary,
+                                    MaterialTheme.colorScheme.secondary
+                                )
+                            ),
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
                 ) {
                     AsyncImage(
-                        model = "${RetrofitClient.BASE_URL}api/v1/liga/image/$leagueCode",
+                        model = "${RetrofitClient.BASE_URL}api/v1/liga/image/$leagueId?ts=$lastImageUpdateTs",
                         contentDescription = "Imagen Liga",
                         modifier = Modifier
-                            .fillMaxSize()
-                            .clip(RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp)),
+                            .size(48.dp) // Imagen más pequeña dentro del borde
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceVariant) // Fondo por si la imagen no llena
+                            .padding(2.dp), // Ajuste fino si lo deseas
                         placeholder = painterResource(id = R.drawable.fantasydraft),
                         error = painterResource(id = R.drawable.fantasydraft)
                     )
                 }
+
 
                 Column(
                     modifier = Modifier
@@ -464,13 +507,13 @@ fun LeagueRow(
                             modifier = Modifier.weight(1f)
                         )
 
-                        // Box que alinea menú justo con el botón
+                        // Menú desplegable con opciones
                         Box {
                             IconButton(
                                 onClick = { expanded = true },
                                 modifier = Modifier
                                     .size(36.dp)
-                                    .padding(0.dp) // Elimina padding interno
+                                    .padding(0.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.MoreVert,
@@ -479,7 +522,6 @@ fun LeagueRow(
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
-
                             DropdownMenu(
                                 expanded = expanded,
                                 onDismissRequest = { expanded = false },
@@ -487,8 +529,17 @@ fun LeagueRow(
                                     .wrapContentSize()
                                     .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
                                     .clip(RoundedCornerShape(8.dp))
-                                    .padding(0.dp) // Quita espacio superior e inferior del menú
+                                    .padding(0.dp)
                             ) {
+                                // NUEVA opción: Compartir liga
+                                DropdownMenuItem(
+                                    text = { Text("Compartir liga") },
+                                    onClick = {
+                                        expanded = false
+                                        onShareLiga()
+                                    },
+                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)
+                                )
                                 DropdownMenuItem(
                                     text = { Text("Editar liga") },
                                     onClick = {
@@ -498,12 +549,11 @@ fun LeagueRow(
                                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)
                                 )
                                 DropdownMenuItem(
-                                    modifier = Modifier
-                                        .background(
-                                            Brush.horizontalGradient(
-                                                listOf(Color(0xFFFF5252), Color(0xFFB71C1C))
-                                            )
-                                        ),
+                                    modifier = Modifier.background(
+                                        Brush.horizontalGradient(
+                                            listOf(Color(0xFFFF5252), Color(0xFFB71C1C))
+                                        )
+                                    ),
                                     text = { Text("Abandonar liga", color = Color.White) },
                                     onClick = {
                                         expanded = false
@@ -529,7 +579,6 @@ fun LeagueRow(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-
                         Text(
                             text = "$ptsInt pts",
                             style = MaterialTheme.typography.bodyMedium.copy(fontSize = 16.sp),
@@ -541,9 +590,6 @@ fun LeagueRow(
         }
     }
 }
-
-
-
 
 /** Tarjeta para "Partidos" (Fixtures); se mantiene el estilo compacto */
 @Composable

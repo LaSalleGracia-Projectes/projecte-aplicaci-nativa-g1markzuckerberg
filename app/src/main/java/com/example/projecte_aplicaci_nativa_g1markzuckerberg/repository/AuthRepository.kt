@@ -3,9 +3,11 @@ package com.example.projecte_aplicaci_nativa_g1markzuckerberg.repository
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.Interface.AuthService
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.LoginRequest
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.RegisterRequest
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.utils.TokenManager
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.TokenManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import android.util.Base64
+import org.json.JSONObject
 
 class AuthRepository(
     private val service: AuthService,
@@ -85,4 +87,26 @@ class AuthRepository(
             }
         }
     }
+
+    fun getCurrentUserId(): Int? {
+        val token = tokenManager.getToken() ?: return null
+        // El token JWT tiene tres partes separadas por puntos
+        val parts = token.split(".")
+        if (parts.size != 3) return null
+
+        return try {
+            // La segunda parte es el payload codificado en Base64Url
+            val payloadEncoded = parts[1]
+            // Decodificamos el payload. Los flags NO_WRAP y URL_SAFE ayudan a evitar espacios y saltos de línea.
+            val payloadBytes = Base64.decode(payloadEncoded, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
+            val payload = String(payloadBytes, Charsets.UTF_8)
+            // Convertimos el payload en un objeto JSON y extraemos el campo "id"
+            val json = JSONObject(payload)
+            json.optInt("id")
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
 }

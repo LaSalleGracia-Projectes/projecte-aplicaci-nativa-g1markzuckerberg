@@ -1,4 +1,4 @@
-package com.example.projecte_aplicaci_nativa_g1markzuckerberg.utils
+package com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils
 
 import android.content.Context
 

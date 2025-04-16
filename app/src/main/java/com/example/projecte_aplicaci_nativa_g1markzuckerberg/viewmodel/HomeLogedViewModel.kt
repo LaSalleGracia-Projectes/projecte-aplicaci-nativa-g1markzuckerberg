@@ -1,5 +1,7 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel
 
+import android.content.Context
+import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.State
@@ -18,6 +20,9 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.LigaConPuntos
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.repository.AuthRepository
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.Event
 import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 
 class HomeLogedViewModel(private val authRepository: AuthRepository) : ViewModel() {
 
@@ -51,9 +56,17 @@ class HomeLogedViewModel(private val authRepository: AuthRepository) : ViewModel
     // Abandonar Liga
     private val _leaveLigaResult = MutableLiveData<Event<String>>()
     val leaveLigaResult: LiveData<Event<String>> = _leaveLigaResult
+
+    private val _userEmail = MutableLiveData<String>()
+    val userEmail: LiveData<String> = _userEmail
+
+    private val _lastImageUpdateTs = MutableLiveData<Long>(System.currentTimeMillis())
+    val lastImageUpdateTs: LiveData<Long> get() = _lastImageUpdateTs
+
     init {
         // Cargar la jornada actual al iniciar.
         fetchCurrentJornada()
+        fetchUserInfo()
     }
 
     private fun fetchCurrentJornada() {
@@ -215,4 +228,58 @@ class HomeLogedViewModel(private val authRepository: AuthRepository) : ViewModel
             }
         }
     }
+    fun fetchUserInfo() {
+        viewModelScope.launch {
+            try {
+                val response = RetrofitClient.userService.getMe() // Asegúrate de que este método exista
+                if (response.isSuccessful) {
+                    _userEmail.value = response.body()?.user?.correo ?: ""
+                } else {
+                    _errorMessage.value = Event("Error al obtener información de usuario: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = Event(e.message ?: "Error desconocido al obtener información del usuario")
+            }
+        }
+    }
+    fun updateLigaWithImage(ligaId: String, imageUri: Uri, context: Context) {
+        _isLoading.value = true
+        viewModelScope.launch {
+            try {
+                val contentResolver = context.contentResolver
+                val mimeType = contentResolver.getType(imageUri) ?: ""
+
+                if (mimeType !in listOf("image/png", "image/jpg", "image/jpeg")) {
+                    _errorMessage.value = Event("Formato de imagen no permitido (solo png, jpg, jpeg).")
+                    return@launch
+                }
+
+                val inputStream = contentResolver.openInputStream(imageUri)!!
+                val bytes = inputStream.readBytes()
+                val requestFile = bytes.toRequestBody(mimeType.toMediaTypeOrNull())
+                val body = MultipartBody.Part.createFormData(
+                    "image",
+                    "leagueImage.${mimeType.substringAfter("/")}",
+                    requestFile
+                )
+
+                val response = RetrofitClient.ligaService.uploadLeagueImage(ligaId, body)
+
+                if (response.isSuccessful) {
+                    _errorMessage.value = Event("Imagen actualizada con éxito.")
+                    fetchUserLeagues() // Actualizamos la lista de ligas.
+                    // Actualizamos el timestamp para forzar la recarga de las imágenes.
+                    _lastImageUpdateTs.value = System.currentTimeMillis()
+                } else {
+                    _errorMessage.value = Event("Error al subir imagen: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = Event("Error inesperado: ${e.localizedMessage}")
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+
 }

@@ -1,5 +1,6 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -44,6 +45,7 @@ fun HomeView(
     navController: NavController,
     viewModel: HomeViewModel
 ) {
+    BackHandler {}
     Column(
         modifier = Modifier
             .fillMaxSize()
