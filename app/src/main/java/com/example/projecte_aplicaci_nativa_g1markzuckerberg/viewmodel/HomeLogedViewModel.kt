@@ -10,28 +10,25 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient.authRepository
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.CreateLigaRequest
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.CreateLigaResponse
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.Fixture
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.JoinLigaResponse
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.JornadaResponse
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.LigaConPuntos
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.repository.AuthRepository
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.Event
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
 
-class HomeLogedViewModel(private val authRepository: AuthRepository) : ViewModel() {
+class HomeLogedViewModel : ViewModel() {
 
     // Datos de la jornada y fixtures.
     private val _jornadaData = mutableStateOf<JornadaResponse?>(null)
     val jornadaData: State<JornadaResponse?> = _jornadaData
 
     private val _fixturesState = mutableStateOf<List<Fixture>>(emptyList())
-    val fixturesState: State<List<Fixture>> = _fixturesState
 
     // Evento para la creación de liga.
     private val _createLigaResult = MutableLiveData<Event<CreateLigaResponse?>>()
@@ -50,17 +47,16 @@ class HomeLogedViewModel(private val authRepository: AuthRepository) : ViewModel
     val userLeagues: LiveData<List<LigaConPuntos>> = _userLeagues
 
     // Estado de carga.
-    private val _isLoading = MutableLiveData<Boolean>(true)
+    private val _isLoading = MutableLiveData(true)
     val isLoading: LiveData<Boolean> get() = _isLoading
 
     // Abandonar Liga
     private val _leaveLigaResult = MutableLiveData<Event<String>>()
-    val leaveLigaResult: LiveData<Event<String>> = _leaveLigaResult
 
     private val _userEmail = MutableLiveData<String>()
     val userEmail: LiveData<String> = _userEmail
 
-    private val _lastImageUpdateTs = MutableLiveData<Long>(System.currentTimeMillis())
+    private val _lastImageUpdateTs = MutableLiveData(System.currentTimeMillis())
     val lastImageUpdateTs: LiveData<Long> get() = _lastImageUpdateTs
 
     init {
@@ -228,7 +224,7 @@ class HomeLogedViewModel(private val authRepository: AuthRepository) : ViewModel
             }
         }
     }
-    fun fetchUserInfo() {
+    private fun fetchUserInfo() {
         viewModelScope.launch {
             try {
                 val response = RetrofitClient.userService.getMe() // Asegúrate de que este método exista

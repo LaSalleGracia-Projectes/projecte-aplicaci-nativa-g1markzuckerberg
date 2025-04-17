@@ -3,7 +3,6 @@ package com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel
 import androidx.lifecycle.*
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.LigaUsersResponse
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class LigaViewModel : ViewModel() {
@@ -23,7 +22,7 @@ class LigaViewModel : ViewModel() {
     val showCodeDialog: LiveData<Boolean> = _showCodeDialog
 
     // NUEVO: Estado de carga
-    private val _isLoading = MutableLiveData<Boolean>(true)
+    private val _isLoading = MutableLiveData(true)
     val isLoading: LiveData<Boolean> get() = _isLoading
 
     init {
@@ -46,7 +45,7 @@ class LigaViewModel : ViewModel() {
         }
     }
 
-    fun fetchCurrentJornada() {
+    private fun fetchCurrentJornada() {
         viewModelScope.launch {
             val response = RetrofitClient.service.getJornadaActual()
             if (response.isSuccessful) {

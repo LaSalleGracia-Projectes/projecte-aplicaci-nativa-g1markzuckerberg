@@ -43,7 +43,6 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.Cust
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.EditLigaDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.JoinLigaDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.LeagueCodeDialog
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.NavbarView
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.HomeLogedViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -128,7 +127,7 @@ fun HomeLogedView(
             ligaId = liga.id.toString(),
             currentName = liga.name,
             onDismiss = { editingLiga = null },
-            onSave = { newName, imageUri ->
+            onSave = { _, imageUri ->
                 editingLiga = null
                 imageUri?.let {
                     homeLogedViewModel.updateLigaWithImage(liga.id.toString(), it, context)
@@ -292,10 +291,8 @@ fun HomeLogedView(
                         LeagueRow(
                             name = liga.name,
                             puntos = liga.puntos_totales,
-                            leagueCode = liga.code,
                             leagueId = liga.id.toString(),
                             totalUsers = liga.total_users,
-                            lastImageUpdateTs = lastImageUpdateTs.toString(),
                             onClick = { navController.navigate(Routes.LigaView.createRoute(liga.code)) },
                             onShareLiga = {
                                 // Aquí puedes implementar la acción para compartir, por ejemplo:
@@ -321,6 +318,7 @@ fun HomeLogedView(
                                 }
                                 showCustomAlert = true
                             },
+                            lastImageUpdateTs = lastImageUpdateTs.toString(),
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                     }
@@ -432,7 +430,6 @@ fun SectionHeader(
 fun LeagueRow(
     name: String,
     puntos: String,
-    leagueCode: String,
     leagueId: String,
     totalUsers: String,
     onClick: () -> Unit,

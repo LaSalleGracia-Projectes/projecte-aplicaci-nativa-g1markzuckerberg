@@ -13,7 +13,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import kotlinx.coroutines.launch
 
 class RegisterViewModel : ViewModel() {
-    private val _isLoading = MutableLiveData<Boolean>(false)
+    private val _isLoading = MutableLiveData(false)
     val isLoading: LiveData<Boolean> get() = _isLoading
 
     private val _errorMessage = MutableLiveData<String?>()

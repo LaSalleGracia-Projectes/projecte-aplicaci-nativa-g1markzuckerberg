@@ -1,10 +1,13 @@
-import androidx.compose.animation.ExperimentalAnimationApi
+package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
+
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -21,38 +24,16 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.factory.HomeLogedViewModelFactory
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.NavbarView
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.view.DraftScreen
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.LoginViewModel
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.RegisterEmailViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.RegisterViewModel
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.view.HomeView
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.view.HomeLogedView
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.view.LoginScreen
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.view.RegisterScreen
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.view.RegisterView
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.view.SettingsScreen
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.view.LigaView
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.view.UserDraftView
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.DraftViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.HomeLogedViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.LigaViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.UserDraftViewModel
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.factory.LoginViewModelFactory
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.factory.RegisterEmailViewModelFactory
-import com.example.proyecte_aplicaci_nativa_g1markzuckerberg.viewmodel.HomeViewModel
 
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun EntryPoint(
     navigationController: NavHostController,
-    homeViewModel: HomeViewModel = viewModel(),
     registerViewModel: RegisterViewModel = viewModel(),
-    loginViewModel: LoginViewModel = viewModel(
-        factory = LoginViewModelFactory(RetrofitClient.authRepository)
-    ),
-    registerEmailViewModel: RegisterEmailViewModel = viewModel(
-        factory = RegisterEmailViewModelFactory(RetrofitClient.authRepository)
-    ),
     homeLogedViewModel: HomeLogedViewModel = viewModel(
         factory = HomeLogedViewModelFactory(RetrofitClient.authRepository)
     ),
@@ -82,6 +63,10 @@ fun EntryPoint(
     val showNavBar = currentRoute in routesConNavbar
 
     Scaffold(
+        modifier = Modifier
+            .fillMaxSize()
+            .consumeWindowInsets(WindowInsets.systemBars), // 👈 esto previene "salto de layout"
+        contentWindowInsets = WindowInsets.systemBars, // 👈 importante
         bottomBar = {
             if (showNavBar) {
                 // La navbar se mostrará solo en las rutas indicadas.
@@ -99,7 +84,9 @@ fun EntryPoint(
     NavHost(
         navController = navigationController,
         startDestination = Routes.Home.route,
-        modifier = Modifier.padding(innerPadding), // ✅ Aquí usas innerPadding
+        modifier = Modifier
+            .consumeWindowInsets(innerPadding) // 👈 esto previene "salto de layout"
+            .padding(innerPadding), // ✅ Aquí usas innerPadding
         enterTransition = {
             // Entrada: combina fadeIn y un pequeño zoom "in"
             fadeIn(animationSpec = tween(300))
@@ -119,7 +106,6 @@ fun EntryPoint(
         composable(Routes.Home.route) {
             HomeView(
                 navController = navigationController,
-                viewModel = homeViewModel
             )
         }
         composable(Routes.Register.route) {

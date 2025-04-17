@@ -33,7 +33,6 @@ class RegisterEmailViewModel(private val authRepository: AuthRepository) : ViewM
     val hasDigit: LiveData<Boolean> = _hasDigit
 
     private val _isPasswordValid = MutableLiveData(false)
-    val isPasswordValid: LiveData<Boolean> = _isPasswordValid
 
     // Estados de carga, error y éxito
     private val _isLoading = MutableLiveData(false)
@@ -43,7 +42,6 @@ class RegisterEmailViewModel(private val authRepository: AuthRepository) : ViewM
     val errorMessage: LiveData<String?> get() = _errorMessage
 
     private val _successMessage = MutableLiveData<String?>()
-    val successMessage: LiveData<String?> get() = _successMessage
 
     fun clearError() {
         _errorMessage.value = null

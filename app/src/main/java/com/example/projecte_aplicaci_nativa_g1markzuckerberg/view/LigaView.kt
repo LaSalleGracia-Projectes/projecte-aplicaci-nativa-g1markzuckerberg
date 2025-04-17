@@ -1,7 +1,6 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
 import LoadingTransitionScreen
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -40,10 +39,7 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.repository.AuthRepository
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.PrimaryColor
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.SecondaryColor
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.LeagueCodeDialog
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.NavbarView
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.TokenManager
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.UserImage
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.DraftViewModel
@@ -176,18 +172,14 @@ fun LigaView(
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         // Al pulsar el botón "Crear Draft"
-                        // Al pulsar el botón "Crear Draft"
                         Button(
                             onClick = {
-                                // Primero, intenta recuperar un draft existente.
                                 draftViewModel.createOrFetchDraft(
-                                    ligaId = data.liga.id,
-                                    onSuccess = {
-                                        // Si se recupera el draft, navega a DraftScreen y se mostrarán las posiciones tal como estaban.
+                                    ligaId           = data.liga.id,
+                                    onSuccess        = {
                                         navController.navigate(Routes.DraftScreen.createRoute())
                                     },
                                     onRequestFormation = {
-                                        // Si no se encontró draft, muestra el diálogo para solicitar la formación (y luego crear un draft nuevo).
                                         showCreateDraftDialog = true
                                     }
                                 )
@@ -424,14 +416,20 @@ fun LigaView(
                     draftViewModel = draftViewModel,
                     onDismiss = { showCreateDraftDialog = false },
                     onConfirm = { formation ->
-                        draftViewModel.createDraft(formation, data.liga.id) {
+                        showCreateDraftDialog = false
+
+                        draftViewModel.createAndFetchDraft(
+                            formation = formation,
+                            ligaId    = data.liga.id
+                        ) {
                             navController.navigate(Routes.DraftScreen.createRoute())
                         }
                     }
                 )
             }
+
         }
-        if (showCodeDialog && ligaData != null) {
+            if (showCodeDialog && ligaData != null) {
             LeagueCodeDialog(
                 leagueCode = ligaData!!.liga.code,
                 onDismiss = { ligaViewModel.toggleShowCodeDialog() }

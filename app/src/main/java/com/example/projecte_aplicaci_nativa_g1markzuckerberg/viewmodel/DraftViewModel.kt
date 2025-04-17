@@ -27,6 +27,45 @@ class DraftViewModel : ViewModel() {
     fun setSelectedFormation(formation: String) {
         _selectedFormation.value = formation
     }
+    fun createAndFetchDraft(
+        formation: String,
+        ligaId: Int,
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+            // 1) Intentamos el POST, pero capturamos y sólo logueamos errores de parseo:
+            try {
+                val createResp = RetrofitClient.draftService.createDraft(
+                    CreateDraftRequest(formation, ligaId)
+                )
+                Log.d("DraftViewModel",
+                    "createDraft() code=${createResp.code()} — ignoramos body")
+            } catch (ex: Exception) {
+                Log.w("DraftViewModel",
+                    "Error parseando createDraft, lo ignoramos y seguimos al GET", ex)
+            }
+
+            // 2) Ahora, hagamos siempre el GET /draft
+            try {
+                val fetchResp = RetrofitClient.draftService.getTempDraft(ligaId)
+                if (fetchResp.isSuccessful) {
+                    _tempDraft.value = fetchResp.body()!!.tempDraft
+                    currentLigaId = ligaId
+                    Log.d("DraftViewModel", "GET tempDraft OK — navegamos")
+                    onSuccess()
+                } else {
+                    _errorMessage.value = "Error al recuperar draft: ${fetchResp.code()}"
+                    Log.e("DraftViewModel",
+                        "GET tempDraft error ${fetchResp.code()}")
+                }
+            } catch (ex: Exception) {
+                _errorMessage.value = "Error de conexión al recuperar draft: ${ex.message}"
+                Log.e("DraftViewModel", "Excepción en GET tempDraft", ex)
+            }
+        }
+    }
+
+
 
     fun createOrFetchDraft(
         ligaId: Int,
@@ -48,29 +87,6 @@ class DraftViewModel : ViewModel() {
             } catch (ex: Exception) {
                 Log.e("DraftViewModel", "Error al recuperar draft: ${ex.message}")
                 onRequestFormation()
-            }
-        }
-    }
-
-    fun createDraft(
-        formation: String,
-        ligaId: Int,
-        onSuccess: () -> Unit
-    ) {
-        viewModelScope.launch {
-            try {
-                val request = CreateDraftRequest(formation = formation, ligaId = ligaId)
-                Log.d("DraftViewModel", "Enviando request de crear draft: $request")
-                val response = RetrofitClient.draftService.createDraft(request)
-                if (response.isSuccessful) {
-                    _tempDraft.value = response.body()!!.tempDraft
-                    currentLigaId = ligaId
-                    onSuccess()
-                } else {
-                    _errorMessage.value = "Error al crear el draft: ${response.code()} ${response.message()}"
-                }
-            } catch (ex: Exception) {
-                _errorMessage.value = "Error de conexión: ${ex.message}"
             }
         }
     }
