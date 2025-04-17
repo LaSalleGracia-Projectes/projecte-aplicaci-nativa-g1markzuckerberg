@@ -32,9 +32,11 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.BeyondBoundsLayout
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
@@ -42,10 +44,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.times
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
@@ -111,35 +115,29 @@ fun initializeSelectedPlayersFromDraft(
 fun DraftScreen(
     viewModel: DraftViewModel,
     navController: NavController,
-    innerPadding: PaddingValues,
+    innerPadding: PaddingValues,   // viene del Scaffold
 ) {
+    /* -------- datos y estado (idéntico a tu versión) -------- */
     val tempDraftResponse by viewModel.tempDraft.observeAsState()
-    // Si tempDraftResponse no es nulo, parseamos el campo playerOptions (que viene como String).
-    // Usamos derivedStateOf dentro de remember para calcular parsedPlayerOptions sin invocar llamadas composables directamente.
+
     val parsedPlayerOptions by remember(tempDraftResponse) {
-        derivedStateOf {
-            tempDraftResponse?.playerOptions?.let { raw ->
-                parsePlayerOptions(raw)
-            } ?: emptyList()
-        }
+        derivedStateOf { tempDraftResponse?.playerOptions?.let(::parsePlayerOptions) ?: emptyList() }
     }
-    // Para mostrar las cartas, convertimos cada grupo (los 4 primeros elementos) a PlayerOption.
+
     val playerOptionsForDisplay: List<List<PlayerOption>> = remember(parsedPlayerOptions) {
         parsedPlayerOptions.mapNotNull { group ->
             if (group.size >= 4) {
                 group.take(4).mapNotNull { item ->
-                    if (item is Map<*, *>) {
-                        Gson().fromJson(Gson().toJson(item), PlayerOption::class.java)
-                    } else if (item is PlayerOption) {
-                        item
-                    } else null
+                    when (item) {
+                        is Map<*, *>    -> Gson().fromJson(Gson().toJson(item), PlayerOption::class.java)
+                        is PlayerOption -> item
+                        else            -> null
+                    }
                 }
-            } else {
-                null
-            }
+            } else null
         }
     }
-    // Mapa de jugadores seleccionados.
+
     val selectedPlayers = remember { mutableStateMapOf<String, PlayerOption?>() }
     LaunchedEffect(tempDraftResponse, parsedPlayerOptions) {
         if (parsedPlayerOptions.isNotEmpty() && tempDraftResponse != null) {
@@ -154,20 +152,15 @@ fun DraftScreen(
         }
     }
 
-    val headerHeight = 110.dp
-    val buttonHeight = 34.dp
-
-    // Función para construir la estructura que se enviará en el update.
     fun buildPositionOptions(): List<List<Any?>> {
         val keys = getPositionKeys(viewModel.selectedFormation.value)
-        val options = parsedPlayerOptions.mapIndexed { index, group ->
+        return parsedPlayerOptions.mapIndexed { index, group ->
             val key = keys.getOrElse(index) { "grupo_$index" }
-            // Convertir los 4 primeros elementos a PlayerOption
             val players = group.take(4).mapNotNull { item ->
                 when (item) {
-                    is Map<*, *> -> Gson().fromJson(Gson().toJson(item), PlayerOption::class.java)
+                    is Map<*, *>    -> Gson().fromJson(Gson().toJson(item), PlayerOption::class.java)
                     is PlayerOption -> item
-                    else -> null
+                    else            -> null
                 }
             }
             val chosenIndex = selectedPlayers[key]?.let { sel ->
@@ -175,110 +168,135 @@ fun DraftScreen(
             }
             listOf(players[0], players[1], players[2], players[3], chosenIndex)
         }
-        Log.d("DraftScreen", "buildPositionOptions: $options")
-        return options
     }
 
-    fun updateDraftOnServer() {
-        Log.d("DraftScreen", "Current liga id: ${viewModel.currentLigaId}")
-        viewModel.updateDraft(viewModel.currentLigaId, buildPositionOptions()) {
-            Log.d("DraftScreen", "Draft actualizado en el servidor")
-        }
-    }
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .padding(innerPadding)) {
-        // HEADER
-        Box(
+    fun updateDraftOnServer() =
+        viewModel.updateDraft(viewModel.currentLigaId, buildPositionOptions()) { }
+
+    /* ----------  constantes UI ---------- */
+    val headerHeight = 110.dp
+    val buttonHeight = 34.dp
+    val bottomBarPadding = innerPadding.calculateBottomPadding()
+
+    /* ==========  LAY OUT  ========== */
+    Box(Modifier.fillMaxSize()) {
+
+        /* ---- FONDO del campo (solo entre header y bottom bar) ---- */
+        Image(
+            painter = painterResource(R.drawable.futbol_pitch_background),
+            contentDescription = null,
+            contentScale = ContentScale.FillBounds,   // deforma para rellenar
             modifier = Modifier
-                .fillMaxWidth()
-                .height(headerHeight)
-                .background(
-                    Brush.horizontalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.primary,
-                            MaterialTheme.colorScheme.secondary
+                .fillMaxSize()
+                .padding(                       // respeta header y nav bar
+                    top    = headerHeight,
+                )
+                .graphicsLayer {                // “ensanchar” sin mover verticalmente
+                    scaleX = 1.25f              // 25 % más ancho
+                }
+                .clipToBounds()                 // que no se salga del área
+                .zIndex(-1f)
+        )
+
+        /* ---- CONTENIDO (header + cartas) ---- */
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                // solo respetamos top/left/right del Scaffold,
+                // NO el bottom, para que no quede franja blanca
+                .padding(
+                    start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
+                    end   = innerPadding.calculateEndPadding(LayoutDirection.Ltr),
+                    top   = innerPadding.calculateTopPadding()
+                )
+        ) {
+
+            /* ----------  HEADER  ---------- */
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(headerHeight)
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(
+                                MaterialTheme.colorScheme.primary,
+                                MaterialTheme.colorScheme.secondary
+                            )
                         )
                     )
-                )
-                .padding(horizontal = 20.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Row(
-                modifier = Modifier.fillMaxSize(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .padding(horizontal = 20.dp),
+                contentAlignment = Alignment.Center
             ) {
-                IconButton(
-                    onClick = { navController.popBackStack() },
-                    modifier = Modifier.size(28.dp)
+                Row(
+                    Modifier.fillMaxSize(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Volver",
-                        tint = MaterialTheme.colorScheme.onPrimary
-                    )
-                }
-                Text(
-                    text = "DRAFT",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = 0.3.sp
-                    ),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.weight(1f)
-                )
-                FilledTonalButton(
-                    onClick = {
-                        Log.d("DraftScreen", "Botón Guardar pulsado")
-                        viewModel.saveDraft(selectedPlayers) {
-                            Log.d("DraftScreen", "Draft guardado correctamente, navegando a Home")
-                            navController.navigate(Routes.HomeLoged.route)
-                        }
-                    },
-                    shape = RoundedCornerShape(50.dp),
-                    colors = ButtonDefaults.filledTonalButtonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = Color.White
-                    ),
-                    modifier = Modifier.height(buttonHeight)
-                ) {
+                    IconButton(
+                        onClick = { navController.popBackStack() },
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
                     Text(
-                        "Guardar",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp)
+                        "DRAFT",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = 0.3.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.weight(1f)
                     )
+                    FilledTonalButton(
+                        onClick = {
+                            viewModel.saveDraft(selectedPlayers) {
+                                navController.navigate(Routes.HomeLoged.route)
+                            }
+                        },
+                        shape = RoundedCornerShape(50.dp),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = Color.White
+                        ),
+                        modifier = Modifier.height(buttonHeight)
+                    ) {
+                        Text(
+                            "Guardar",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp)
+                        )
+                    }
                 }
             }
-        }
-        // CONTENIDO
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.futbol_pitch_background),
-                contentDescription = "Campo de fútbol",
-                contentScale = ContentScale.Fit,
+
+            /* ----------  CAMPO & CARTAS  ---------- */
+            Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .graphicsLayer { scaleX = 1.25f }
-            )
-            DraftLayout(
-                formation = viewModel.selectedFormation.value,
-                playerOptions = playerOptionsForDisplay,
-                selectedPlayers = selectedPlayers,
-                onPlayerSelectedWithUpdate = { key, chosenPlayer ->
-                    selectedPlayers[key] = chosenPlayer
-                    updateDraftOnServer()
-                },
-                updateDraftOnServer = { updateDraftOnServer() }
-            )
+                    .weight(1f)     // ocupa todo el alto debajo del header
+                    .fillMaxWidth()
+            ) {
+                DraftLayout(
+                    formation   = viewModel.selectedFormation.value,
+                    playerOptions       = playerOptionsForDisplay,
+                    selectedPlayers     = selectedPlayers,
+                    onPlayerSelectedWithUpdate = { key, player ->
+                        selectedPlayers[key] = player
+                        updateDraftOnServer()
+                    },
+                    updateDraftOnServer = { updateDraftOnServer() }
+                )
+            }
         }
     }
 }
+
+
+
 
 @Composable
 fun getPlayerCardDimensions(): Pair<Dp, Dp> {
