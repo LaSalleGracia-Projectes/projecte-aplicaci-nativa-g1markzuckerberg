@@ -4,7 +4,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -14,7 +13,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -22,14 +20,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
-import com.example.proyecte_aplicaci_nativa_g1markzuckerberg.viewmodel.HomeViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.ui.graphics.Color
 
 
-private val BluePrimary @Composable
-get() = colorScheme.primary
+
 
 private val GraySecondary @Composable
 get() = colorScheme.surfaceVariant
@@ -43,7 +39,6 @@ get() = colorScheme.onSurfaceVariant
 @Composable
 fun HomeView(
     navController: NavController,
-    viewModel: HomeViewModel
 ) {
     BackHandler {}
     Column(
@@ -59,8 +54,8 @@ fun HomeView(
                 .background(
                     Brush.horizontalGradient(
                         colors = listOf(
-                            MaterialTheme.colorScheme.primary,
-                            MaterialTheme.colorScheme.secondary
+                            colorScheme.primary,
+                            colorScheme.secondary
                         )
                     )
                 ),
@@ -111,7 +106,7 @@ fun HomeView(
                     .height(56.dp)
             )
             // Botón para Iniciar Sesión, con fondo gris
-            androidx.compose.material3.Button(
+            Button(
                 onClick = { navController.navigate(Routes.Login.route) },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -136,11 +131,11 @@ fun GradientButton(
     modifier: Modifier = Modifier,
     gradient: Brush = Brush.horizontalGradient(
         colors = listOf(
-            MaterialTheme.colorScheme.primary,
-            MaterialTheme.colorScheme.secondary
+            colorScheme.primary,
+            colorScheme.secondary
         )
     ),
-    textColor: Color = MaterialTheme.colorScheme.onPrimary
+    textColor: Color = colorScheme.onPrimary
 ) {
     Button(
         onClick = onClick,

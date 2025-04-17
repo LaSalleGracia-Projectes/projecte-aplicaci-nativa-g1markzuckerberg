@@ -26,8 +26,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.NavbarView
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.Tab
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.UserDraftViewModel
 import androidx.compose.ui.text.font.FontWeight
@@ -280,22 +278,6 @@ fun UserDraftView(
                 title = data.title,
                 message = data.message,
                 onAccept = { resultDialogData = null }
-            )
-        }
-
-        // NAVBAR
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-        ) {
-            NavbarView(
-                navController = navController,
-                onProfileClick = { /* Acción perfil */ },
-                onHomeClick = { navController.navigate(Routes.HomeLoged.route) },
-                onNotificationsClick = { /* Acción notificaciones */ },
-                onSettingsClick = { navController.navigate(Routes.Settings.route) },
-                modifier = Modifier.fillMaxWidth()
             )
         }
     }

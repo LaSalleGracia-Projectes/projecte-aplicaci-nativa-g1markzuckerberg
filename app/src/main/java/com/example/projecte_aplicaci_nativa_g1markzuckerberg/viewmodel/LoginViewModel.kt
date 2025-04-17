@@ -39,7 +39,7 @@ class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
     fun togglePasswordVisibility() {
         _passwordVisible.value = _passwordVisible.value?.not() ?: false
     }
-    private val _isLoading = MutableLiveData<Boolean>(false)
+    private val _isLoading = MutableLiveData(false)
     val isLoading: LiveData<Boolean> get() = _isLoading
 
     private val _errorMessage = MutableLiveData<String?>()

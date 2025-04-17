@@ -9,7 +9,7 @@ class HomeLogedViewModelFactory(private val authRepository: AuthRepository) : Vi
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(HomeLogedViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return HomeLogedViewModel(authRepository) as T
+            return HomeLogedViewModel() as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
