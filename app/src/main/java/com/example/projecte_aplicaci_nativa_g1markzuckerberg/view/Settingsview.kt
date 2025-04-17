@@ -35,26 +35,10 @@ fun SettingsView(
     val isLoading by viewModel.isLoading.observeAsState(false)
     val errorMessage by viewModel.errorMessage.observeAsState()
 
-    // Usamos Scaffold con bottomBar
-    Scaffold(
-        bottomBar = {
-            // Aquí declaramos la navbar
-            NavbarView(
-                navController = navController,
-                onProfileClick = { /* TODO */ },
-                onHomeClick = { navController.navigate(Routes.HomeLoged.route) },
-                onNotificationsClick = { /* TODO */ },
-                onSettingsClick = { },
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-    ) { paddingValues ->
-        // 'paddingValues' incluye el espacio reservado para la bottomBar,
-        // así que podemos aplicarlo a nuestro contenido
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues) // Evita que se solape el contenido con la navbar
                 .background(Color.LightGray)
                 .padding(16.dp),
             verticalArrangement = Arrangement.SpaceBetween
@@ -99,7 +83,6 @@ fun SettingsView(
             }
         }
     }
-}
 
 @Composable
 fun AjustesSeccion(titulo: String) {
