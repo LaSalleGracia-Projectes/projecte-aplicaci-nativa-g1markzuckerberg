@@ -30,8 +30,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -382,14 +385,14 @@ fun CustomAlertDialog(
             modifier = Modifier.fillMaxWidth(0.9f)
         ) {
             Column {
-                // Encabezado con gradiente, siguiendo el estilo de tus diálogos
+                /* ---------- ENCABEZADO ---------- */
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(60.dp)
                         .background(
                             Brush.horizontalGradient(
-                                colors = listOf(
+                                listOf(
                                     MaterialTheme.colorScheme.primary,
                                     MaterialTheme.colorScheme.secondary
                                 )
@@ -398,37 +401,35 @@ fun CustomAlertDialog(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = title,
+                        text  = title,
                         color = Color.White,
                         style = MaterialTheme.typography.titleMedium
                     )
                 }
-                // Contenido del diálogo
+
+                /* ---------- CONTENIDO ---------- */
                 Column(modifier = Modifier.padding(16.dp)) {
+
+                    /* ← aquí convertimos **texto** en negrita */
                     Text(
-                        text = message,
+                        text = message.toAnnotatedStringWithBold(),
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    // Botones de acción: Cancelar y Confirmar
+
+                    Spacer(Modifier.height(16.dp))
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.End
                     ) {
                         TextButton(onClick = onDismiss) {
-                            Text(
-                                text = cancelButtonText,
-                                color = MaterialTheme.colorScheme.error
-                            )
+                            Text(cancelButtonText, color = MaterialTheme.colorScheme.error)
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(Modifier.width(8.dp))
                         TextButton(onClick = onConfirm) {
-                            Text(
-                                text = confirmButtonText,
-                                color = MaterialTheme.colorScheme.primary
-                            )
+                            Text(confirmButtonText, color = MaterialTheme.colorScheme.primary)
                         }
                     }
                 }
@@ -436,6 +437,28 @@ fun CustomAlertDialog(
         }
     }
 }
+
+/* ---------- helper ext. function ---------- */
+private fun String.toAnnotatedStringWithBold(): AnnotatedString {
+    val boldRegex = Regex("\\*\\*(.*?)\\*\\*")
+    return buildAnnotatedString {
+        var currentIndex = 0
+        boldRegex.findAll(this@toAnnotatedStringWithBold).forEach { match ->
+            // texto normal hasta la coincidencia
+            append(this@toAnnotatedStringWithBold.substring(currentIndex, match.range.first))
+            // texto en negrita
+            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                append(match.groupValues[1])
+            }
+            currentIndex = match.range.last + 1
+        }
+        // cola de texto normal
+        if (currentIndex < this@toAnnotatedStringWithBold.length) {
+            append(this@toAnnotatedStringWithBold.substring(currentIndex))
+        }
+    }
+}
+
 
 @Composable
 fun CustomAlertDialogSingleButton(

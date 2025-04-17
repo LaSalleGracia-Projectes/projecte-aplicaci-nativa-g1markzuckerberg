@@ -15,10 +15,11 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -36,9 +37,9 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.BeyondBoundsLayout
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -56,6 +57,8 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.PlayerOption
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.TempPlantillaResponse
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialog
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialogSingleButton
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.DraftViewModel
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -115,30 +118,34 @@ fun initializeSelectedPlayersFromDraft(
 fun DraftScreen(
     viewModel: DraftViewModel,
     navController: NavController,
-    innerPadding: PaddingValues,   // viene del Scaffold
+    innerPadding: PaddingValues
 ) {
-    /* -------- datos y estado (idéntico a tu versión) -------- */
+    /* ----------------  DATA & STATE  ---------------- */
     val tempDraftResponse by viewModel.tempDraft.observeAsState()
 
     val parsedPlayerOptions by remember(tempDraftResponse) {
         derivedStateOf { tempDraftResponse?.playerOptions?.let(::parsePlayerOptions) ?: emptyList() }
     }
 
-    val playerOptionsForDisplay: List<List<PlayerOption>> = remember(parsedPlayerOptions) {
-        parsedPlayerOptions.mapNotNull { group ->
-            if (group.size >= 4) {
-                group.take(4).mapNotNull { item ->
-                    when (item) {
-                        is Map<*, *>    -> Gson().fromJson(Gson().toJson(item), PlayerOption::class.java)
-                        is PlayerOption -> item
+    val playerOptionsForDisplay by remember(parsedPlayerOptions) {
+        mutableStateOf(
+            parsedPlayerOptions.mapNotNull { g ->
+                if (g.size >= 4) g.take(4).mapNotNull { itm ->
+                    when (itm) {
+                        is Map<*, *>    -> Gson().fromJson(Gson().toJson(itm), PlayerOption::class.java)
+                        is PlayerOption -> itm
                         else            -> null
                     }
-                }
-            } else null
-        }
+                } else null
+            }
+        )
     }
 
     val selectedPlayers = remember { mutableStateMapOf<String, PlayerOption?>() }
+
+    var showSaveDialog by remember { mutableStateOf(false) }     // ← diálogo guardar
+    var showInfoDialog by remember { mutableStateOf(false) }     // ← diálogo info
+
     LaunchedEffect(tempDraftResponse, parsedPlayerOptions) {
         if (parsedPlayerOptions.isNotEmpty() && tempDraftResponse != null) {
             selectedPlayers.clear()
@@ -154,12 +161,12 @@ fun DraftScreen(
 
     fun buildPositionOptions(): List<List<Any?>> {
         val keys = getPositionKeys(viewModel.selectedFormation.value)
-        return parsedPlayerOptions.mapIndexed { index, group ->
-            val key = keys.getOrElse(index) { "grupo_$index" }
-            val players = group.take(4).mapNotNull { item ->
-                when (item) {
-                    is Map<*, *>    -> Gson().fromJson(Gson().toJson(item), PlayerOption::class.java)
-                    is PlayerOption -> item
+        return parsedPlayerOptions.mapIndexed { idx, grp ->
+            val key = keys.getOrElse(idx) { "grupo_$idx" }
+            val players = grp.take(4).mapNotNull { itm ->
+                when (itm) {
+                    is Map<*, *>    -> Gson().fromJson(Gson().toJson(itm), PlayerOption::class.java)
+                    is PlayerOption -> itm
                     else            -> null
                 }
             }
@@ -171,39 +178,32 @@ fun DraftScreen(
     }
 
     fun updateDraftOnServer() =
-        viewModel.updateDraft(viewModel.currentLigaId, buildPositionOptions()) { }
+        viewModel.updateDraft(viewModel.currentLigaId, buildPositionOptions()) {}
 
-    /* ----------  constantes UI ---------- */
-    val headerHeight = 110.dp
-    val buttonHeight = 34.dp
-    val bottomBarPadding = innerPadding.calculateBottomPadding()
+    /* ----------------  CONSTANTES UI  ---------------- */
+    val headerHeight  = 110.dp
+    val buttonHeight  = 34.dp
 
-    /* ==========  LAY OUT  ========== */
+    /* =================  LAYOUT  ================= */
     Box(Modifier.fillMaxSize()) {
 
-        /* ---- FONDO del campo (solo entre header y bottom bar) ---- */
+        /* ----------  FONDO  ---------- */
         Image(
             painter = painterResource(R.drawable.futbol_pitch_background),
             contentDescription = null,
-            contentScale = ContentScale.FillBounds,   // deforma para rellenar
+            contentScale = ContentScale.FillBounds,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(                       // respeta header y nav bar
-                    top    = headerHeight,
-                )
-                .graphicsLayer {                // “ensanchar” sin mover verticalmente
-                    scaleX = 1.25f              // 25 % más ancho
-                }
-                .clipToBounds()                 // que no se salga del área
+                .padding(top = headerHeight)
+                .graphicsLayer { scaleX = 1.25f }
+                .clipToBounds()
                 .zIndex(-1f)
         )
 
-        /* ---- CONTENIDO (header + cartas) ---- */
+        /* ----------  CONTENIDO (header + cartas)  ---------- */
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                // solo respetamos top/left/right del Scaffold,
-                // NO el bottom, para que no quede franja blanca
                 .padding(
                     start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
                     end   = innerPadding.calculateEndPadding(LayoutDirection.Ltr),
@@ -211,7 +211,7 @@ fun DraftScreen(
                 )
         ) {
 
-            /* ----------  HEADER  ---------- */
+            /* ---------  HEADER  --------- */
             Box(
                 Modifier
                     .fillMaxWidth()
@@ -224,89 +224,144 @@ fun DraftScreen(
                             )
                         )
                     )
-                    .padding(horizontal = 20.dp),
-                contentAlignment = Alignment.Center
+                    .padding(horizontal = 20.dp)
             ) {
-                Row(
-                    Modifier.fillMaxSize(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                IconButton(
+                    onClick = { navController.popBackStack() },
+                    modifier = Modifier
+                        .size(28.dp)
+                        .align(Alignment.CenterStart)
                 ) {
-                    IconButton(
-                        onClick = { navController.popBackStack() },
-                        modifier = Modifier.size(28.dp)
-                    ) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver",
-                            tint = MaterialTheme.colorScheme.onPrimary
-                        )
-                    }
-                    Text(
-                        "DRAFT",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = 0.3.sp
-                        ),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.weight(1f)
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Volver",
+                        tint = MaterialTheme.colorScheme.onPrimary
                     )
-                    FilledTonalButton(
-                        onClick = {
-                            viewModel.saveDraft(selectedPlayers) {
-                                navController.navigate(Routes.HomeLoged.route)
-                            }
-                        },
-                        shape = RoundedCornerShape(50.dp),
-                        colors = ButtonDefaults.filledTonalButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = Color.White
-                        ),
-                        modifier = Modifier.height(buttonHeight)
-                    ) {
-                        Text(
-                            "Guardar",
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp)
-                        )
-                    }
+                }
+
+                Text(
+                    "DRAFT",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontSize      = 20.sp,
+                        fontWeight    = FontWeight.ExtraBold,
+                        letterSpacing = 0.3.sp
+                    ),
+                    color     = MaterialTheme.colorScheme.onPrimary,
+                    textAlign = TextAlign.Center,
+                    modifier  = Modifier.align(Alignment.Center)   // ← centrado real
+                )
+
+                FilledTonalButton(
+                    onClick = { showSaveDialog = true },          // ← abrir diálogo
+                    shape   = RoundedCornerShape(50.dp),
+                    colors  = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor   = Color.White
+                    ),
+                    modifier = Modifier
+                        .height(buttonHeight)
+                        .align(Alignment.CenterEnd)
+                ) {
+                    Text("Guardar", style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp))
                 }
             }
 
-            /* ----------  CAMPO & CARTAS  ---------- */
+            /* ---------  CAMPO & CARTAS  --------- */
             Box(
                 modifier = Modifier
-                    .weight(1f)     // ocupa todo el alto debajo del header
+                    .weight(1f)
                     .fillMaxWidth()
             ) {
                 DraftLayout(
-                    formation   = viewModel.selectedFormation.value,
+                    formation           = viewModel.selectedFormation.value,
                     playerOptions       = playerOptionsForDisplay,
                     selectedPlayers     = selectedPlayers,
-                    onPlayerSelectedWithUpdate = { key, player ->
-                        selectedPlayers[key] = player
+                    onPlayerSelectedWithUpdate = { k, p ->
+                        selectedPlayers[k] = p
                         updateDraftOnServer()
                     },
                     updateDraftOnServer = { updateDraftOnServer() }
                 )
             }
         }
+
+        /* ----------  BOTÓN INFO FLOTANTE  ---------- */
+        val bottomInset = innerPadding.calculateBottomPadding()
+        val bottomPad   = (bottomInset - 28.dp).coerceAtLeast(0.dp)   // ↓ media altura del botón
+
+        IconButton(
+            onClick = { showInfoDialog = true },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(
+                    end   = 20.dp,
+                    bottom = bottomPad      // ahora está casi pegado al borde
+                )
+                .size(56.dp)
+                .background(MaterialTheme.colorScheme.primary, CircleShape)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Info,
+                contentDescription = "Información",
+                tint = Color.White,
+                modifier = Modifier.size(28.dp)
+            )
+        }
     }
+
+        /* -------------  DIÁLOGO CONFIRMAR GUARDAR ------------- */
+    if (showSaveDialog) {
+        CustomAlertDialog(
+            title   = "¿Guardar plantilla?",
+            message = "¿Estás seguro de que quieres guardar la plantilla?\n\n" +
+                    "Una vez la guardes se enviará la convocatoria y **no podrás volver a editarla**.",
+            confirmButtonText = "Guardar",
+            cancelButtonText  = "Cancelar",
+            onDismiss = { showSaveDialog = false },
+            onConfirm = {
+                showSaveDialog = false
+                viewModel.saveDraft(selectedPlayers) {
+                    navController.navigate(Routes.HomeLoged.route)
+                }
+            }
+        )
+    }
+
+    /* -------------  DIÁLOGO INSTRUCCIONES ------------- */
+    if (showInfoDialog) {
+        CustomAlertDialogSingleButton(
+            title   = "Instrucciones",
+            message = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. " +
+                    "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+            confirmButtonText = "Cerrar",
+            onAccept = { showInfoDialog = false }     // cierra el diálogo
+        )
+    }
+
 }
+
+
 
 
 
 
 @Composable
 fun getPlayerCardDimensions(): Pair<Dp, Dp> {
-    val configuration = LocalConfiguration.current
-    val screenWidth = configuration.screenWidthDp.dp
-    val availableWidth = screenWidth - 24.dp
-    val cardWidth = (availableWidth - (3 * 8.dp)) / 4
-    val cardHeight = cardWidth * 122f / 80f
-    return Pair(cardWidth, cardHeight)
+    val density        = LocalDensity.current
+    val screenWidthDp  = LocalConfiguration.current.screenWidthDp.dp
+
+    val availableWidth = screenWidthDp - 24.dp                // padding lateral (12×2)
+    val cardWidth      = (availableWidth - (3 * 8.dp)) / 4
+
+    // 122:80 + margen -> redondeamos siempre hacia ARRIBA
+    val cardHeight = with(density) {
+        kotlin.math.ceil(cardWidth.toPx() * 122f / 80f).toDp() + 6.dp // +4 dp
+    }
+
+    return cardWidth to cardHeight
 }
+
+
 
 @SuppressLint("RememberReturnType")
 @Composable
@@ -587,9 +642,8 @@ fun CompactPlayerCard(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(6.dp),
+                    .padding(start = 6.dp, top = 6.dp, end = 6.dp, bottom = 6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Top
             ) {
                 Box(
                     modifier = Modifier
@@ -620,6 +674,7 @@ fun CompactPlayerCard(
                     color = Color.DarkGray,
                     textAlign = TextAlign.Center
                 )
+                Spacer(modifier = Modifier.weight(1f))
                 Row(
                     modifier = Modifier
                         .padding(top = 2.dp)
