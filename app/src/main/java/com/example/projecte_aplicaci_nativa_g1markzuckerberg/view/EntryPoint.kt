@@ -85,8 +85,8 @@ fun EntryPoint(
         navController = navigationController,
         startDestination = Routes.Home.route,
         modifier = Modifier
-            .consumeWindowInsets(innerPadding) // 👈 esto previene "salto de layout"
-            .padding(innerPadding), // ✅ Aquí usas innerPadding
+            .consumeWindowInsets(innerPadding)
+            .padding(innerPadding),
         enterTransition = {
             // Entrada: combina fadeIn y un pequeño zoom "in"
             fadeIn(animationSpec = tween(300))
@@ -154,7 +154,7 @@ fun EntryPoint(
             val userPhotoUrl = backStackEntry.arguments?.getString("userPhotoUrl") ?: ""
             UserDraftView(
                 navController = navigationController,
-                userDraftViewModel = UserDraftViewModel(), // O viewModel() si usas Hilt u otro inyector
+                userDraftViewModel = UserDraftViewModel(),
                 leagueId = leagueId,
                 userId = userId,
                 userName = userName,
@@ -162,15 +162,12 @@ fun EntryPoint(
             )
         }
         composable(Routes.DraftScreen.route) {
-            // Obtén el ViewModel usando el scope actual de la navegación
             DraftScreen(
                 navController = navigationController,
                 viewModel = draftViewModel,
                 innerPadding = innerPadding
             )
         }
-
-
     }
 }
-    }
+}
