@@ -4,7 +4,11 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -82,6 +86,10 @@ fun EntryPoint(
     val showNavBar = currentRoute in routesConNavbar
 
     Scaffold(
+        modifier = Modifier
+            .fillMaxSize()
+            .consumeWindowInsets(WindowInsets.systemBars), // 👈 esto previene "salto de layout"
+        contentWindowInsets = WindowInsets.systemBars, // 👈 importante
         bottomBar = {
             if (showNavBar) {
                 // La navbar se mostrará solo en las rutas indicadas.
@@ -99,7 +107,9 @@ fun EntryPoint(
     NavHost(
         navController = navigationController,
         startDestination = Routes.Home.route,
-        modifier = Modifier.padding(innerPadding), // ✅ Aquí usas innerPadding
+        modifier = Modifier
+            .consumeWindowInsets(innerPadding) // 👈 esto previene "salto de layout"
+            .padding(innerPadding), // ✅ Aquí usas innerPadding
         enterTransition = {
             // Entrada: combina fadeIn y un pequeño zoom "in"
             fadeIn(animationSpec = tween(300))

@@ -60,10 +60,8 @@ fun NavbarView(
     onSettingsClick: () -> Unit = { navController.navigate(Routes.Settings.route) },
     modifier: Modifier = Modifier
 ) {
-    Row(
+    Column(
         modifier = modifier
-            .fillMaxWidth()
-            .height(56.dp)
             .background(
                 brush = Brush.horizontalGradient(
                     colors = listOf(
@@ -71,16 +69,25 @@ fun NavbarView(
                         MaterialTheme.colorScheme.secondary
                     )
                 )
-            ),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceEvenly
+            )
     ) {
-        NavBarItem(iconResId = R.drawable.ic_profile, contentDescription = "Perfil", onClick = onProfileClick)
-        VerticalDivider(color = MaterialTheme.colorScheme.onPrimary, thickness = 1.dp)
-        NavBarItem(iconResId = R.drawable.ic_home, contentDescription = "Inicio", onClick = onHomeClick)
-        VerticalDivider(color = MaterialTheme.colorScheme.onPrimary, thickness = 1.dp)
-        NavBarItem(iconResId = R.drawable.ic_notifications, contentDescription = "Notificaciones", onClick = onNotificationsClick)
-        VerticalDivider(color = MaterialTheme.colorScheme.onPrimary, thickness = 1.dp)
-        NavBarItem(iconResId = R.drawable.ic_settings, contentDescription = "Ajustes", onClick = onSettingsClick)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            NavBarItem(iconResId = R.drawable.ic_profile, contentDescription = "Perfil", onClick = onProfileClick)
+            VerticalDivider()
+            NavBarItem(iconResId = R.drawable.ic_home, contentDescription = "Inicio", onClick = onHomeClick)
+            VerticalDivider()
+            NavBarItem(iconResId = R.drawable.ic_notifications, contentDescription = "Notificaciones", onClick = onNotificationsClick)
+            VerticalDivider()
+            NavBarItem(iconResId = R.drawable.ic_settings, contentDescription = "Ajustes", onClick = onSettingsClick)
+        }
+
+        // 👇 este spacer evita el espacio blanco y el salto visual
+        Spacer(modifier = Modifier.padding(WindowInsets.navigationBars.asPaddingValues()))
     }
 }
