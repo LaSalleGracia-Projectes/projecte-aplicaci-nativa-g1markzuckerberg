@@ -64,6 +64,7 @@ fun LigaView(
     val tokenManager = TokenManager(context)
     val authRepository = AuthRepository(service = RetrofitClient.authService, tokenManager = tokenManager)
     val currentUserId = authRepository.getCurrentUserId()
+    val isFetching by draftViewModel.isFetchingDraft.observeAsState(false)
 
     LaunchedEffect(key1 = selectedJornada) {
         val jornadaParam = if (selectedJornada == 0) null else selectedJornada
@@ -74,6 +75,8 @@ fun LigaView(
 
     // Estado para mostrar el diálogo de creación de draft
     var showCreateDraftDialog by remember { mutableStateOf(false) }
+    LoadingTransitionScreen(isLoading = isFetching) {
+        // Pantalla de carga
 
     Box(modifier = Modifier.fillMaxSize()) {
         if (ligaData == null) {
@@ -437,7 +440,7 @@ fun LigaView(
         }
     }
 }
-
+}
 @Composable
 fun metallicBrushForRanking(index: Int): Brush {
     return when (index) {
