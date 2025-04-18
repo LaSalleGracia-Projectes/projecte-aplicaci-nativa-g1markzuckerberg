@@ -21,6 +21,12 @@ class DraftViewModel : ViewModel() {
     private val _selectedFormation = mutableStateOf("4-3-3")
     val selectedFormation: State<String> = _selectedFormation
 
+    private val _isFetchingDraft = MutableLiveData(false)
+    val isFetchingDraft: LiveData<Boolean> = _isFetchingDraft
+
+    private val _isSavingDraft = MutableLiveData(false)
+    val isSavingDraft: LiveData<Boolean> = _isSavingDraft
+
     var currentLigaId: Int = 0
         private set
 
@@ -72,6 +78,7 @@ class DraftViewModel : ViewModel() {
         onSuccess: () -> Unit,
         onRequestFormation: () -> Unit
     ) {
+        _isFetchingDraft.value = true
         viewModelScope.launch {
             try {
                 val response = RetrofitClient.draftService.getTempDraft(ligaId)
@@ -87,6 +94,8 @@ class DraftViewModel : ViewModel() {
             } catch (ex: Exception) {
                 Log.e("DraftViewModel", "Error al recuperar draft: ${ex.message}")
                 onRequestFormation()
+            } finally {
+                _isFetchingDraft.value = false
             }
         }
     }
@@ -136,6 +145,7 @@ class DraftViewModel : ViewModel() {
         selectedPlayers: Map<String, PlayerOption?>,
         onSuccess: () -> Unit
     ) {
+        _isSavingDraft.value = true
         viewModelScope.launch {
             Log.d("DraftViewModel", "🧠 Entrando en saveDraft()")
 
@@ -231,6 +241,8 @@ class DraftViewModel : ViewModel() {
             } catch (ex: Exception) {
                 _errorMessage.value = "Error de conexión: ${ex.message}"
                 Log.e("DraftViewModel", "❌ Excepción: ${ex.message}", ex)
+            } finally {
+                _isSavingDraft.value = false
             }
         }
     }

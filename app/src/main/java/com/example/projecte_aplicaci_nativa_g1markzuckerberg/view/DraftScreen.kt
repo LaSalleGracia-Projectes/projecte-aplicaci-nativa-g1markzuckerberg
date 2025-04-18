@@ -1,5 +1,6 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
+import LoadingTransitionScreen
 import android.annotation.SuppressLint
 import android.util.Log
 import androidx.compose.animation.AnimatedContent
@@ -23,6 +24,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -122,6 +124,7 @@ fun DraftScreen(
 ) {
     /* ----------------  DATA & STATE  ---------------- */
     val tempDraftResponse by viewModel.tempDraft.observeAsState()
+    val isSaving by viewModel.isSavingDraft.observeAsState(false)
 
     val parsedPlayerOptions by remember(tempDraftResponse) {
         derivedStateOf { tempDraftResponse?.playerOptions?.let(::parsePlayerOptions) ?: emptyList() }
@@ -145,6 +148,7 @@ fun DraftScreen(
 
     var showSaveDialog by remember { mutableStateOf(false) }     // ← diálogo guardar
     var showInfoDialog by remember { mutableStateOf(false) }     // ← diálogo info
+    var showErrorDialog  by remember { mutableStateOf(false) }   // ← nuevo
 
     LaunchedEffect(tempDraftResponse, parsedPlayerOptions) {
         if (parsedPlayerOptions.isNotEmpty() && tempDraftResponse != null) {
@@ -183,6 +187,8 @@ fun DraftScreen(
     /* ----------------  CONSTANTES UI  ---------------- */
     val headerHeight  = 110.dp
     val buttonHeight  = 34.dp
+
+    LoadingTransitionScreen(isLoading = isSaving) {
 
     /* =================  LAYOUT  ================= */
     Box(Modifier.fillMaxSize()) {
@@ -252,8 +258,14 @@ fun DraftScreen(
                 )
 
                 FilledTonalButton(
-                    onClick = { showSaveDialog = true },          // ← abrir diálogo
-                    shape   = RoundedCornerShape(50.dp),
+                    onClick = {
+                        val plantillaCompleta = selectedPlayers.values.none { it == null }
+                        if (plantillaCompleta) {
+                            showSaveDialog = true           // plantilla OK → confirmar guardado
+                        } else {
+                            showErrorDialog = true          // falta algún jugador → error
+                        }
+                    },                    shape   = RoundedCornerShape(50.dp),
                     colors  = ButtonDefaults.filledTonalButtonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor   = Color.White
@@ -321,11 +333,22 @@ fun DraftScreen(
             onConfirm = {
                 showSaveDialog = false
                 viewModel.saveDraft(selectedPlayers) {
-                    navController.navigate(Routes.HomeLoged.route)
+                    navController.popBackStack()   // ← vuelve a la pantalla anterior
                 }
             }
         )
     }
+
+    if (showErrorDialog) {
+        CustomAlertDialogSingleButton(
+            title   = "Plantilla incompleta",
+            message = "Debes seleccionar un jugador para cada posición antes de guardar la alineación.",
+            confirmButtonText = "Entendido",
+            onAccept = { showErrorDialog = false }
+        )
+    }
+
+
 
     /* -------------  DIÁLOGO INSTRUCCIONES ------------- */
     if (showInfoDialog) {
@@ -337,14 +360,11 @@ fun DraftScreen(
             onAccept = { showInfoDialog = false }     // cierra el diálogo
         )
     }
-
 }
-
-
-
-
-
-
+}
+    /* -------------  DIMENSIONES DE LAS CARTAS ------------- */
+    // Se calcula el tamaño de las cartas en función del ancho de la pantalla
+    // y se devuelve como un par (ancho, alto)
 @Composable
 fun getPlayerCardDimensions(): Pair<Dp, Dp> {
     val density        = LocalDensity.current
