@@ -230,7 +230,9 @@ fun LigaView(
                                             data.liga.id.toString(),
                                             user.usuario_id.toString(),
                                             user.username,
-                                            fullUserImageUrl
+                                            fullUserImageUrl,
+                                            createdJornada    = data.liga.created_jornada,
+                                            currentJornada
                                         )
                                     )
                                 }

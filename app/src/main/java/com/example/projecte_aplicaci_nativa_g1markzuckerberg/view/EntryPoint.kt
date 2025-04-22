@@ -145,20 +145,27 @@ fun EntryPoint(
                 navArgument("leagueId") { type = NavType.StringType },
                 navArgument("userId") { type = NavType.StringType },
                 navArgument("userName") { type = NavType.StringType },
-                navArgument("userPhotoUrl") { type = NavType.StringType }
+                navArgument("userPhotoUrl") { type = NavType.StringType },
+                navArgument("createdJornada")   { type = NavType.IntType    },
+                navArgument("currentJornada")   { type = NavType.IntType    }
             )
         ) { backStackEntry ->
             val leagueId = backStackEntry.arguments?.getString("leagueId") ?: ""
             val userId = backStackEntry.arguments?.getString("userId") ?: ""
             val userName = backStackEntry.arguments?.getString("userName") ?: ""
             val userPhotoUrl = backStackEntry.arguments?.getString("userPhotoUrl") ?: ""
+            val createdJornada   = backStackEntry.arguments!!.getInt   ("createdJornada")
+            val currentJornada   = backStackEntry.arguments!!.getInt   ("currentJornada")
+
             UserDraftView(
-                navController = navigationController,
+                navController      = navigationController,
                 userDraftViewModel = UserDraftViewModel(),
-                leagueId = leagueId,
-                userId = userId,
-                userName = userName,
-                userPhotoUrl = userPhotoUrl
+                leagueId           = leagueId,
+                userId             = userId,
+                userName           = userName,
+                userPhotoUrl       = userPhotoUrl,
+                createdJornada     = createdJornada,
+                currentJornada     = currentJornada
             )
         }
         composable(Routes.DraftScreen.route) {

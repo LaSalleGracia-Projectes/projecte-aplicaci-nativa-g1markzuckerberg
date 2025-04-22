@@ -1,47 +1,46 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
 import android.net.Uri
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.Tab
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.UserDraftViewModel
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.DpOffset
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.zIndex
+import androidx.navigation.NavController
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.ResultDialogData
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialogSingleButton
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.TrainerCard
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.UserImage
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.Tab
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.UserDraftViewModel
 import kotlinx.coroutines.launch
-
-// Define la data class fuera de la función composable
 
 @Composable
 fun UserDraftView(
@@ -50,11 +49,13 @@ fun UserDraftView(
     leagueId: String,
     userId: String,
     userName: String,
-    userPhotoUrl: String
+    userPhotoUrl: String,
+    createdJornada: Int,
+    currentJornada: Int
 ) {
     val decodedUserPhotoUrl = Uri.decode(userPhotoUrl)
 
-    // Initialize pager with 2 pages, starting on current selectedTab
+    // 1) Pager USER / DRAFT
     val selectedTab by userDraftViewModel.selectedTab.observeAsState(initial = Tab.USER)
     val pagerState = rememberPagerState(
         initialPage = if (selectedTab == Tab.USER) 0 else 1,
@@ -62,32 +63,26 @@ fun UserDraftView(
     )
     val scope = rememberCoroutineScope()
 
-    // Sync pager -> viewModel when page changes
     LaunchedEffect(pagerState.currentPage) {
         userDraftViewModel.setSelectedTab(
             if (pagerState.currentPage == 0) Tab.USER else Tab.DRAFT
         )
     }
 
-    // Fetch user info once
+    // 2) Traer info de usuario
     LaunchedEffect(leagueId, userId) {
         userDraftViewModel.fetchUserInfo(leagueId, userId)
     }
     val leagueUserResponse by userDraftViewModel.leagueUserResponse.observeAsState()
 
-    // Dropdown & dialogs state
+    // 3) Dropdowns y diálogos (igual que antes)
     var dropDownExpanded by remember { mutableStateOf(false) }
-    var anchorOffset by remember { mutableStateOf(Offset.Zero) }
-    var anchorSize   by remember { mutableStateOf(IntSize.Zero) }
-
     var showConfirmationDialog by remember { mutableStateOf(false) }
-    var confirmationAction     by remember { mutableStateOf("") }
-    var resultDialogData       by remember { mutableStateOf<ResultDialogData?>(null) }
-
-    val density = LocalDensity.current
+    var confirmationAction by remember { mutableStateOf("") }
+    var resultDialogData by remember { mutableStateOf<ResultDialogData?>(null) }
 
     Box(Modifier.fillMaxSize()) {
-        // HEADER
+        // ─── HEADER ─────────────────────────────────────────
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -100,8 +95,7 @@ fun UserDraftView(
                         )
                     )
                 )
-                .padding(horizontal = 20.dp)
-                .align(Alignment.TopStart),
+                .padding(horizontal = 20.dp),
             contentAlignment = Alignment.TopCenter
         ) {
             Column(Modifier.fillMaxSize()) {
@@ -109,13 +103,10 @@ fun UserDraftView(
                     Modifier
                         .fillMaxWidth()
                         .weight(1f),
-                    verticalAlignment   = Alignment.CenterVertically,
+                    verticalAlignment    = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    IconButton(
-                        onClick = { navController.popBackStack() },
-                        modifier = Modifier.size(28.dp)
-                    ) {
+                    IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
                             imageVector   = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Volver",
@@ -126,8 +117,7 @@ fun UserDraftView(
                         text      = userName,
                         style     = MaterialTheme.typography.titleLarge.copy(
                             fontSize   = 20.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = 0.3.sp
+                            fontWeight = FontWeight.ExtraBold
                         ),
                         color     = MaterialTheme.colorScheme.onPrimary,
                         modifier  = Modifier.weight(1f),
@@ -145,92 +135,117 @@ fun UserDraftView(
                         .fillMaxWidth()
                         .padding(vertical = 8.dp)
                 ) {
-                    TabButton(
-                        text       = "Usuario",
-                        isSelected = pagerState.currentPage == 0,
-                        onClick    = { scope.launch { pagerState.animateScrollToPage(0) } }
-                    )
-                    TabButton(
-                        text       = "Draft",
-                        isSelected = pagerState.currentPage == 1,
-                        onClick    = { scope.launch { pagerState.animateScrollToPage(1) } }
-                    )
+                    TabButton("Usuario", pagerState.currentPage == 0) {
+                        scope.launch { pagerState.animateScrollToPage(0) }
+                    }
+                    TabButton("Draft",   pagerState.currentPage == 1) {
+                        scope.launch { pagerState.animateScrollToPage(1) }
+                    }
                 }
             }
         }
 
-        // PAGER con swipe horizontal
+        // ─── PAGER ──────────────────────────────────────────
         HorizontalPager(
             state = pagerState,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 130.dp, start = 16.dp, end = 16.dp)
-                .align(Alignment.TopStart)
+                .padding(top = 130.dp)
         ) { page ->
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 100.dp)
-            ) {
-                if (page == 0) {
-                    // === PÁGINA USUARIO ===
-                    if (leagueUserResponse != null) {
-                        item {
+            if (page == 0) {
+                // === USUARIO ===
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    contentPadding = PaddingValues(bottom = 56.dp)
+                ) {
+                    item {
+                        leagueUserResponse?.let { resp ->
                             Box(Modifier.wrapContentSize()) {
                                 TrainerCard(
-                                    imageUrl     = RetrofitClient.BASE_URL.trimEnd('/') + leagueUserResponse!!.user.imageUrl,
-                                    name         = leagueUserResponse!!.user.username,
-                                    birthDate    = leagueUserResponse!!.user.birthDate,
-                                    isCaptain    = leagueUserResponse!!.user.is_capitan,
-                                    puntosTotales= leagueUserResponse!!.user.puntos_totales,
-                                    onInfoClick  = { dropDownExpanded = true }
+                                    imageUrl      = RetrofitClient.BASE_URL.trimEnd('/') + resp.user.imageUrl,
+                                    name          = resp.user.username,
+                                    birthDate     = resp.user.birthDate,
+                                    isCaptain     = resp.user.is_capitan,
+                                    puntosTotales = resp.user.puntos_totales,
+                                    onInfoClick   = { dropDownExpanded = true }
                                 )
-                                // Anchor para el dropdown
-                                Box(
-                                    modifier = Modifier
-                                        .align(Alignment.TopEnd)
-                                        .size(40.dp)
-                                        .zIndex(1f)
-                                        .clickable { dropDownExpanded = true }
-                                        .onGloballyPositioned { coords ->
-                                            anchorOffset = coords.localToRoot(Offset.Zero)
-                                            anchorSize   = coords.size
-                                        }
+                            }
+                        } ?: Text("Cargando datos…")
+                    }
+                }
+            } else { /* ---------- PÁGINA DRAFT ---------- */
+                val jornadas = remember(createdJornada, currentJornada) {
+                    (createdJornada..currentJornada).toList()
+                }
+                var selectedJornada by remember { mutableIntStateOf(currentJornada) }
+
+                Column(modifier = Modifier.fillMaxSize()) {
+
+                    /* 1️⃣  LazyRow — SIEMPRE visible arriba */
+                    LazyRow(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        contentPadding        = PaddingValues(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(jornadas) { j ->
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (j == selectedJornada)
+                                            MaterialTheme.colorScheme.secondary
+                                        else
+                                            MaterialTheme.colorScheme.primary
+                                    )
+                                    .clickable {
+                                        selectedJornada = j
+                                        // TODO: userDraftViewModel.fetchUserDraft(...)
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    "$j",
+                                    fontSize   = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color      = MaterialTheme.colorScheme.onPrimary
                                 )
                             }
                         }
-                    } else {
-                        item {
-                            Text("Cargando datos del usuario...")
-                        }
                     }
-                } else {
-                    // === PÁGINA DRAFT ===
-                    item {
-                        Text("Contenido de Draft (pendiente)")
+
+                    /* 2️⃣  Lo que queda de alto: campo + contenido */
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)   // ocupa TODO tras la LazyRow
+                            .fillMaxWidth()
+                    ) {
+                        Image(
+                            painter           = painterResource(R.drawable.futbol_pitch_background),
+                            contentDescription = null,
+                            modifier          = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer { scaleX = 1.25f } // opcional, como en DraftScreen
+                                .clipToBounds(),
+                            contentScale      = ContentScale.FillBounds
+                        )
+
+                        // TODO: aquí tu layout con el equipo para `selectedJornada`
                     }
                 }
             }
         }
 
-        // DropdownMenu anclado
+            // ─── DROPDOWN / DIÁLOGOS ───────────────────────────
         DropdownMenu(
             expanded = dropDownExpanded,
-            onDismissRequest = { dropDownExpanded = false },
-            offset = with(density) {
-                DpOffset(
-                    x = anchorOffset.x.toDp(),
-                    y = (anchorOffset.y + anchorSize.height).toDp()
-                )
-            },
-            modifier = Modifier
-                .wrapContentSize()
-                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
-                .clip(RoundedCornerShape(8.dp))
+            onDismissRequest = { dropDownExpanded = false }
         ) {
             DropdownMenuItem(
-                modifier = Modifier.background(
-                    Brush.horizontalGradient(listOf(Color(0xFFFF5252), Color(0xFFB71C1C)))
-                ),
                 text = { Text("Expulsar", color = Color.White) },
                 onClick = {
                     dropDownExpanded = false
@@ -248,35 +263,35 @@ fun UserDraftView(
             )
         }
 
-        // Diálogos de confirmación e info (igual que antes)
         if (showConfirmationDialog) {
-            val title   = if (confirmationAction == "expulsar") "Confirmar Expulsión" else "Confirmar Cambio de Capitán"
-            val message = if (confirmationAction == "expulsar")
-                "¿Estás seguro que deseas expulsar a este usuario?"
+            val title = if (confirmationAction == "expulsar") "Confirmar expulsión" else "Confirmar capitán"
+            val msg   = if (confirmationAction == "expulsar")
+                "¿Seguro que deseas expulsar a este usuario?"
             else
-                "¿Estás seguro que deseas hacer capitán a este usuario?"
+                "¿Seguro que deseas hacer capitán a este usuario?"
 
             CustomAlertDialog(
                 title   = title,
-                message = message,
+                message = msg,
                 onDismiss = { showConfirmationDialog = false },
                 onConfirm = {
                     showConfirmationDialog = false
-                    when (confirmationAction) {
-                        "expulsar" -> userDraftViewModel.kickUser(leagueId, userId) { success, msg ->
-                            resultDialogData = ResultDialogData(if (success) "Éxito" else "Error", msg)
+                    if (confirmationAction == "expulsar")
+                        userDraftViewModel.kickUser(leagueId, userId) { ok, m ->
+                            resultDialogData = ResultDialogData(if (ok) "Éxito" else "Error", m)
                         }
-                        "captain"  -> userDraftViewModel.makeCaptain(leagueId, userId) { success, msg ->
-                            resultDialogData = ResultDialogData(if (success) "Éxito" else "Error", msg)
+                    else
+                        userDraftViewModel.makeCaptain(leagueId, userId) { ok, m ->
+                            resultDialogData = ResultDialogData(if (ok) "Éxito" else "Error", m)
                         }
-                    }
                 }
             )
         }
+
         resultDialogData?.let { data ->
             CustomAlertDialogSingleButton(
-                title = data.title,
-                message = data.message,
+                title    = data.title,
+                message  = data.message,
                 onAccept = { resultDialogData = null }
             )
         }
@@ -284,34 +299,24 @@ fun UserDraftView(
 }
 
 @Composable
-fun RowScope.TabButton(
-    text: String,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
+private fun RowScope.TabButton(text: String, isSelected: Boolean, onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .weight(1f)
-            .clickable { onClick() },
+            .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = text,
-            color = MaterialTheme.colorScheme.onPrimary,
-            style = MaterialTheme.typography.bodyMedium
-        )
-        Spacer(modifier = Modifier.height(4.dp))
+        Text(text = text, color = MaterialTheme.colorScheme.onPrimary)
+        Spacer(Modifier.height(4.dp))
         if (isSelected) {
             Box(
-                modifier = Modifier
+                Modifier
                     .fillMaxWidth()
                     .height(2.dp)
                     .background(MaterialTheme.colorScheme.onPrimary)
             )
         } else {
-            Spacer(modifier = Modifier.height(2.dp))
+            Spacer(Modifier.height(2.dp))
         }
     }
 }
-
-
