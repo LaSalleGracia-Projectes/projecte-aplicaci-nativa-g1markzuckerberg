@@ -127,12 +127,17 @@ fun HomeLogedView(
             ligaId = liga.id.toString(),
             currentName = liga.name,
             onDismiss = { editingLiga = null },
-            onSave = { _, imageUri ->
+            onSave = { newName, imageUri ->
                 editingLiga = null
+
+                // Cambiar el nombre de la liga
+                if (newName.isNotBlank() && newName != liga.name) {
+                    homeLogedViewModel.updateLigaName(liga.id.toString(), newName)
+                }
+                // Cambiar la imagen de la liga
                 imageUri?.let {
                     homeLogedViewModel.updateLigaWithImage(liga.id.toString(), it, context)
                 }
-                // Aquí podrías agregar la lógica adicional para editar nombre si lo implementas.
             }
         )
     }

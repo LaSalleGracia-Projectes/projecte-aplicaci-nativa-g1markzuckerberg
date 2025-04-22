@@ -6,6 +6,7 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.CreateLigaRes
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.JoinLigaResponse
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.LeagueUserResponse
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.LigaUsersResponse
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.UpdateLigaNameRequest
 import okhttp3.MultipartBody
 import okhttp3.ResponseBody
 import retrofit2.Response
@@ -68,6 +69,11 @@ interface LigaService {
     suspend fun makeCaptain(
         @Path("ligaId") leagueId: String,
         @Path("newCaptainId") newCaptainId: String
+    ): Response<ApiResponse>
+    @PUT("api/v1/liga/update-name/{ligaId}")
+    suspend fun updateLigaName(
+        @Path("ligaId") ligaId: String,
+        @Body request: UpdateLigaNameRequest
     ): Response<ApiResponse>
 
 }

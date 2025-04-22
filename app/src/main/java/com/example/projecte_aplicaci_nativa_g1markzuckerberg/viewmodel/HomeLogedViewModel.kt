@@ -16,6 +16,7 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.Fixture
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.JoinLigaResponse
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.JornadaResponse
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.LigaConPuntos
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.UpdateLigaNameRequest
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.Event
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -277,5 +278,24 @@ class HomeLogedViewModel : ViewModel() {
         }
     }
 
+    fun updateLigaName(ligaId: String, newName: String) {
+        _isLoading.value = true
+        viewModelScope.launch {
+            try {
+                val request = UpdateLigaNameRequest(newName = newName)
+                val response = RetrofitClient.ligaService.updateLigaName(ligaId, request)
+                if (response.isSuccessful) {
+                    _errorMessage.value = Event("Nombre de liga actualizado con éxito.")
+                    fetchUserLeagues()  // Refrescar lista y vista
+                } else {
+                    _errorMessage.value = Event("Error al actualizar nombre: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = Event("Error inesperado: ${e.localizedMessage}")
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
 
 }

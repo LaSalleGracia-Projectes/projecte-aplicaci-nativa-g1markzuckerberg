@@ -85,8 +85,8 @@ fun EntryPoint(
         navController = navigationController,
         startDestination = Routes.Home.route,
         modifier = Modifier
-            .consumeWindowInsets(innerPadding) // 👈 esto previene "salto de layout"
-            .padding(innerPadding), // ✅ Aquí usas innerPadding
+            .consumeWindowInsets(innerPadding)
+            .padding(innerPadding),
         enterTransition = {
             // Entrada: combina fadeIn y un pequeño zoom "in"
             fadeIn(animationSpec = tween(300))
@@ -145,32 +145,36 @@ fun EntryPoint(
                 navArgument("leagueId") { type = NavType.StringType },
                 navArgument("userId") { type = NavType.StringType },
                 navArgument("userName") { type = NavType.StringType },
-                navArgument("userPhotoUrl") { type = NavType.StringType }
+                navArgument("userPhotoUrl") { type = NavType.StringType },
+                navArgument("createdJornada")   { type = NavType.IntType    },
+                navArgument("currentJornada")   { type = NavType.IntType    }
             )
         ) { backStackEntry ->
             val leagueId = backStackEntry.arguments?.getString("leagueId") ?: ""
             val userId = backStackEntry.arguments?.getString("userId") ?: ""
             val userName = backStackEntry.arguments?.getString("userName") ?: ""
             val userPhotoUrl = backStackEntry.arguments?.getString("userPhotoUrl") ?: ""
+            val createdJornada   = backStackEntry.arguments!!.getInt   ("createdJornada")
+            val currentJornada   = backStackEntry.arguments!!.getInt   ("currentJornada")
+
             UserDraftView(
-                navController = navigationController,
-                userDraftViewModel = UserDraftViewModel(), // O viewModel() si usas Hilt u otro inyector
-                leagueId = leagueId,
-                userId = userId,
-                userName = userName,
-                userPhotoUrl = userPhotoUrl
+                navController      = navigationController,
+                userDraftViewModel = UserDraftViewModel(),
+                leagueId           = leagueId,
+                userId             = userId,
+                userName           = userName,
+                userPhotoUrl       = userPhotoUrl,
+                createdJornada     = createdJornada,
+                currentJornada     = currentJornada
             )
         }
         composable(Routes.DraftScreen.route) {
-            // Obtén el ViewModel usando el scope actual de la navegación
             DraftScreen(
                 navController = navigationController,
                 viewModel = draftViewModel,
                 innerPadding = innerPadding
             )
         }
-
-
     }
 }
-    }
+}

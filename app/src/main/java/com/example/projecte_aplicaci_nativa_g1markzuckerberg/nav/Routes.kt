@@ -12,13 +12,15 @@ sealed class Routes(val route: String) {
     object LigaView : Routes("liga_view/{ligaCode}") {
         fun createRoute(ligaCode: String) = "liga_view/$ligaCode"
     }
-    object UserDraftView : Routes("userdraft/{leagueId}/{userId}/{userName}/{userPhotoUrl}") {
+    object UserDraftView : Routes("userdraft/{leagueId}/{userId}/{userName}/{userPhotoUrl}/{createdJornada}/{currentJornada}") {
         fun createRoute(
             leagueId: String,
             userId: String,
             userName: String,
-            userPhotoUrl: String
-        ) = "userdraft/$leagueId/$userId/${Uri.encode(userName)}/${Uri.encode(userPhotoUrl)}"
+            userPhotoUrl: String,
+            createdJornada: Int,
+            currentJornada: Int
+        ) = "userdraft/$leagueId/$userId/${Uri.encode(userName)}/${Uri.encode(userPhotoUrl)}/$createdJornada/$currentJornada"
     }
     object DraftScreen : Routes("draft_screen") {
         fun createRoute() = "draft_screen"

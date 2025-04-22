@@ -23,4 +23,13 @@ interface DraftService {
         @Path("ligaId") ligaId: Int,
         @Query("roundName") roundName: String? = null
     ): Response<GetTempDraftResponse>
+
+    // DraftService.kt
+    @GET("api/v1/draft/getUserDraft")
+    suspend fun getUserDraft(
+        @Query("ligaId") ligaId: String,
+        @Query("userId") userId: String,
+        @Query("roundName") roundName: Int?
+    ): Response<GetDraftResponse>
+
 }

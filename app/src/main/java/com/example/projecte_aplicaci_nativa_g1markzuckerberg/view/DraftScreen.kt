@@ -1,5 +1,6 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
+import LoadingTransitionScreen
 import android.annotation.SuppressLint
 import android.util.Log
 import androidx.compose.animation.AnimatedContent
@@ -15,13 +16,15 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -32,26 +35,32 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.times
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.PlayerOption
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.TempPlantillaResponse
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialog
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialogSingleButton
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.DraftViewModel
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -111,36 +120,36 @@ fun initializeSelectedPlayersFromDraft(
 fun DraftScreen(
     viewModel: DraftViewModel,
     navController: NavController,
-    innerPadding: PaddingValues,
+    innerPadding: PaddingValues
 ) {
+    /* ----------------  DATA & STATE  ---------------- */
     val tempDraftResponse by viewModel.tempDraft.observeAsState()
-    // Si tempDraftResponse no es nulo, parseamos el campo playerOptions (que viene como String).
-    // Usamos derivedStateOf dentro de remember para calcular parsedPlayerOptions sin invocar llamadas composables directamente.
+    val isSaving by viewModel.isSavingDraft.observeAsState(false)
+
     val parsedPlayerOptions by remember(tempDraftResponse) {
-        derivedStateOf {
-            tempDraftResponse?.playerOptions?.let { raw ->
-                parsePlayerOptions(raw)
-            } ?: emptyList()
-        }
+        derivedStateOf { tempDraftResponse?.playerOptions?.let(::parsePlayerOptions) ?: emptyList() }
     }
-    // Para mostrar las cartas, convertimos cada grupo (los 4 primeros elementos) a PlayerOption.
-    val playerOptionsForDisplay: List<List<PlayerOption>> = remember(parsedPlayerOptions) {
-        parsedPlayerOptions.mapNotNull { group ->
-            if (group.size >= 4) {
-                group.take(4).mapNotNull { item ->
-                    if (item is Map<*, *>) {
-                        Gson().fromJson(Gson().toJson(item), PlayerOption::class.java)
-                    } else if (item is PlayerOption) {
-                        item
-                    } else null
-                }
-            } else {
-                null
+
+    val playerOptionsForDisplay by remember(parsedPlayerOptions) {
+        mutableStateOf(
+            parsedPlayerOptions.mapNotNull { g ->
+                if (g.size >= 4) g.take(4).mapNotNull { itm ->
+                    when (itm) {
+                        is Map<*, *>    -> Gson().fromJson(Gson().toJson(itm), PlayerOption::class.java)
+                        is PlayerOption -> itm
+                        else            -> null
+                    }
+                } else null
             }
-        }
+        )
     }
-    // Mapa de jugadores seleccionados.
+
     val selectedPlayers = remember { mutableStateMapOf<String, PlayerOption?>() }
+
+    var showSaveDialog by remember { mutableStateOf(false) }     // ← diálogo guardar
+    var showInfoDialog by remember { mutableStateOf(false) }     // ← diálogo info
+    var showErrorDialog  by remember { mutableStateOf(false) }   // ← nuevo
+
     LaunchedEffect(tempDraftResponse, parsedPlayerOptions) {
         if (parsedPlayerOptions.isNotEmpty() && tempDraftResponse != null) {
             selectedPlayers.clear()
@@ -154,20 +163,15 @@ fun DraftScreen(
         }
     }
 
-    val headerHeight = 110.dp
-    val buttonHeight = 34.dp
-
-    // Función para construir la estructura que se enviará en el update.
     fun buildPositionOptions(): List<List<Any?>> {
         val keys = getPositionKeys(viewModel.selectedFormation.value)
-        val options = parsedPlayerOptions.mapIndexed { index, group ->
-            val key = keys.getOrElse(index) { "grupo_$index" }
-            // Convertir los 4 primeros elementos a PlayerOption
-            val players = group.take(4).mapNotNull { item ->
-                when (item) {
-                    is Map<*, *> -> Gson().fromJson(Gson().toJson(item), PlayerOption::class.java)
-                    is PlayerOption -> item
-                    else -> null
+        return parsedPlayerOptions.mapIndexed { idx, grp ->
+            val key = keys.getOrElse(idx) { "grupo_$idx" }
+            val players = grp.take(4).mapNotNull { itm ->
+                when (itm) {
+                    is Map<*, *>    -> Gson().fromJson(Gson().toJson(itm), PlayerOption::class.java)
+                    is PlayerOption -> itm
+                    else            -> null
                 }
             }
             val chosenIndex = selectedPlayers[key]?.let { sel ->
@@ -175,120 +179,209 @@ fun DraftScreen(
             }
             listOf(players[0], players[1], players[2], players[3], chosenIndex)
         }
-        Log.d("DraftScreen", "buildPositionOptions: $options")
-        return options
     }
 
-    fun updateDraftOnServer() {
-        Log.d("DraftScreen", "Current liga id: ${viewModel.currentLigaId}")
-        viewModel.updateDraft(viewModel.currentLigaId, buildPositionOptions()) {
-            Log.d("DraftScreen", "Draft actualizado en el servidor")
-        }
-    }
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .padding(innerPadding)) {
-        // HEADER
-        Box(
+    fun updateDraftOnServer() =
+        viewModel.updateDraft(viewModel.currentLigaId, buildPositionOptions()) {}
+
+    /* ----------------  CONSTANTES UI  ---------------- */
+    val headerHeight  = 110.dp
+    val buttonHeight  = 34.dp
+
+    LoadingTransitionScreen(isLoading = isSaving) {
+
+    /* =================  LAYOUT  ================= */
+    Box(Modifier.fillMaxSize()) {
+
+        /* ----------  FONDO  ---------- */
+        Image(
+            painter = painterResource(R.drawable.futbol_pitch_background),
+            contentDescription = null,
+            contentScale = ContentScale.FillBounds,
             modifier = Modifier
-                .fillMaxWidth()
-                .height(headerHeight)
-                .background(
-                    Brush.horizontalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.primary,
-                            MaterialTheme.colorScheme.secondary
+                .fillMaxSize()
+                .padding(top = headerHeight)
+                .graphicsLayer { scaleX = 1.25f }
+                .clipToBounds()
+                .zIndex(-1f)
+        )
+
+        /* ----------  CONTENIDO (header + cartas)  ---------- */
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(
+                    start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
+                    end   = innerPadding.calculateEndPadding(LayoutDirection.Ltr),
+                    top   = innerPadding.calculateTopPadding()
+                )
+        ) {
+
+            /* ---------  HEADER  --------- */
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(headerHeight)
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(
+                                MaterialTheme.colorScheme.primary,
+                                MaterialTheme.colorScheme.secondary
+                            )
                         )
                     )
-                )
-                .padding(horizontal = 20.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Row(
-                modifier = Modifier.fillMaxSize(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .padding(horizontal = 20.dp)
             ) {
                 IconButton(
                     onClick = { navController.popBackStack() },
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier
+                        .size(28.dp)
+                        .align(Alignment.CenterStart)
                 ) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Volver",
                         tint = MaterialTheme.colorScheme.onPrimary
                     )
                 }
+
                 Text(
-                    text = "DRAFT",
+                    "DRAFT",
                     style = MaterialTheme.typography.titleLarge.copy(
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.ExtraBold,
+                        fontSize      = 20.sp,
+                        fontWeight    = FontWeight.ExtraBold,
                         letterSpacing = 0.3.sp
                     ),
-                    color = MaterialTheme.colorScheme.onPrimary,
+                    color     = MaterialTheme.colorScheme.onPrimary,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.weight(1f)
+                    modifier  = Modifier.align(Alignment.Center)   // ← centrado real
                 )
+
                 FilledTonalButton(
                     onClick = {
-                        Log.d("DraftScreen", "Botón Guardar pulsado")
-                        viewModel.saveDraft(selectedPlayers) {
-                            Log.d("DraftScreen", "Draft guardado correctamente, navegando a Home")
-                            navController.navigate(Routes.HomeLoged.route)
+                        val plantillaCompleta = selectedPlayers.values.none { it == null }
+                        if (plantillaCompleta) {
+                            showSaveDialog = true           // plantilla OK → confirmar guardado
+                        } else {
+                            showErrorDialog = true          // falta algún jugador → error
                         }
-                    },
-                    shape = RoundedCornerShape(50.dp),
-                    colors = ButtonDefaults.filledTonalButtonColors(
+                    },                    shape   = RoundedCornerShape(50.dp),
+                    colors  = ButtonDefaults.filledTonalButtonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = Color.White
+                        contentColor   = Color.White
                     ),
-                    modifier = Modifier.height(buttonHeight)
+                    modifier = Modifier
+                        .height(buttonHeight)
+                        .align(Alignment.CenterEnd)
                 ) {
-                    Text(
-                        "Guardar",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp)
-                    )
+                    Text("Guardar", style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp))
                 }
             }
-        }
-        // CONTENIDO
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.futbol_pitch_background),
-                contentDescription = "Campo de fútbol",
-                contentScale = ContentScale.Fit,
+
+            /* ---------  CAMPO & CARTAS  --------- */
+            Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .graphicsLayer { scaleX = 1.25f }
-            )
-            DraftLayout(
-                formation = viewModel.selectedFormation.value,
-                playerOptions = playerOptionsForDisplay,
-                selectedPlayers = selectedPlayers,
-                onPlayerSelectedWithUpdate = { key, chosenPlayer ->
-                    selectedPlayers[key] = chosenPlayer
-                    updateDraftOnServer()
-                },
-                updateDraftOnServer = { updateDraftOnServer() }
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
+                DraftLayout(
+                    formation           = viewModel.selectedFormation.value,
+                    playerOptions       = playerOptionsForDisplay,
+                    selectedPlayers     = selectedPlayers,
+                    onPlayerSelectedWithUpdate = { k, p ->
+                        selectedPlayers[k] = p
+                        updateDraftOnServer()
+                    },
+                    updateDraftOnServer = { updateDraftOnServer() }
+                )
+            }
+        }
+
+        /* ----------  BOTÓN INFO FLOTANTE  ---------- */
+        val bottomInset = innerPadding.calculateBottomPadding()
+        val bottomPad   = (bottomInset - 28.dp).coerceAtLeast(0.dp)   // ↓ media altura del botón
+
+        IconButton(
+            onClick = { showInfoDialog = true },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(
+                    end   = 20.dp,
+                    bottom = bottomPad      // ahora está casi pegado al borde
+                )
+                .size(56.dp)
+                .background(MaterialTheme.colorScheme.primary, CircleShape)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Info,
+                contentDescription = "Información",
+                tint = Color.White,
+                modifier = Modifier.size(28.dp)
             )
         }
     }
-}
 
+        /* -------------  DIÁLOGO CONFIRMAR GUARDAR ------------- */
+    if (showSaveDialog) {
+        CustomAlertDialog(
+            title   = "¿Guardar plantilla?",
+            message = "¿Estás seguro de que quieres guardar la plantilla?\n\n" +
+                    "Una vez la guardes se enviará la convocatoria y **no podrás volver a editarla**.",
+            confirmButtonText = "Guardar",
+            cancelButtonText  = "Cancelar",
+            onDismiss = { showSaveDialog = false },
+            onConfirm = {
+                showSaveDialog = false
+                viewModel.saveDraft(selectedPlayers) {
+                    navController.popBackStack()   // ← vuelve a la pantalla anterior
+                }
+            }
+        )
+    }
+
+    if (showErrorDialog) {
+        CustomAlertDialogSingleButton(
+            title   = "Plantilla incompleta",
+            message = "Debes seleccionar un jugador para cada posición antes de guardar la alineación.",
+            confirmButtonText = "Entendido",
+            onAccept = { showErrorDialog = false }
+        )
+    }
+
+
+
+    /* -------------  DIÁLOGO INSTRUCCIONES ------------- */
+    if (showInfoDialog) {
+        CustomAlertDialogSingleButton(
+            title   = "Instrucciones",
+            message = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. " +
+                    "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+            confirmButtonText = "Cerrar",
+            onAccept = { showInfoDialog = false }     // cierra el diálogo
+        )
+    }
+}
+}
+    /* -------------  DIMENSIONES DE LAS CARTAS ------------- */
+    // Se calcula el tamaño de las cartas en función del ancho de la pantalla
+    // y se devuelve como un par (ancho, alto)
 @Composable
 fun getPlayerCardDimensions(): Pair<Dp, Dp> {
-    val configuration = LocalConfiguration.current
-    val screenWidth = configuration.screenWidthDp.dp
-    val availableWidth = screenWidth - 24.dp
-    val cardWidth = (availableWidth - (3 * 8.dp)) / 4
-    val cardHeight = cardWidth * 122f / 80f
-    return Pair(cardWidth, cardHeight)
+    val density        = LocalDensity.current
+    val screenWidthDp  = LocalConfiguration.current.screenWidthDp.dp
+
+    val availableWidth = screenWidthDp - 24.dp                // padding lateral (12×2)
+    val cardWidth      = (availableWidth - (3 * 8.dp)) / 4
+
+    // 122:80 + margen -> redondeamos siempre hacia ARRIBA
+    val cardHeight = with(density) {
+        kotlin.math.ceil(cardWidth.toPx() * 122f / 80f).toDp() + 6.dp // +4 dp
+    }
+
+    return cardWidth to cardHeight
 }
+
+
 
 @SuppressLint("RememberReturnType")
 @Composable
@@ -569,9 +662,8 @@ fun CompactPlayerCard(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(6.dp),
+                    .padding(start = 6.dp, top = 6.dp, end = 6.dp, bottom = 6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Top
             ) {
                 Box(
                     modifier = Modifier
@@ -602,6 +694,7 @@ fun CompactPlayerCard(
                     color = Color.DarkGray,
                     textAlign = TextAlign.Center
                 )
+                Spacer(modifier = Modifier.weight(1f))
                 Row(
                     modifier = Modifier
                         .padding(top = 2.dp)
