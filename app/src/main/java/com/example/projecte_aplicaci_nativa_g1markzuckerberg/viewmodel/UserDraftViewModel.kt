@@ -7,6 +7,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.LeagueUserResponse
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.Player
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.TempPlantillaResponse
 import kotlinx.coroutines.launch
 
 // Enum con las pestañas disponibles.
@@ -24,6 +26,8 @@ class UserDraftViewModel : ViewModel() {
     fun setSelectedTab(tab: Tab) {
         _selectedTab.value = tab
     }
+
+
 
     fun fetchUserInfo(leagueId: String, userId: String) {
         viewModelScope.launch {
@@ -75,6 +79,28 @@ class UserDraftViewModel : ViewModel() {
             }
         }
     }
+
+    private val _draftPlayers   = MutableLiveData<List<Player>>()     // lista plana de 11
+    private val _draftFormation = MutableLiveData<String>()           // "4-3-3", "3-4-3", …
+    val draftPlayers   : LiveData<List<Player>> = _draftPlayers
+    val draftFormation : LiveData<String>       = _draftFormation
+
+    /** Descarga la plantilla del usuario para la jornada dada (o total si roundName == null) */
+    fun fetchUserDraft(leagueId: String, userId: String, roundName: Int?) {
+        viewModelScope.launch {
+            try {
+                val resp = RetrofitClient.draftService.getUserDraft(leagueId, userId, roundName)
+                if (resp.isSuccessful) {
+                    resp.body()?.let {
+                        _draftPlayers.postValue(it.players)
+                        _draftFormation.postValue(it.plantilla.formation)
+                    }
+                } else {
+                    Log.e("UserDraft", "Error getUserDraft: ${resp.code()}")
+                }
+            } catch (e: Exception) {
+                Log.e("UserDraft", "Excepción getUserDraft(): ${e.message}")
+            }
+        }
+    }
 }
-
-

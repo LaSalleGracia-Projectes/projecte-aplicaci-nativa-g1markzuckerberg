@@ -58,6 +58,7 @@ data class Plantilla(
     val id: Int,
     val teamId: Int,
     val seasonId: Int,
+    val formation: String,
     val name: String,
     val finalized: Boolean
 )

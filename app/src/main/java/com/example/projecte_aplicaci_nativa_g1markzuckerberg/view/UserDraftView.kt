@@ -29,10 +29,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.Player
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.ResultDialogData
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialogSingleButton
@@ -80,6 +80,17 @@ fun UserDraftView(
     var showConfirmationDialog by remember { mutableStateOf(false) }
     var confirmationAction by remember { mutableStateOf("") }
     var resultDialogData by remember { mutableStateOf<ResultDialogData?>(null) }
+// variables reactivas
+    val draftPlayers   by userDraftViewModel.draftPlayers.observeAsState(emptyList())
+    val draftFormation by userDraftViewModel.draftFormation.observeAsState("4-3-3")
+    val jornadas = remember(createdJornada, currentJornada) {
+        (createdJornada..currentJornada).toList()
+    }
+    var selectedJornada by remember { mutableIntStateOf(currentJornada) }
+// cuando cambia la jornada seleccionada → descargar plantilla
+    LaunchedEffect(selectedJornada) {
+        userDraftViewModel.fetchUserDraft(leagueId, userId, selectedJornada)
+    }
 
     Box(Modifier.fillMaxSize()) {
         // ─── HEADER ─────────────────────────────────────────
@@ -176,10 +187,6 @@ fun UserDraftView(
                     }
                 }
             } else { /* ---------- PÁGINA DRAFT ---------- */
-                val jornadas = remember(createdJornada, currentJornada) {
-                    (createdJornada..currentJornada).toList()
-                }
-                var selectedJornada by remember { mutableIntStateOf(currentJornada) }
 
                 Column(modifier = Modifier.fillMaxSize()) {
 
@@ -234,7 +241,10 @@ fun UserDraftView(
                             contentScale      = ContentScale.FillBounds
                         )
 
-                        // TODO: aquí tu layout con el equipo para `selectedJornada`
+                        ReadonlyDraftLayout(
+                            formation = draftFormation,
+                            players   = draftPlayers
+                        )
                     }
                 }
             }
@@ -320,3 +330,68 @@ private fun RowScope.TabButton(text: String, isSelected: Boolean, onClick: () ->
         }
     }
 }
+
+@Composable
+private fun ReadonlyDraftLayout(
+    formation: String,
+    players  : List<Player>,
+) {
+    val byPos = remember(players) {
+        players.groupBy { it.positionId }   // 24‑27 según ejemplo
+    }
+
+    val rows: List<Pair<Int, Int>> = when (formation) {
+        "4-3-3" -> listOf(27 to 3, 26 to 3, 25 to 4, 24 to 1)
+        "4-4-2" -> listOf(27 to 2, 26 to 4, 25 to 4, 24 to 1)
+        "3-4-3" -> listOf(27 to 3, 26 to 4, 25 to 3, 24 to 1)
+        else    -> emptyList()
+    }
+
+
+    val (cardW, cardH) = getPlayerCardDimensions()
+
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.SpaceEvenly
+    ) {
+        rows.forEach { (posId, count) ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+            ) {
+                repeat(count) { idx ->
+                    // tomamos el idx‑ésimo jugador de ese bloque
+                    val p = byPos[posId]?.getOrNull(idx)
+                    Box(
+                        Modifier
+                            .width(cardW)
+                            .height(cardH),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (p != null) {
+                            CompactPlayerCard(
+                                player = p.toPlayerOption(),   // extensión abajo
+                                width  = cardW,
+                                height = cardH,
+                                onClick = {}                   // 🔒 NO hace nada
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/* helper para reusar CompactPlayerCard con tu modelo Player → PlayerOption */
+private fun Player.toPlayerOption() = com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.PlayerOption(
+    id             = id.toInt(),
+    displayName    = displayName,
+    positionId     = positionId,
+    imagePath      = imagePath,
+    estrellas      = estrellas,
+    puntos_totales = puntos_totales.toInt()
+)
+
