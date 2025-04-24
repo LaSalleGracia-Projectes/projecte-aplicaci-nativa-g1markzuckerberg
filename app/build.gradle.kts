@@ -41,6 +41,9 @@ android {
 }
 
 dependencies {
+    //Swipe
+    implementation ("androidx.compose.foundation:foundation:1.4.0")
+
     implementation ("com.airbnb.android:lottie-compose:6.0.0")
     //URL IMAGES
     implementation ("io.coil-kt:coil-compose:2.2.2")
