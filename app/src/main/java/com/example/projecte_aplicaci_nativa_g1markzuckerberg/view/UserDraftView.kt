@@ -4,12 +4,14 @@ import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
@@ -30,6 +32,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.Player
@@ -38,6 +41,7 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.Cust
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialogSingleButton
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.TrainerCard
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.UserImage
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.grafanaUserUrl
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.Tab
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.UserDraftViewModel
 import kotlinx.coroutines.launch
@@ -175,17 +179,41 @@ fun UserDraftView(
                         leagueUserResponse?.let { resp ->
                             Box(Modifier.wrapContentSize()) {
                                 TrainerCard(
-                                    imageUrl      = RetrofitClient.BASE_URL.trimEnd('/') + resp.user.imageUrl,
-                                    name          = resp.user.username,
-                                    birthDate     = resp.user.birthDate,
-                                    isCaptain     = resp.user.is_capitan,
+                                    imageUrl = RetrofitClient.BASE_URL.trimEnd('/') + resp.user.imageUrl,
+                                    name = resp.user.username,
+                                    birthDate = resp.user.birthDate,
+                                    isCaptain = resp.user.is_capitan,
                                     puntosTotales = resp.user.puntos_totales,
-                                    onInfoClick   = { dropDownExpanded = true }
+                                    onInfoClick = { dropDownExpanded = true }
                                 )
                             }
                         } ?: Text("Cargando datos…")
                     }
+                    item {
+                        val graphUrl = remember(leagueId, userId) {
+                            grafanaUserUrl(leagueId, userId)
+                        }
+
+                        // 220 dp alto; 16 dp margen superior‑inferior
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 16.dp)
+                                .horizontalScroll(rememberScrollState()),  // ← scroll lateral
+                            horizontalArrangement = Arrangement.Start
+                        ) {
+                            AsyncImage(                       // coil‑compose
+                                model = graphUrl,
+                                contentDescription = "Gráfico de rendimiento",
+                                contentScale = ContentScale.FillHeight,
+                                modifier = Modifier
+                                    .height(220.dp)           // alto fijo
+                                    .clip(MaterialTheme.shapes.medium)
+                            )
+                        }
+                    }
                 }
+
             } else { /* ---------- PÁGINA DRAFT ---------- */
 
                 Column(modifier = Modifier.fillMaxSize()) {
