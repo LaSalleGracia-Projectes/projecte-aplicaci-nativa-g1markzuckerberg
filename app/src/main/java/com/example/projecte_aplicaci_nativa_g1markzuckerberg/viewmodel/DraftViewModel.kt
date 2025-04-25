@@ -38,6 +38,7 @@ class DraftViewModel : ViewModel() {
         ligaId: Int,
         onSuccess: () -> Unit
     ) {
+        _isFetchingDraft.value = true
         viewModelScope.launch {
             // 1) Intentamos el POST, pero capturamos y sólo logueamos errores de parseo:
             try {
@@ -67,6 +68,8 @@ class DraftViewModel : ViewModel() {
             } catch (ex: Exception) {
                 _errorMessage.value = "Error de conexión al recuperar draft: ${ex.message}"
                 Log.e("DraftViewModel", "Excepción en GET tempDraft", ex)
+            } finally {
+                _isFetchingDraft.value = false
             }
         }
     }
@@ -78,7 +81,6 @@ class DraftViewModel : ViewModel() {
         onSuccess: () -> Unit,
         onRequestFormation: () -> Unit
     ) {
-        _isFetchingDraft.value = true
         viewModelScope.launch {
             try {
                 val response = RetrofitClient.draftService.getTempDraft(ligaId)
