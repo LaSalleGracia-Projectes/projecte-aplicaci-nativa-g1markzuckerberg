@@ -5,54 +5,70 @@ import androidx.lifecycle.viewModelScope
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.interface_service.NotificationsService
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.Notifications
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
 
-/* ---------- Estado de la UI ---------- */
 sealed interface NotificationsUiState {
     object Loading : NotificationsUiState
     data class Success(val data: List<Notifications>) : NotificationsUiState
     data class Error(val msg: String) : NotificationsUiState
 }
 
-/* ---------- “Repositorio” ultra-ligero ---------- */
-/*  ➜  Le damos un valor por defecto que apunta al service de RetrofitClient,
-        así evitamos el error “No value passed for parameter 'service'”. */
 class NotificationsRepository(
     private val service: NotificationsService = RetrofitClient.notificationsService
 ) {
     suspend fun fetch(): List<Notifications> {
-        val response = service.getUserNotifications()
-        if (response.isSuccessful) {
-            return response.body()?.notifications ?: emptyList()
-        } else {
-            throw HttpException(response)
-        }
+        val resp = service.getUserNotifications()
+        if (resp.isSuccessful) return resp.body()?.notifications ?: emptyList()
+        throw HttpException(resp)
     }
 }
 
-/* ---------- ViewModel ---------- */
 class NotificationViewModel(
-    private val repository: NotificationsRepository = NotificationsRepository()
+    private val repo: NotificationsRepository = NotificationsRepository()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<NotificationsUiState>(NotificationsUiState.Loading)
     val uiState: StateFlow<NotificationsUiState> = _uiState
 
-    init { loadNotifications() }
+    private var alreadyLoaded = false
 
-    fun loadNotifications() = viewModelScope.launch {
+    fun loadIfTokenExists() {
+        if (alreadyLoaded) return
+        if (RetrofitClient.authRepository.getToken().isNullOrEmpty()) return
+        alreadyLoaded = true
+        viewModelScope.launch { fetchWithRetry() }
+    }
+
+    private suspend fun fetchWithRetry(maxRetries: Int = 2) {
         _uiState.value = NotificationsUiState.Loading
-        try {
-            val data = repository.fetch()
-            _uiState.value = NotificationsUiState.Success(data)
-        } catch (_: IOException) {
-            _uiState.value = NotificationsUiState.Error("Sin conexión")
-        } catch (e: Exception) {
-            _uiState.value = NotificationsUiState.Error(e.localizedMessage ?: "Error inesperado")
+        repeat(maxRetries + 1) { attempt ->
+            try {
+                _uiState.value = NotificationsUiState.Success(repo.fetch())
+                return
+            } catch (e: HttpException) {
+                if (e.code() == 401) {
+                    // ignorar el 401 y mostrar lista vacía
+                    _uiState.value = NotificationsUiState.Success(emptyList())
+                    return
+                }
+                if (attempt < maxRetries) {
+                    delay(500)
+                    return@repeat
+                }
+                _uiState.value = NotificationsUiState.Error("Error ${e.code()}")
+                return
+            } catch (_: IOException) {
+                _uiState.value = NotificationsUiState.Error("Sin conexión")
+                return
+            } catch (e: Exception) {
+                _uiState.value = NotificationsUiState.Error(e.localizedMessage ?: "Error")
+                return
+            }
         }
     }
 }
