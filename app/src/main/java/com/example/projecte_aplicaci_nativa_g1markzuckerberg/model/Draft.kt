@@ -68,7 +68,9 @@ data class Player(
     val positionId: Int,
     val imagePath: String,
     val estrellas: Int,
-    val puntos_totales: String
+    val puntos_totales: String,
+    @SerializedName("puntos_jornada")
+    val puntos_jornada: String = "0"
 )
 data class TempDraftData(
     @SerializedName("id_plantilla")

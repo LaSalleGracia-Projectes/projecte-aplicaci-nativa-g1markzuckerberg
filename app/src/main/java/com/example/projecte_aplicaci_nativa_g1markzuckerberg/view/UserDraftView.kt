@@ -45,6 +45,7 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.graf
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.Tab
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.UserDraftViewModel
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 @Composable
 fun UserDraftView(
@@ -420,6 +421,6 @@ private fun Player.toPlayerOption() = com.example.projecte_aplicaci_nativa_g1mar
     positionId     = positionId,
     imagePath      = imagePath,
     estrellas      = estrellas,
-    puntos_totales = puntos_totales.toInt()
+    puntos_totales = puntos_jornada.toDouble().roundToInt()
 )
 

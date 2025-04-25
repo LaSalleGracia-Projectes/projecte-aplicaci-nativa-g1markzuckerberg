@@ -8,7 +8,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.LeagueUserResponse
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.Player
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.TempPlantillaResponse
 import kotlinx.coroutines.launch
 
 // Enum con las pestañas disponibles.
