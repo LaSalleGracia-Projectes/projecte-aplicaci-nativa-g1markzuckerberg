@@ -35,12 +35,8 @@ class NotificationViewModel(
     private val _uiState = MutableStateFlow<NotificationsUiState>(NotificationsUiState.Loading)
     val uiState: StateFlow<NotificationsUiState> = _uiState
 
-    private var alreadyLoaded = false
-
-    fun loadIfTokenExists() {
-        if (alreadyLoaded) return
+    fun forceReloadIfTokenExists() {
         if (RetrofitClient.authRepository.getToken().isNullOrEmpty()) return
-        alreadyLoaded = true
         viewModelScope.launch { fetchWithRetry() }
     }
 
@@ -52,7 +48,6 @@ class NotificationViewModel(
                 return
             } catch (e: HttpException) {
                 if (e.code() == 401) {
-                    // ignorar el 401 y mostrar lista vacía
                     _uiState.value = NotificationsUiState.Success(emptyList())
                     return
                 }

@@ -29,14 +29,15 @@ fun NotificationScreen(
 ) {
     BackHandler {}
 
-    /* espera activa hasta que el JWT exista, evitando el 401 inicial */
     val token by produceState(initialValue = RetrofitClient.authRepository.getToken()) {
         while (value.isNullOrEmpty()) {
             delay(150)
             value = RetrofitClient.authRepository.getToken()
         }
     }
-    LaunchedEffect(token) { viewModel.loadIfTokenExists() }
+
+    // 🔥 Cambiado aquí
+    LaunchedEffect(token) { viewModel.forceReloadIfTokenExists() }
 
     val uiState by viewModel.uiState.collectAsState()
 
@@ -45,7 +46,6 @@ fun NotificationScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-
         Box(
             modifier = Modifier
                 .fillMaxWidth()
