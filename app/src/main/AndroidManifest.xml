@@ -4,6 +4,7 @@
     package="com.example.projecte_aplicaci_nativa_g1markzuckerberg">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <application
         android:usesCleartextTraffic="true"
