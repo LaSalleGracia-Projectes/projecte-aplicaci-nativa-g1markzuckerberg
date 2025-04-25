@@ -52,6 +52,10 @@ dependencies {
     implementation("androidx.credentials:credentials:1.3.0-alpha02")
     implementation("androidx.credentials:credentials-play-services-auth:1.3.0-alpha02")
 
+    implementation("io.socket:socket.io-client:2.1.0")
+    implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+
     implementation (libs.retrofit)
     implementation (libs.converter.gson)
     implementation (libs.logging.interceptor)

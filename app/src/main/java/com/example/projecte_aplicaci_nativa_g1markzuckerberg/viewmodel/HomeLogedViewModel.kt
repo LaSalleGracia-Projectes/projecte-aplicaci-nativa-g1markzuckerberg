@@ -30,6 +30,7 @@ class HomeLogedViewModel : ViewModel() {
     val jornadaData: State<JornadaResponse?> = _jornadaData
 
     private val _fixturesState = mutableStateOf<List<Fixture>>(emptyList())
+    val fixturesState: State<List<Fixture>> = _fixturesState
 
     // Evento para la creación de liga.
     private val _createLigaResult = MutableLiveData<Event<CreateLigaResponse?>>()
@@ -51,17 +52,19 @@ class HomeLogedViewModel : ViewModel() {
     private val _isLoading = MutableLiveData(true)
     val isLoading: LiveData<Boolean> get() = _isLoading
 
-    // Abandonar Liga
+    // Evento para abandonar liga.
     private val _leaveLigaResult = MutableLiveData<Event<String>>()
+    val leaveLigaResult: LiveData<Event<String>> = _leaveLigaResult
 
+    // Correo del usuario.
     private val _userEmail = MutableLiveData<String>()
     val userEmail: LiveData<String> = _userEmail
 
+    // Timestamp para forzar recarga de imágenes.
     private val _lastImageUpdateTs = MutableLiveData(System.currentTimeMillis())
     val lastImageUpdateTs: LiveData<Long> get() = _lastImageUpdateTs
 
     init {
-        // Cargar la jornada actual al iniciar.
         fetchCurrentJornada()
         fetchUserInfo()
     }
@@ -73,7 +76,6 @@ class HomeLogedViewModel : ViewModel() {
                 if (currentResponse.isSuccessful) {
                     val currentJornada = currentResponse.body()?.jornadaActual
                     if (currentJornada != null) {
-                        // Llamamos a fetchJornada con el valor recibido.
                         fetchJornada(currentJornada.name)
                     } else {
                         Log.e("API_CALL", "No se recibió la jornada actual")
@@ -115,29 +117,14 @@ class HomeLogedViewModel : ViewModel() {
                 if (response.isSuccessful) {
                     fetchUserLeagues()
                 } else {
-                    // Aquí puedes verificar el código de error
                     when (response.code()) {
-                        404 -> {
-                            _errorMessage.value = Event("Error: Liga no encontrada.")
-                        }
-                        409 -> {
-                            _errorMessage.value = Event("Error: Ya estás en esta liga.")
-                        }
-                        422 -> {
-                            _errorMessage.value = Event("Error: Código de liga inválido.")
-                        }
-                        403 -> {
-                            _errorMessage.value = Event("Error: No tienes permiso para unirte a esta liga.")
-                        }
-                        401 -> {
-                            _errorMessage.value = Event("Error: No estás autenticado.")
-                        }
-                        500 -> {
-                            _errorMessage.value = Event("Error del servidor. Intenta más tarde.")
-                        }
-                        else -> {
-                            _errorMessage.value = Event("Error desconocido: ${response.code()}.")
-                        }
+                        404 -> _errorMessage.value = Event("Error: Liga no encontrada.")
+                        409 -> _errorMessage.value = Event("Error: Ya estás en esta liga.")
+                        422 -> _errorMessage.value = Event("Error: Código de liga inválido.")
+                        403 -> _errorMessage.value = Event("Error: No tienes permiso para unirte a esta liga.")
+                        401 -> {/* ignorado para evitar popup inicial */}
+                        500 -> _errorMessage.value = Event("Error del servidor. Intenta más tarde.")
+                        else -> _errorMessage.value = Event("Error desconocido: ${response.code()}.")
                     }
                 }
             } catch (e: Exception) {
@@ -157,29 +144,14 @@ class HomeLogedViewModel : ViewModel() {
                 if (response.isSuccessful) {
                     fetchUserLeagues()
                 } else {
-                    // Mismo caso aquí
                     when (response.code()) {
-                        404 -> {
-                            _errorMessage.value = Event("Error: No se pudo crear la liga.")
-                        }
-                        409 -> {
-                            _errorMessage.value = Event("Error: Liga ya existe.")
-                        }
-                        422 -> {
-                            _errorMessage.value = Event("Error: Datos inválidos.")
-                        }
-                        403 -> {
-                            _errorMessage.value = Event("Error: No tienes permiso para crear una liga.")
-                        }
-                        401 -> {
-                            _errorMessage.value = Event("Error: No estás autenticado.")
-                        }
-                        500 -> {
-                            _errorMessage.value = Event("Error del servidor al crear la liga. Intenta más tarde.")
-                        }
-                        else -> {
-                            _errorMessage.value = Event("Error desconocido: ${response.code()}.")
-                        }
+                        404 -> _errorMessage.value = Event("Error: No se pudo crear la liga.")
+                        409 -> _errorMessage.value = Event("Error: Liga ya existe.")
+                        422 -> _errorMessage.value = Event("Error: Datos inválidos.")
+                        403 -> _errorMessage.value = Event("Error: No tienes permiso para crear una liga.")
+                        401 -> {/* ignorado para evitar popup inicial */}
+                        500 -> _errorMessage.value = Event("Error del servidor al crear la liga. Intenta más tarde.")
+                        else -> _errorMessage.value = Event("Error desconocido: ${response.code()}.")
                     }
                 }
             } catch (e: Exception) {
@@ -207,6 +179,7 @@ class HomeLogedViewModel : ViewModel() {
             }
         }
     }
+
     fun leaveLiga(ligaId: String) {
         _isLoading.value = true
         viewModelScope.launch {
@@ -214,7 +187,7 @@ class HomeLogedViewModel : ViewModel() {
                 val response = RetrofitClient.ligaService.leaveLiga(ligaId)
                 if (response.isSuccessful) {
                     _leaveLigaResult.value = Event("Liga abandonada")
-                    fetchUserLeagues() // Actualiza la lista de ligas
+                    fetchUserLeagues()
                 } else {
                     _errorMessage.value = Event("El capitán no puede abandonar la liga")
                 }
@@ -225,32 +198,33 @@ class HomeLogedViewModel : ViewModel() {
             }
         }
     }
+
     private fun fetchUserInfo() {
         viewModelScope.launch {
             try {
-                val response = RetrofitClient.userService.getMe() // Asegúrate de que este método exista
+                val response = RetrofitClient.userService.getMe()
                 if (response.isSuccessful) {
                     _userEmail.value = response.body()?.user?.correo ?: ""
-                } else {
+                } else if (response.code() != 401) {
                     _errorMessage.value = Event("Error al obtener información de usuario: ${response.code()}")
                 }
+                // 401 ignorado para no mostrar popup al inicio
             } catch (e: Exception) {
                 _errorMessage.value = Event(e.message ?: "Error desconocido al obtener información del usuario")
             }
         }
     }
+
     fun updateLigaWithImage(ligaId: String, imageUri: Uri, context: Context) {
         _isLoading.value = true
         viewModelScope.launch {
             try {
                 val contentResolver = context.contentResolver
                 val mimeType = contentResolver.getType(imageUri) ?: ""
-
                 if (mimeType !in listOf("image/png", "image/jpg", "image/jpeg")) {
                     _errorMessage.value = Event("Formato de imagen no permitido (solo png, jpg, jpeg).")
                     return@launch
                 }
-
                 val inputStream = contentResolver.openInputStream(imageUri)!!
                 val bytes = inputStream.readBytes()
                 val requestFile = bytes.toRequestBody(mimeType.toMediaTypeOrNull())
@@ -259,13 +233,10 @@ class HomeLogedViewModel : ViewModel() {
                     "leagueImage.${mimeType.substringAfter("/")}",
                     requestFile
                 )
-
                 val response = RetrofitClient.ligaService.uploadLeagueImage(ligaId, body)
-
                 if (response.isSuccessful) {
                     _errorMessage.value = Event("Imagen actualizada con éxito.")
-                    fetchUserLeagues() // Actualizamos la lista de ligas.
-                    // Actualizamos el timestamp para forzar la recarga de las imágenes.
+                    fetchUserLeagues()
                     _lastImageUpdateTs.value = System.currentTimeMillis()
                 } else {
                     _errorMessage.value = Event("Error al subir imagen: ${response.code()}")
@@ -286,7 +257,7 @@ class HomeLogedViewModel : ViewModel() {
                 val response = RetrofitClient.ligaService.updateLigaName(ligaId, request)
                 if (response.isSuccessful) {
                     _errorMessage.value = Event("Nombre de liga actualizado con éxito.")
-                    fetchUserLeagues()  // Refrescar lista y vista
+                    fetchUserLeagues()
                 } else {
                     _errorMessage.value = Event("Error al actualizar nombre: ${response.code()}")
                 }
@@ -297,5 +268,4 @@ class HomeLogedViewModel : ViewModel() {
             }
         }
     }
-
 }
