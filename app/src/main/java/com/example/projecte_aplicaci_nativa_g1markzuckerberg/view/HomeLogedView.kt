@@ -1,6 +1,6 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
-import LoadingTransitionScreen
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.LoadingTransitionScreen
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
