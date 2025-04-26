@@ -3,12 +3,6 @@ package com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -38,88 +31,6 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.PlayerOption
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.view.StyledPlayerCard
-
-@Composable
-fun CreateLigaDialog(
-    onDismiss: () -> Unit,
-    onCreateLiga: (String) -> Unit
-) {
-    var leagueName by remember { mutableStateOf("") }
-    // Solo permite enviar si se ha escrito algo
-    val isSubmitEnabled = leagueName.isNotBlank()
-
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            elevation = CardDefaults.cardElevation(8.dp),
-            modifier = Modifier.fillMaxWidth(0.9f)
-        ) {
-            Column {
-                // Header con gradiente azul
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(60.dp)
-                        .background(
-                            Brush.horizontalGradient(
-                                colors = listOf(
-                                    MaterialTheme.colorScheme.primary,
-                                    MaterialTheme.colorScheme.secondary
-                                )
-                            )
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Crear Liga",
-                        color = Color.White,
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                }
-                // Contenido
-                Column(modifier = Modifier.padding(16.dp)) {
-                    OutlinedTextField(
-                        value = leagueName,
-                        onValueChange = { leagueName = it },
-                        label = { Text("Nombre de la liga") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        singleLine = true,
-                        maxLines = 1
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    // Botones: Cancelar y Crear
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        TextButton(onClick = onDismiss) {
-                            Text("Cancelar", color = MaterialTheme.colorScheme.error)
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        TextButton(
-                            onClick = {
-                                if (isSubmitEnabled) onCreateLiga(leagueName)
-                            }
-                        ) {
-                            Text(
-                                text = "Crear",
-                                color = if (isSubmitEnabled)
-                                    MaterialTheme.colorScheme.primary
-                                else
-                                    Color.Gray
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-
 
 @Composable
 fun JoinLigaDialog(
@@ -521,17 +432,18 @@ fun CustomAlertDialogSingleButton(
         }
     }
 }
-@Composable
-fun EditLigaDialog(
-    ligaId: String,
-    currentName: String,
-    onDismiss: () -> Unit,
-    onSave: (String, Uri?) -> Unit
-) {
-    var leagueName by remember { mutableStateOf(currentName) }
-    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
-    val context = LocalContext.current
 
+@Composable
+fun LigaDialog(
+    title: String,
+    initialName: String = "",
+    onDismiss: () -> Unit,
+    onConfirm: (String, Uri?) -> Unit
+) {
+    var leagueName by remember { mutableStateOf(initialName) }
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+
+    // Launcher para elegir imagen
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         selectedImageUri = uri
     }
@@ -543,6 +455,7 @@ fun EditLigaDialog(
             modifier = Modifier.fillMaxWidth(0.9f)
         ) {
             Column {
+                // Encabezado con gradiente y título dinámico
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -558,35 +471,47 @@ fun EditLigaDialog(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Editar Liga",
+                        text = title,
                         color = Color.White,
                         style = MaterialTheme.typography.titleMedium
                     )
                 }
+
                 Column(modifier = Modifier.padding(16.dp)) {
+                    // Campo de nombre
                     OutlinedTextField(
                         value = leagueName,
                         onValueChange = { leagueName = it },
                         label = { Text("Nombre de la liga") },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = true
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // Botón para seleccionar/cambiar imagen
                     Button(
                         onClick = { launcher.launch("image/*") },
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(text = if (selectedImageUri == null) "Seleccionar imagen" else "Cambiar imagen")
+                        Text(
+                            text = if (selectedImageUri == null)
+                                "Seleccionar imagen"
+                            else
+                                "Cambiar imagen"
+                        )
                     }
 
+                    // Indicador de imagen elegida
                     selectedImageUri?.let {
                         Text(
                             text = "Imagen seleccionada ✅",
                             color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(top = 8.dp),
+                            modifier = Modifier
+                                .padding(top = 8.dp)
+                                .fillMaxWidth(),
                             textAlign = TextAlign.Center,
                             style = MaterialTheme.typography.bodyMedium
                         )
@@ -594,6 +519,7 @@ fun EditLigaDialog(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // Botones de acción
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.End
@@ -602,10 +528,17 @@ fun EditLigaDialog(
                             Text("Cancelar", color = MaterialTheme.colorScheme.error)
                         }
                         Spacer(modifier = Modifier.width(8.dp))
-                        TextButton(onClick = {
-                            onSave(leagueName, selectedImageUri)
-                        }) {
-                            Text("Guardar", color = MaterialTheme.colorScheme.primary)
+                        TextButton(
+                            onClick = { onConfirm(leagueName.trim(), selectedImageUri) },
+                            enabled = leagueName.isNotBlank()
+                        ) {
+                            Text(
+                                text = if (initialName.isEmpty()) "Crear" else "Guardar",
+                                color = if (leagueName.isNotBlank())
+                                    MaterialTheme.colorScheme.primary
+                                else
+                                    Color.Gray
+                            )
                         }
                     }
                 }
@@ -613,74 +546,6 @@ fun EditLigaDialog(
         }
     }
 }
-@Composable
-fun PlayerSelectionDialog(
-    players: List<PlayerOption?>,
-    onDismiss: () -> Unit,
-    onPlayerSelected: (PlayerOption) -> Unit
-) {
-    val validPlayers = players.filterNotNull()
-    val cardWidth = 150.dp
-    val cardHeight = 220.dp
 
-    val blueGradient = Brush.verticalGradient(
-        colors = listOf(Color(0xFF0D47A1), Color(0xFF1976D2))
-    )
-
-    Dialog(onDismissRequest = onDismiss) {
-        AnimatedVisibility(
-            visible = true,
-            enter = fadeIn(tween(300)) + scaleIn(tween(300)),
-            exit = fadeOut(tween(200)) + scaleOut(tween(200))
-        ) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth(0.95f)
-                    .wrapContentHeight(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-                elevation = CardDefaults.cardElevation(8.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .background(blueGradient)
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        text = "Elige un jugador",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    val rows = validPlayers.chunked(2)
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        rows.forEach { row ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                row.forEach { player ->
-                                    StyledPlayerCard(
-                                        player = player,
-                                        onClick = { onPlayerSelected(player) },
-                                        cardWidth = cardWidth,
-                                        cardHeight = cardHeight
-                                    )
-                                }
-                                if (row.size == 1) {
-                                    Spacer(modifier = Modifier.width(cardWidth + 12.dp))
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 
 

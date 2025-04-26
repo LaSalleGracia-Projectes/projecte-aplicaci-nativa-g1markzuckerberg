@@ -60,6 +60,9 @@ class HomeLogedViewModel : ViewModel() {
     private val _lastImageUpdateTs = MutableLiveData(System.currentTimeMillis())
     val lastImageUpdateTs: LiveData<Long> get() = _lastImageUpdateTs
 
+    private val _updateLigaSuccess = MutableLiveData<Event<Unit>>()
+    val updateLigaSuccess: LiveData<Event<Unit>> = _updateLigaSuccess
+
     init {
         // Cargar la jornada actual al iniciar.
         fetchCurrentJornada()
@@ -115,7 +118,6 @@ class HomeLogedViewModel : ViewModel() {
                 if (response.isSuccessful) {
                     fetchUserLeagues()
                 } else {
-                    // Aquí puedes verificar el código de error
                     when (response.code()) {
                         404 -> {
                             _errorMessage.value = Event("Error: Liga no encontrada.")
@@ -148,38 +150,67 @@ class HomeLogedViewModel : ViewModel() {
         }
     }
 
-    fun createLiga(name: String) {
+    fun createLiga(
+        name: String,
+        imageUri: Uri?,
+        context: Context
+    ) {
         _isLoading.value = true
         viewModelScope.launch {
             try {
-                val request = CreateLigaRequest(name = name)
+                // 1) Creamos la liga
+                val request = CreateLigaRequest(name = name.trim())
                 val response = RetrofitClient.ligaService.createLiga(request)
+
                 if (response.isSuccessful) {
-                    fetchUserLeagues()
+                    // 2) Obtenemos el wrapper que trae message + liga
+                    val wrapper = response.body()!!
+                    _createLigaResult.value = Event(wrapper)
+
+                    // 3) Extraemos el id de la nueva liga
+                    val newLigaId = wrapper.liga.id.toString()
+
+                    if (imageUri != null) {
+                        // 4) Preparamos el multipart para la imagen
+                        val mime = context.contentResolver.getType(imageUri)!!
+                        val bytes = context.contentResolver.openInputStream(imageUri)!!.readBytes()
+                        val reqFile = bytes.toRequestBody(mime.toMediaTypeOrNull())
+                        val part = MultipartBody.Part.createFormData(
+                            "image",
+                            "leagueImage.${mime.substringAfter("/")}",
+                            reqFile
+                        )
+
+                        // 5) Llamamos al endpoint de subida
+                        val uploadResponse = RetrofitClient.ligaService.uploadLeagueImage(
+                            newLigaId,
+                            part
+                        )
+
+                        if (!uploadResponse.isSuccessful) {
+                            Log.e("API_CALL",
+                                "Error al subir imagen: ${uploadResponse.code()} " +
+                                        uploadResponse.errorBody()?.string()
+                            )
+                        } else {
+                            // 6) Si subió bien, recargamos lista y timestamp
+                            fetchUserLeagues()
+                            _lastImageUpdateTs.value = System.currentTimeMillis()
+                        }
+                    } else {
+                        // Si no había imagen, simplemente recargamos la lista
+                        fetchUserLeagues()
+                    }
                 } else {
-                    // Mismo caso aquí
+                    // Manejo de errores HTTP al crear liga
                     when (response.code()) {
-                        404 -> {
-                            _errorMessage.value = Event("Error: No se pudo crear la liga.")
-                        }
-                        409 -> {
-                            _errorMessage.value = Event("Error: Liga ya existe.")
-                        }
-                        422 -> {
-                            _errorMessage.value = Event("Error: Datos inválidos.")
-                        }
-                        403 -> {
-                            _errorMessage.value = Event("Error: No tienes permiso para crear una liga.")
-                        }
-                        401 -> {
-                            _errorMessage.value = Event("Error: No estás autenticado.")
-                        }
-                        500 -> {
-                            _errorMessage.value = Event("Error del servidor al crear la liga. Intenta más tarde.")
-                        }
-                        else -> {
-                            _errorMessage.value = Event("Error desconocido: ${response.code()}.")
-                        }
+                        404 -> _errorMessage.value = Event("Error: No se pudo crear la liga.")
+                        409 -> _errorMessage.value = Event("Error: Liga ya existe.")
+                        422 -> _errorMessage.value = Event("Error: Datos inválidos.")
+                        403 -> _errorMessage.value = Event("Error: No tienes permiso para crear una liga.")
+                        401 -> _errorMessage.value = Event("Error: No estás autenticado.")
+                        500 -> _errorMessage.value = Event("Error del servidor al crear la liga. Intenta más tarde.")
+                        else -> _errorMessage.value = Event("Error desconocido: ${response.code()}.")
                     }
                 }
             } catch (e: Exception) {
@@ -189,6 +220,7 @@ class HomeLogedViewModel : ViewModel() {
             }
         }
     }
+
 
     fun fetchUserLeagues() {
         _isLoading.value = true
@@ -214,7 +246,7 @@ class HomeLogedViewModel : ViewModel() {
                 val response = RetrofitClient.ligaService.leaveLiga(ligaId)
                 if (response.isSuccessful) {
                     _leaveLigaResult.value = Event("Liga abandonada")
-                    fetchUserLeagues() // Actualiza la lista de ligas
+                    fetchUserLeagues()
                 } else {
                     _errorMessage.value = Event("El capitán no puede abandonar la liga")
                 }
@@ -228,7 +260,7 @@ class HomeLogedViewModel : ViewModel() {
     private fun fetchUserInfo() {
         viewModelScope.launch {
             try {
-                val response = RetrofitClient.userService.getMe() // Asegúrate de que este método exista
+                val response = RetrofitClient.userService.getMe()
                 if (response.isSuccessful) {
                     _userEmail.value = response.body()?.user?.correo ?: ""
                 } else {
@@ -263,7 +295,7 @@ class HomeLogedViewModel : ViewModel() {
                 val response = RetrofitClient.ligaService.uploadLeagueImage(ligaId, body)
 
                 if (response.isSuccessful) {
-                    _errorMessage.value = Event("Imagen actualizada con éxito.")
+                    _updateLigaSuccess.value = Event(Unit)
                     fetchUserLeagues() // Actualizamos la lista de ligas.
                     // Actualizamos el timestamp para forzar la recarga de las imágenes.
                     _lastImageUpdateTs.value = System.currentTimeMillis()
@@ -285,7 +317,7 @@ class HomeLogedViewModel : ViewModel() {
                 val request = UpdateLigaNameRequest(newName = newName)
                 val response = RetrofitClient.ligaService.updateLigaName(ligaId, request)
                 if (response.isSuccessful) {
-                    _errorMessage.value = Event("Nombre de liga actualizado con éxito.")
+                    _updateLigaSuccess.value = Event(Unit)
                     fetchUserLeagues()  // Refrescar lista y vista
                 } else {
                     _errorMessage.value = Event("Error al actualizar nombre: ${response.code()}")

@@ -37,12 +37,11 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.LigaConPuntos
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CreateLigaDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialogSingleButton
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.EditLigaDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.JoinLigaDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.LeagueCodeDialog
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.LigaDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.HomeLogedViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -76,6 +75,7 @@ fun HomeLogedView(
     var alertTitle by remember { mutableStateOf("") }
     var alertMessage by remember { mutableStateOf("") }
     var alertOnConfirm by remember { mutableStateOf({}) }
+    var editingLiga by remember { mutableStateOf<LigaConPuntos?>(null) }
 
     val createLigaResult by homeLogedViewModel.createLigaResult.observeAsState()
     val joinLigaResult by homeLogedViewModel.joinLigaResult.observeAsState()
@@ -83,6 +83,9 @@ fun HomeLogedView(
     val isLoading by homeLogedViewModel.isLoading.observeAsState(initial = true)
     val userEmail by homeLogedViewModel.userEmail.observeAsState(initial = "")
     val lastImageUpdateTs by homeLogedViewModel.lastImageUpdateTs.observeAsState(initial = 0L)
+    val context = LocalContext.current
+    val updateLigaSuccess by homeLogedViewModel.updateLigaSuccess.observeAsState()
+    val errorEvent       by homeLogedViewModel.errorMessage.observeAsState()
 
     BackHandler {}
 
@@ -98,18 +101,18 @@ fun HomeLogedView(
     }
 
     // Al recibir el resultado de crear una liga
-    LaunchedEffect(key1 = createLigaResult) {
-        createLigaResult?.getContentIfNotHandled()?.let {
-            alertTitle = "Crear Liga"
-            alertMessage = "Liga creada correctamente."
-            alertOnConfirm = { showCustomAlert = false }
-            showCustomAlert = true
-            homeLogedViewModel.fetchUserLeagues()
-        }
+    LaunchedEffect(createLigaResult) {
+        createLigaResult
+            ?.getContentIfNotHandled()
+            ?.let {
+                alertTitle   = "Crear Liga"
+                alertMessage = "Liga creada correctamente."
+                showCustomAlert = true
+            }
     }
 
+
     // Para mostrar errores en un modal
-    val errorEvent by homeLogedViewModel.errorMessage.observeAsState()
     LaunchedEffect(key1 = errorEvent) {
         errorEvent?.getContentIfNotHandled()?.let { error: String ->
             alertTitle = "Error"
@@ -119,29 +122,35 @@ fun HomeLogedView(
         }
     }
 
-    var editingLiga by remember { mutableStateOf<LigaConPuntos?>(null) }
-    val context = LocalContext.current
+    // --------- Efecto para detectar éxito en la actualización ------------
+    LaunchedEffect(updateLigaSuccess) {
+        updateLigaSuccess
+            ?.getContentIfNotHandled()
+            ?.let {
+                alertTitle   = "Liga actualizada"
+                alertMessage = "Liga actualizada con éxito."
+                showCustomAlert = true
+            }
+    }
 
     editingLiga?.let { liga ->
-        EditLigaDialog(
-            ligaId = liga.id.toString(),
-            currentName = liga.name,
+        LigaDialog(
+            title = "Editar Liga",
+            initialName = liga.name,
             onDismiss = { editingLiga = null },
-            onSave = { newName, imageUri ->
+            onConfirm = { newName, imgUri ->
                 editingLiga = null
-
-                // Cambiar el nombre de la liga
+                // Actualizar nombre si cambió
                 if (newName.isNotBlank() && newName != liga.name) {
                     homeLogedViewModel.updateLigaName(liga.id.toString(), newName)
                 }
-                // Cambiar la imagen de la liga
-                imageUri?.let {
+                // Subir imagen si se seleccionó
+                imgUri?.let {
                     homeLogedViewModel.updateLigaWithImage(liga.id.toString(), it, context)
                 }
             }
         )
     }
-
 
     LaunchedEffect(Unit) {
         homeLogedViewModel.fetchUserLeagues()
@@ -300,8 +309,6 @@ fun HomeLogedView(
                             totalUsers = liga.total_users,
                             onClick = { navController.navigate(Routes.LigaView.createRoute(liga.code)) },
                             onShareLiga = {
-                                // Aquí puedes implementar la acción para compartir, por ejemplo:
-                                // Mostrar un Toast o abrir un diálogo similar a LeagueCodeDialog
                                 selectedLeagueCode = liga.code
                             },
                             onEditLiga = {
@@ -311,7 +318,7 @@ fun HomeLogedView(
                                     alertOnConfirm = { showCustomAlert = false }
                                     showCustomAlert = true
                                 } else {
-                                    editingLiga = liga // Aquí abre el nuevo diálogo si eres el creador
+                                    editingLiga = liga
                                 }
                             },
                             onLeaveLiga = {
@@ -356,13 +363,17 @@ fun HomeLogedView(
 
         /** Diálogos: al enviar, se cierra el diálogo correspondiente antes de llamar a la acción */
         if (openCreateLigaDialog) {
-            CreateLigaDialog(
+            LigaDialog(
+                title     = "Crear Liga",
                 onDismiss = { openCreateLigaDialog = false },
-                onCreateLiga = { leagueName ->
-                    // Cerrar el diálogo antes de la acción
+                onConfirm = { name, imgUri ->
                     openCreateLigaDialog = false
-                    homeLogedViewModel.createLiga(leagueName)
-                },
+                    homeLogedViewModel.createLiga(
+                        name     = name.trim(),
+                        imageUri = imgUri,
+                        context  = context
+                    )
+                }
             )
         }
         if (openJoinLigaDialog) {
@@ -374,7 +385,6 @@ fun HomeLogedView(
                 },
             )
         }
-        // Muestra el LeagueCodeDialog cuando selectedLeagueCode tiene un valor
         selectedLeagueCode?.let { code ->
             LeagueCodeDialog(
                 leagueCode = code,
@@ -386,7 +396,6 @@ fun HomeLogedView(
     // Mostrar nuestro modal de alerta personalizado
     if (showCustomAlert) {
         if (alertTitle == "Abandonar Liga") {
-            // Utilizamos el CustomAlertDialog de dos botones para confirmación
             CustomAlertDialog(
                 title = alertTitle,
                 message = alertMessage,
@@ -476,10 +485,10 @@ fun LeagueRow(
                         model = "${RetrofitClient.BASE_URL}api/v1/liga/image/$leagueId?ts=$lastImageUpdateTs",
                         contentDescription = "Imagen Liga",
                         modifier = Modifier
-                            .size(48.dp) // Imagen más pequeña dentro del borde
+                            .size(48.dp)
                             .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceVariant) // Fondo por si la imagen no llena
-                            .padding(2.dp), // Ajuste fino si lo deseas
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .padding(2.dp),
                         placeholder = painterResource(id = R.drawable.fantasydraft),
                         error = painterResource(id = R.drawable.fantasydraft)
                     )
@@ -533,7 +542,7 @@ fun LeagueRow(
                                     .clip(RoundedCornerShape(8.dp))
                                     .padding(0.dp)
                             ) {
-                                // NUEVA opción: Compartir liga
+                                // Compartir liga
                                 DropdownMenuItem(
                                     text = { Text("Compartir liga") },
                                     onClick = {
