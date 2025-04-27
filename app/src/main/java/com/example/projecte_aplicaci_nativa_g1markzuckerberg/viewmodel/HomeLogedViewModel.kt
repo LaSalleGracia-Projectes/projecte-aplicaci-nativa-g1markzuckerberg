@@ -130,7 +130,7 @@ class HomeLogedViewModel : ViewModel() {
                     val newLigaId = wrapper.liga.id.toString()
 
                     if (imageUri != null) {
-                        uploadLigaImage(newLigaId, imageUri, context)
+                        updateLigaWithImage(newLigaId, imageUri, context)
                     } else {
                         fetchUserLeagues()
                     }
@@ -153,7 +153,7 @@ class HomeLogedViewModel : ViewModel() {
         }
     }
 
-    private fun uploadLigaImage(ligaId: String, imageUri: Uri, context: Context) {
+    fun updateLigaWithImage(ligaId: String, imageUri: Uri, context: Context) {
         viewModelScope.launch {
             try {
                 val contentResolver = context.contentResolver
