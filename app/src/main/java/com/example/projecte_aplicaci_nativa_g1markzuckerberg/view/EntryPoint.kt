@@ -99,7 +99,9 @@ fun EntryPoint(
         Routes.LigaView.route,
         Routes.UserDraftView.route,
         Routes.DraftScreen.route,
-        Routes.NotificationScreen.route
+        Routes.NotificationScreen.route,
+        Routes.PlayersList.route,
+        Routes.PlayerDetail.route
     )
     val currentRoute = navBackStackEntry?.destination?.route
     val showNavBar = currentRoute in routesConNavbar
@@ -117,6 +119,7 @@ fun EntryPoint(
                     onProfileClick = { /* Acción perfil */ },
                     onHomeClick = { navigationController.navigate(Routes.HomeLoged.route) },
                     onNotificationsClick = { navigationController.navigate(Routes.NotificationScreen.route) },
+                    onPlayersClick = { navigationController.navigate(Routes.PlayersList.createRoute()) },
                     onSettingsClick = { navigationController.navigate(Routes.Settings.route) }
                 )
             }
@@ -129,9 +132,9 @@ fun EntryPoint(
                 .consumeWindowInsets(innerPadding)
                 .padding(innerPadding),
             enterTransition = { fadeIn(tween(300)) },
-            exitTransition  = { fadeOut(tween(300)) },
+            exitTransition = { fadeOut(tween(300)) },
             popEnterTransition = { fadeIn(tween(300)) },
-            popExitTransition  = { fadeOut(tween(300)) }
+            popExitTransition = { fadeOut(tween(300)) }
         ) {
             composable(Routes.Home.route) {
                 HomeView(navController = navigationController)
@@ -164,23 +167,23 @@ fun EntryPoint(
             composable(
                 Routes.UserDraftView.route,
                 arguments = listOf(
-                    navArgument("leagueId")        { type = NavType.StringType },
-                    navArgument("userId")          { type = NavType.StringType },
-                    navArgument("userName")        { type = NavType.StringType },
-                    navArgument("userPhotoUrl")    { type = NavType.StringType },
-                    navArgument("createdJornada")  { type = NavType.IntType    },
-                    navArgument("currentJornada")  { type = NavType.IntType    }
+                    navArgument("leagueId") { type = NavType.StringType },
+                    navArgument("userId") { type = NavType.StringType },
+                    navArgument("userName") { type = NavType.StringType },
+                    navArgument("userPhotoUrl") { type = NavType.StringType },
+                    navArgument("createdJornada") { type = NavType.IntType },
+                    navArgument("currentJornada") { type = NavType.IntType }
                 )
             ) { backStackEntry ->
                 UserDraftView(
-                    navController      = navigationController,
+                    navController = navigationController,
                     userDraftViewModel = UserDraftViewModel(),
-                    leagueId           = backStackEntry.arguments?.getString("leagueId") ?: "",
-                    userId             = backStackEntry.arguments?.getString("userId") ?: "",
-                    userName           = backStackEntry.arguments?.getString("userName") ?: "",
-                    userPhotoUrl       = backStackEntry.arguments?.getString("userPhotoUrl") ?: "",
-                    createdJornada     = backStackEntry.arguments!!.getInt("createdJornada"),
-                    currentJornada     = backStackEntry.arguments!!.getInt("currentJornada")
+                    leagueId = backStackEntry.arguments?.getString("leagueId") ?: "",
+                    userId = backStackEntry.arguments?.getString("userId") ?: "",
+                    userName = backStackEntry.arguments?.getString("userName") ?: "",
+                    userPhotoUrl = backStackEntry.arguments?.getString("userPhotoUrl") ?: "",
+                    createdJornada = backStackEntry.arguments!!.getInt("createdJornada"),
+                    currentJornada = backStackEntry.arguments!!.getInt("currentJornada")
                 )
             }
             composable(Routes.DraftScreen.route) {
@@ -194,6 +197,19 @@ fun EntryPoint(
                 NotificationScreen(
                     navController = navigationController,
                     viewModel = notificationViewModel
+                )
+            }
+            composable(Routes.PlayersList.route) {
+                PlayersView(navController = navigationController)
+            }
+            composable(
+                route = Routes.PlayerDetail.route,
+                arguments = listOf(navArgument("playerId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val playerId = backStackEntry.arguments!!.getString("playerId")!!
+                PlayerDetailView(
+                    navController = navigationController,
+                    playerId = playerId
                 )
             }
         }

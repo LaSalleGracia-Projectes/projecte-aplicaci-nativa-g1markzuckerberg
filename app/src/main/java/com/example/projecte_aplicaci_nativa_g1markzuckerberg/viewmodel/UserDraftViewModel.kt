@@ -22,6 +22,15 @@ class UserDraftViewModel : ViewModel() {
     private val _leagueUserResponse = MutableLiveData<LeagueUserResponse>()
     val leagueUserResponse: LiveData<LeagueUserResponse> = _leagueUserResponse
 
+    private val _isLoadingDraft = MutableLiveData(false)
+    val isLoadingDraft: LiveData<Boolean> = _isLoadingDraft
+
+    private val _draftPlayers   = MutableLiveData<List<Player>>()
+    private val _draftFormation = MutableLiveData<String>()
+
+    val draftPlayers   : LiveData<List<Player>> = _draftPlayers
+    val draftFormation : LiveData<String>       = _draftFormation
+
     fun setSelectedTab(tab: Tab) {
         _selectedTab.value = tab
     }
@@ -79,14 +88,11 @@ class UserDraftViewModel : ViewModel() {
         }
     }
 
-    private val _draftPlayers   = MutableLiveData<List<Player>>()     // lista plana de 11
-    private val _draftFormation = MutableLiveData<String>()           // "4-3-3", "3-4-3", …
-    val draftPlayers   : LiveData<List<Player>> = _draftPlayers
-    val draftFormation : LiveData<String>       = _draftFormation
 
     /** Descarga la plantilla del usuario para la jornada dada (o total si roundName == null) */
     fun fetchUserDraft(leagueId: String, userId: String, roundName: Int?) {
         viewModelScope.launch {
+            _isLoadingDraft.value = true
             try {
                 val resp = RetrofitClient.draftService.getUserDraft(leagueId, userId, roundName)
                 if (resp.isSuccessful) {
@@ -95,10 +101,13 @@ class UserDraftViewModel : ViewModel() {
                         _draftFormation.postValue(it.plantilla.formation)
                     }
                 } else {
+                    _draftPlayers.postValue(emptyList())
                     Log.e("UserDraft", "Error getUserDraft: ${resp.code()}")
                 }
             } catch (e: Exception) {
                 Log.e("UserDraft", "Excepción getUserDraft(): ${e.message}")
+            } finally {
+            _isLoadingDraft.value = false
             }
         }
     }

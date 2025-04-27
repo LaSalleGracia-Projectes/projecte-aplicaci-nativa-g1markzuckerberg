@@ -1,5 +1,6 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.OverlayLoading
 import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -10,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -22,13 +24,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -46,6 +54,7 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.Tab
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.UserDraftViewModel
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+import androidx.compose.ui.unit.Velocity
 
 @Composable
 fun UserDraftView(
@@ -68,12 +77,6 @@ fun UserDraftView(
     )
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(pagerState.currentPage) {
-        userDraftViewModel.setSelectedTab(
-            if (pagerState.currentPage == 0) Tab.USER else Tab.DRAFT
-        )
-    }
-
     // 2) Traer info de usuario
     LaunchedEffect(leagueId, userId) {
         userDraftViewModel.fetchUserInfo(leagueId, userId)
@@ -88,14 +91,31 @@ fun UserDraftView(
 // variables reactivas
     val draftPlayers   by userDraftViewModel.draftPlayers.observeAsState(emptyList())
     val draftFormation by userDraftViewModel.draftFormation.observeAsState("4-3-3")
+    val isLoadingDraft  by userDraftViewModel.isLoadingDraft.observeAsState(false)
+
     val jornadas = remember(createdJornada, currentJornada) {
         (createdJornada..currentJornada).toList()
     }
+
     var selectedJornada by remember { mutableIntStateOf(currentJornada) }
 // cuando cambia la jornada seleccionada → descargar plantilla
     LaunchedEffect(selectedJornada) {
         userDraftViewModel.fetchUserDraft(leagueId, userId, selectedJornada)
     }
+    LaunchedEffect(pagerState.currentPage) {
+        val nuevaPestanya = if (pagerState.currentPage == 0) Tab.USER else Tab.DRAFT
+        userDraftViewModel.setSelectedTab(nuevaPestanya)
+
+        // Si acabamos de ir a DRAFT, recargamos la plantilla de la jornada seleccionada
+        if (nuevaPestanya == Tab.DRAFT) {
+            userDraftViewModel.fetchUserDraft(
+                leagueId = leagueId,
+                userId   = userId,
+                roundName = selectedJornada
+            )
+        }
+    }
+
 
     Box(Modifier.fillMaxSize()) {
         // ─── HEADER ─────────────────────────────────────────
@@ -151,15 +171,11 @@ fun UserDraftView(
                         .fillMaxWidth()
                         .padding(vertical = 8.dp)
                 ) {
-                    TabButton("Usuario", pagerState.currentPage == 0) {
-                        scope.launch { pagerState.animateScrollToPage(0) }
-                    }
-                    TabButton("Draft",   pagerState.currentPage == 1) {
-                        scope.launch { pagerState.animateScrollToPage(1) }
-                    }
+                UserDraftTabs(pagerState) { page ->
+                    scope.launch { pagerState.animateScrollToPage(page) }
                 }
             }
-        }
+        }}
 
         // ─── PAGER ──────────────────────────────────────────
         HorizontalPager(
@@ -169,6 +185,32 @@ fun UserDraftView(
                 .padding(top = 130.dp)
         ) { page ->
             if (page == 0) {
+                val imageScroll = rememberScrollState()
+                // === GRAFANA ===
+                val grafanaConn = remember(imageScroll) {
+                    object : NestedScrollConnection {
+                        override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                            val canScrollForward  = available.x < 0 && imageScroll.value < imageScroll.maxValue
+                            val canScrollBackward = available.x > 0 && imageScroll.value > 0
+
+                            return if (canScrollForward || canScrollBackward) {
+                                Offset.Zero
+                            } else {
+                                Offset(available.x, 0f)
+                            }
+                        }
+                        override suspend fun onPreFling(available: Velocity): Velocity {
+                            val canFlingForward  = available.x < 0 && imageScroll.value < imageScroll.maxValue
+                            val canFlingBackward = available.x > 0 && imageScroll.value > 0
+
+                            return if (canFlingForward || canFlingBackward) {
+                                Velocity.Zero
+                            } else {
+                                Velocity(available.x, 0f)
+                            }
+                        }
+                    }
+                }
                 // === USUARIO ===
                 LazyColumn(
                     modifier = Modifier
@@ -200,7 +242,10 @@ fun UserDraftView(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 16.dp)
-                                .horizontalScroll(rememberScrollState()),  // ← scroll lateral
+                                // 3) Primero nestedScroll con nuestra lógica condicional
+                                .nestedScroll(grafanaConn)
+                                // 4) Luego horizontalScroll con el state que definimos
+                                .horizontalScroll(imageScroll),
                             horizontalArrangement = Arrangement.Start
                         ) {
                             AsyncImage(                       // coil‑compose
@@ -216,21 +261,25 @@ fun UserDraftView(
                 }
 
             } else { /* ---------- PÁGINA DRAFT ---------- */
+                OverlayLoading(isLoading = isLoadingDraft) {
 
                 Column(modifier = Modifier.fillMaxSize()) {
+                    val jornadaPoints =
+                        draftPlayers.sumOf { it.puntos_jornada.toDouble().roundToInt() }
+
 
                     /* 1️⃣  LazyRow — SIEMPRE visible arriba */
                     LazyRow(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        contentPadding        = PaddingValues(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            .padding(vertical = 12.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(jornadas) { j ->
                             Box(
                                 modifier = Modifier
-                                    .size(36.dp)
+                                    .size(44.dp)        // un poco más grande que 36.dp
                                     .clip(CircleShape)
                                     .background(
                                         if (j == selectedJornada)
@@ -238,18 +287,29 @@ fun UserDraftView(
                                         else
                                             MaterialTheme.colorScheme.primary
                                     )
-                                    .clickable {
-                                        selectedJornada = j
-                                        // TODO: userDraftViewModel.fetchUserDraft(...)
-                                    },
+                                    .clickable { selectedJornada = j },
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(
-                                    "$j",
-                                    fontSize   = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color      = MaterialTheme.colorScheme.onPrimary
-                                )
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Text(
+                                        text = "J$j",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onPrimary
+                                    )
+                                    if (j == selectedJornada) {
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = jornadaPoints.toString(),
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.onPrimary
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -257,26 +317,29 @@ fun UserDraftView(
                     /* 2️⃣  Lo que queda de alto: campo + contenido */
                     Box(
                         modifier = Modifier
-                            .weight(1f)   // ocupa TODO tras la LazyRow
                             .fillMaxWidth()
+                            .clipToBounds()
                     ) {
                         Image(
                             painter           = painterResource(R.drawable.futbol_pitch_background),
                             contentDescription = null,
                             modifier          = Modifier
                                 .fillMaxSize()
-                                .graphicsLayer { scaleX = 1.25f } // opcional, como en DraftScreen
-                                .clipToBounds(),
+                                .graphicsLayer { scaleX = 1.25f },
                             contentScale      = ContentScale.FillBounds
                         )
 
-                        ReadonlyDraftLayout(
-                            formation = draftFormation,
-                            players   = draftPlayers
-                        )
+                        // Solo si hay jugadores, dibujamos su plantilla
+                        if (draftPlayers.isNotEmpty()) {
+                            ReadonlyDraftLayout(
+                                formation = draftFormation,
+                                players   = draftPlayers
+                            )
+                        }
                     }
                 }
             }
+        }
         }
 
             // ─── DROPDOWN / DIÁLOGOS ───────────────────────────
@@ -424,3 +487,57 @@ private fun Player.toPlayerOption() = com.example.projecte_aplicaci_nativa_g1mar
     puntos_totales = puntos_jornada.toDouble().roundToInt()
 )
 
+@Composable
+fun UserDraftTabs(
+    pagerState: PagerState,
+    onTabSelected: (page: Int) -> Unit
+) {
+    val tabTitles = listOf("Usuario", "Draft")
+
+    BoxWithConstraints {
+        val fullWidth = constraints.maxWidth.toFloat()
+        val tabWidth  = fullWidth / tabTitles.size
+        // Offset en px: página actual + fracción de desplazamiento
+        val indicatorOffsetPx by remember {
+            derivedStateOf {
+                (pagerState.currentPage + pagerState.currentPageOffsetFraction) * tabWidth
+            }
+        }
+
+        Column {
+            Row(Modifier.fillMaxWidth()) {
+                tabTitles.forEachIndexed { index, title ->
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .clickable { onTabSelected(index) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = title,
+                            color = if (pagerState.currentPage == index)
+                                MaterialTheme.colorScheme.onPrimary
+                            else
+                                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
+                }
+            }
+            // Indicador
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(2.dp)
+            ) {
+                Box(
+                    Modifier
+                        .offset { IntOffset(indicatorOffsetPx.roundToInt(), 0) }
+                        .width(with(LocalDensity.current) { tabWidth.toDp() })
+                        .fillMaxHeight()
+                        .background(MaterialTheme.colorScheme.onPrimary)
+                )
+            }
+        }
+    }
+}
