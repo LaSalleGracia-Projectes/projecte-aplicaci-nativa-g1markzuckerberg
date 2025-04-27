@@ -56,7 +56,9 @@ fun EntryPoint(
         Routes.Settings.route,
         Routes.LigaView.route,
         Routes.UserDraftView.route,
-        Routes.DraftScreen.route
+        Routes.DraftScreen.route,
+        Routes.PlayersList.route,
+        Routes.PlayerDetail.route
     )
     // Averigua si la ruta actual está en la lista
     val currentRoute = navBackStackEntry?.destination?.route
@@ -76,6 +78,7 @@ fun EntryPoint(
                     onProfileClick = { /* Acción para perfil */ },
                     onHomeClick = { navigationController.navigate(Routes.HomeLoged.route) },
                     onNotificationsClick = { /* Acción para notificaciones */ },
+                    onPlayersClick       = { navigationController.navigate(Routes.PlayersList.createRoute()) },
                     onSettingsClick = { navigationController.navigate(Routes.Settings.route) }
                 )
             }
@@ -173,6 +176,21 @@ fun EntryPoint(
                 navController = navigationController,
                 viewModel = draftViewModel,
                 innerPadding = innerPadding
+            )
+        }
+        composable(Routes.PlayersList.route) {
+            PlayersView(navController = navigationController)
+        }
+        composable(
+            route = Routes.PlayerDetail.route,
+            arguments = listOf(navArgument("playerId") {
+                type = NavType.StringType
+            })
+        ) { backStackEntry ->
+            val playerId = backStackEntry.arguments!!.getString("playerId")!!
+            PlayerDetailView(
+                navController = navigationController,
+                playerId = playerId
             )
         }
     }
