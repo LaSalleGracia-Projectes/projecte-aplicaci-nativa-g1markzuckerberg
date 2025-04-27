@@ -25,6 +25,9 @@ sealed class Routes(val route: String) {
     object DraftScreen : Routes("draft_screen") {
         fun createRoute() = "draft_screen"
     }
+    object NotificationScreen : Routes("notification_screen") {
+        fun createRoute() = "notification_screen"
+    }
 
     object PlayersList : Routes("players") {
         fun createRoute() = "players"
