@@ -21,10 +21,13 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.google.firebase.FirebaseApp
+
 class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.R)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        FirebaseApp.initializeApp(this)
         // Inicializamos el TokenManager
         val tokenManager = TokenManager(applicationContext)
         // Creamos el repositorio de autenticación usando el authService de RetrofitClient

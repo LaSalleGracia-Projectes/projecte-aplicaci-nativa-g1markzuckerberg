@@ -146,7 +146,7 @@ fun HomeLogedView(
                 }
                 // Subir imagen si se seleccionó
                 imgUri?.let {
-                    homeLogedViewModel.updateLigaWithImage(liga.id.toString(), it, context)
+                    homeLogedViewModel.uploadLigaImage(liga.id.toString(), it, context)
                 }
             }
         )

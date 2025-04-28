@@ -153,7 +153,7 @@ class HomeLogedViewModel : ViewModel() {
         }
     }
 
-    private fun uploadLigaImage(ligaId: String, imageUri: Uri, context: Context) {
+    fun uploadLigaImage(ligaId: String, imageUri: Uri, context: Context) {
         viewModelScope.launch {
             try {
                 val contentResolver = context.contentResolver
