@@ -16,8 +16,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
@@ -29,6 +31,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
@@ -349,16 +352,11 @@ fun DraftScreen(
 
 
     /* -------------  DIÁLOGO INSTRUCCIONES ------------- */
-    if (showInfoDialog) {
-        CustomAlertDialogSingleButton(
-            title   = "Instrucciones",
-            message = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. " +
-                    "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-            confirmButtonText = "Cerrar",
-            onAccept = { showInfoDialog = false }     // cierra el diálogo
-        )
+        if (showInfoDialog) {
+            GuideDialog(onDismiss = { showInfoDialog = false })
+        }
+
     }
-}
 }
     /* -------------  DIMENSIONES DE LAS CARTAS ------------- */
     // Se calcula el tamaño de las cartas en función del ancho de la pantalla
@@ -471,10 +469,14 @@ fun PositionCard(
             label = "SwapPlayerAnimation"
         ) { player ->
             if (player == null) {
-                Text(
-                    text = positionName,
-                    style = MaterialTheme.typography.bodySmall.copy(color = Color.White),
-                    textAlign = TextAlign.Center
+                // Ports "Portero_0" → "Portero1", "Defensa_2" → "Defensa3", etc.
+                val label = positionName.substringBeforeLast("_") +
+                        (positionName.substringAfterLast("_").toIntOrNull()?.plus(1) ?: "")
+                CompactPlaceholderCard(
+                    positionName = label,
+                    width        = cardWidth,
+                    height       = cardHeight,
+                    onClick      = { showDialog = true }
                 )
             } else {
                 CompactPlayerCard(
@@ -708,3 +710,253 @@ fun CompactPlayerCard(
         }
     }
 }
+
+@Composable
+fun CompactPlaceholderCard(
+    positionName: String,
+    modifier: Modifier = Modifier,
+    width: Dp,
+    height: Dp,
+    onClick: () -> Unit
+) {
+    // mismo estilo de fondo que CompactPlayerCard
+    val gradientBackground = Brush.verticalGradient(listOf(Color.LightGray, Color.White))
+
+    Card(
+        modifier = modifier
+            .width(width)
+            .height(height)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(10.dp),
+        border = BorderStroke(2.dp, Color.White),
+        elevation = CardDefaults.cardElevation(0.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+    ) {
+        Box(modifier = Modifier.background(gradientBackground)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // slot de imagen igual que CompactPlayerCard
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(0.85f)
+                        .height(70.dp)
+                        .background(Color.White, shape = RoundedCornerShape(8.dp))
+                        .clip(RoundedCornerShape(8.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.player_placeholder),
+                        contentDescription = positionName,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = positionName,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.DarkGray,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "0 pts",
+                    fontSize = 9.sp,
+                    color = Color.DarkGray,
+                    textAlign = TextAlign.Center
+                )
+                // no mostramos estrellas
+            }
+        }
+    }
+}
+
+
+@Composable
+fun GuideDialog(onDismiss: () -> Unit) {
+    val scrollState = rememberScrollState()
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(8.dp),
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .fillMaxHeight(0.5f)
+        ) {
+            Column {
+                // Header de gradiente
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                colors = listOf(
+                                    MaterialTheme.colorScheme.primary,
+                                    MaterialTheme.colorScheme.secondary
+                                )
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Guía de puntuación",
+                        color = Color.White,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+
+                // Contenido scrolleable
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .verticalScroll(scrollState)
+                ) {
+                    // -------- Bono y eventos --------
+                    Text(
+                        text = "📋 Bono y Eventos:",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Start
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = """
+• Titular → +3 puntos
+• Gol → +4 puntos
+• Asistencia → +3 puntos
+• Tarjeta amarilla → -1 punto
+• Falta grave → -3 puntos
+• Sustitución → el jugador que entra obtendrá la mitad de los puntos
+                        """.trimIndent(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Start
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // -------- Estadísticas por posición --------
+                    Text(
+                        text = "📚 Estadísticas (según posición):",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Start
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Portero
+                    Text(
+                        text = "• Portero",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        ),
+                        textAlign = TextAlign.Start
+                    )
+                    Text(
+                        text = "- Paradas realizadas\n- Balones recuperados" +
+                                "\n- Goles encajados",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Start
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Defensa
+                    Text(
+                        text = "• Defensa",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        ),
+                        textAlign = TextAlign.Start
+                    )
+                    Text(
+                        text = "- Entradas, intercepciones y despejes\n- Bloqueos de disparos\n- Precisión en pases" +
+                                "\n- Goles encajados",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Start
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Mediocentro
+                    Text(
+                        text = "• Mediocentro",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        ),
+                        textAlign = TextAlign.Start
+                    )
+                    Text(
+                        text = "- Posesión\n- Total de pases\n- % de acierto en pases\n- Intercepciones\n- Regates\n- Centros",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Start
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Delantero
+                    Text(
+                        text = "• Delantero",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        ),
+                        textAlign = TextAlign.Start
+                    )
+                    Text(
+                        text = "- Disparos totales y a puerta\n- Ataques y ataques peligrosos\n- Regates\n- Centros",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Start
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Aviso final
+                    Text(
+                        text = "❗ Si no juega, puntos = 0",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.error
+                        ),
+                        textAlign = TextAlign.Start
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Botón Cerrar
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        TextButton(onClick = { onDismiss() }) {
+                            Text(
+                                text = "Cerrar",
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+

@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -220,17 +221,46 @@ fun UserDraftView(
                 ) {
                     item {
                         leagueUserResponse?.let { resp ->
-                            Box(Modifier.wrapContentSize()) {
+                            // 1) Este Box "envuelve" sólo al TrainerCard y al DropdownMenu
+                            Box(
+                                modifier = Modifier
+                                    .wrapContentSize(align = Alignment.TopEnd),      // lo hacemos tan grande como su contenido
+                                contentAlignment = Alignment.TopEnd                 // anclamos los hijos arriba a la derecha
+                            ) {
                                 TrainerCard(
-                                    imageUrl = RetrofitClient.BASE_URL.trimEnd('/') + resp.user.imageUrl,
-                                    name = resp.user.username,
-                                    birthDate = resp.user.birthDate,
-                                    isCaptain = resp.user.is_capitan,
-                                    puntosTotales = resp.user.puntos_totales,
-                                    onInfoClick = { dropDownExpanded = true }
+                                    imageUrl     = RetrofitClient.BASE_URL.trimEnd('/') + resp.user.imageUrl,
+                                    name         = resp.user.username,
+                                    birthDate    = resp.user.birthDate,
+                                    isCaptain    = resp.user.is_capitan,
+                                    puntosTotales= resp.user.puntos_totales,
+                                    onInfoClick  = { dropDownExpanded = true }
                                 )
+                                DropdownMenu(
+                                    expanded        = dropDownExpanded,
+                                    onDismissRequest= { dropDownExpanded = false },
+                                    // 2) Opcional: desplaza el menú unos dp hacia abajo si quieres separarlo del icono
+                                    offset          = DpOffset(x = 0.dp, y = 8.dp)
+                                ) {
+                                    DropdownMenuItem(
+                                        text    = { Text("Expulsar", color = Color.White) },
+                                        onClick = {
+                                            dropDownExpanded       = false
+                                            confirmationAction     = "expulsar"
+                                            showConfirmationDialog = true
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text    = { Text("Hacer Capitán") },
+                                        onClick = {
+                                            dropDownExpanded       = false
+                                            confirmationAction     = "captain"
+                                            showConfirmationDialog = true
+                                        }
+                                    )
+                                }
                             }
                         } ?: Text("Cargando datos…")
+
                     }
                     item {
                         val graphUrl = remember(leagueId, userId) {
@@ -343,27 +373,7 @@ fun UserDraftView(
         }
 
             // ─── DROPDOWN / DIÁLOGOS ───────────────────────────
-        DropdownMenu(
-            expanded = dropDownExpanded,
-            onDismissRequest = { dropDownExpanded = false }
-        ) {
-            DropdownMenuItem(
-                text = { Text("Expulsar", color = Color.White) },
-                onClick = {
-                    dropDownExpanded = false
-                    confirmationAction = "expulsar"
-                    showConfirmationDialog = true
-                }
-            )
-            DropdownMenuItem(
-                text = { Text("Hacer Capitán") },
-                onClick = {
-                    dropDownExpanded = false
-                    confirmationAction = "captain"
-                    showConfirmationDialog = true
-                }
-            )
-        }
+
 
         if (showConfirmationDialog) {
             val title = if (confirmationAction == "expulsar") "Confirmar expulsión" else "Confirmar capitán"
