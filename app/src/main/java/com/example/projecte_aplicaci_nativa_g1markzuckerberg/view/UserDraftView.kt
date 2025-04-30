@@ -26,17 +26,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -93,6 +93,9 @@ fun UserDraftView(
     val draftPlayers   by userDraftViewModel.draftPlayers.observeAsState(emptyList())
     val draftFormation by userDraftViewModel.draftFormation.observeAsState("4-3-3")
     val isLoadingDraft  by userDraftViewModel.isLoadingDraft.observeAsState(false)
+    // 1 ─ estados NUEVOS junto a dropDownExpanded
+    var boxCoords      by remember { mutableStateOf<LayoutCoordinates?>(null) }   // ← NUEVO
+
 
     val jornadas = remember(createdJornada, currentJornada) {
         (createdJornada..currentJornada).toList()
@@ -224,8 +227,9 @@ fun UserDraftView(
                             // 1) Este Box "envuelve" sólo al TrainerCard y al DropdownMenu
                             Box(
                                 modifier = Modifier
-                                    .wrapContentSize(align = Alignment.TopEnd),      // lo hacemos tan grande como su contenido
-                                contentAlignment = Alignment.TopEnd                 // anclamos los hijos arriba a la derecha
+                                    .wrapContentSize(align = Alignment.TopEnd)
+                                    .onGloballyPositioned { boxCoords = it },
+                                contentAlignment = Alignment.TopEnd
                             ) {
                                 TrainerCard(
                                     imageUrl     = RetrofitClient.BASE_URL.trimEnd('/') + resp.user.imageUrl,
@@ -233,31 +237,16 @@ fun UserDraftView(
                                     birthDate    = resp.user.birthDate,
                                     isCaptain    = resp.user.is_capitan,
                                     puntosTotales= resp.user.puntos_totales,
-                                    onInfoClick  = { dropDownExpanded = true }
+
+                                    onExpelClick = {          // 🔴 “Expulsar”
+                                        confirmationAction     = "expulsar"
+                                        showConfirmationDialog = true
+                                    },
+                                    onCaptainClick = {        // 🟢 “Hacer Capitán”
+                                        confirmationAction     = "captain"
+                                        showConfirmationDialog = true
+                                    }
                                 )
-                                DropdownMenu(
-                                    expanded        = dropDownExpanded,
-                                    onDismissRequest= { dropDownExpanded = false },
-                                    // 2) Opcional: desplaza el menú unos dp hacia abajo si quieres separarlo del icono
-                                    offset          = DpOffset(x = 0.dp, y = 8.dp)
-                                ) {
-                                    DropdownMenuItem(
-                                        text    = { Text("Expulsar", color = Color.White) },
-                                        onClick = {
-                                            dropDownExpanded       = false
-                                            confirmationAction     = "expulsar"
-                                            showConfirmationDialog = true
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text    = { Text("Hacer Capitán") },
-                                        onClick = {
-                                            dropDownExpanded       = false
-                                            confirmationAction     = "captain"
-                                            showConfirmationDialog = true
-                                        }
-                                    )
-                                }
                             }
                         } ?: Text("Cargando datos…")
 
