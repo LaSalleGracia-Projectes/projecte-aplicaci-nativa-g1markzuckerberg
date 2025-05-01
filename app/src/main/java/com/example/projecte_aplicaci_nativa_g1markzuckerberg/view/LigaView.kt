@@ -39,6 +39,7 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.repository.AuthRepository
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialogSingleButton
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.LeagueCodeDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.TokenManager
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.UserImage
@@ -65,13 +66,19 @@ fun LigaView(
     val authRepository = AuthRepository(service = RetrofitClient.authService, tokenManager = tokenManager)
     val currentUserId = authRepository.getCurrentUserId()
     val isFetching by draftViewModel.isFetchingDraft.observeAsState(false)
+    val draftError    by draftViewModel.errorMessage.observeAsState("")
+    var showDraftErr  by remember { mutableStateOf(false) }
 
     LaunchedEffect(key1 = selectedJornada) {
         val jornadaParam = if (selectedJornada == 0) null else selectedJornada
         ligaViewModel.fetchLigaInfo(ligaCode, jornadaParam)
     }
-    // Se ha eliminado el LaunchedEffect que navegaba automáticamente al detectar un draft creado.
-    // Ahora la navegación a DraftScreen se realizará solo en el callback del diálogo.
+    // Cuando el error de draft sea nuestro 500, lanzamos el diálogo
+    LaunchedEffect(draftError) {
+        if (draftError == "Ya tienes un draft creado en esta jornada.") {
+            showDraftErr = true
+        }
+    }
 
     // Estado para mostrar el diálogo de creación de draft
     var showCreateDraftDialog by remember { mutableStateOf(false) }
@@ -422,7 +429,7 @@ fun LigaView(
                     onDismiss = { showCreateDraftDialog = false },
                     onConfirm = { formation ->
                         showCreateDraftDialog = false
-
+                        // ahora usamos el método corregido:
                         draftViewModel.createAndFetchDraft(
                             formation = formation,
                             ligaId    = data.liga.id
@@ -438,6 +445,17 @@ fun LigaView(
             LeagueCodeDialog(
                 leagueCode = ligaData!!.liga.code,
                 onDismiss = { ligaViewModel.toggleShowCodeDialog() }
+            )
+        }
+
+        if (showDraftErr) {
+            CustomAlertDialogSingleButton(
+                title    = "Error",
+                message  = draftError,
+                onAccept = {
+                    showDraftErr = false
+                    draftViewModel.clearError()
+                }
             )
         }
     }

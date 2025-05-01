@@ -12,13 +12,24 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.DpOffset
 
 @Composable
 fun TrainerCard(
@@ -27,8 +38,10 @@ fun TrainerCard(
     birthDate: String?,
     isCaptain: Boolean,
     puntosTotales: String,
-    onInfoClick: () -> Unit = {}
+    onExpelClick: () -> Unit = {},
+    onCaptainClick: () -> Unit = {},
 ) {
+    var menuExpanded by remember { mutableStateOf(false) }
     Card(
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
@@ -78,13 +91,43 @@ fun TrainerCard(
                     }
                 }
                 // Botón de información a la derecha
-                IconButton(onClick = onInfoClick) {
-                    Icon(
-                        imageVector = Icons.Filled.Info,
-                        contentDescription = "Información adicional",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
+                // ─── Icono + menú ─────────────────────────────────────────
+                Box(
+                    modifier = Modifier.wrapContentSize(Alignment.TopEnd)   // ancla = botón
+                ) {
+                    IconButton(onClick = { menuExpanded = true }) {
+                        Icon(
+                            imageVector = Icons.Filled.Info,
+                            contentDescription = "Información adicional",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded         = menuExpanded,
+                        onDismissRequest = { menuExpanded = false },
+                        offset           = DpOffset(0.dp, 4.dp)              // 4 dp de holgura
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Expulsar", color = Color.White) },
+                            modifier = Modifier.background(
+                                Brush.horizontalGradient(listOf(Color(0xFFFF5252), Color(0xFFB71C1C)))
+                            ),
+                            onClick = {
+                                menuExpanded = false
+                                onExpelClick()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Hacer Capitán") },
+                            onClick = {
+                                menuExpanded = false
+                                onCaptainClick()
+                            }
+                        )
+                    }
                 }
+
             }
             Spacer(modifier = Modifier.height(16.dp))
             // Fila para mostrar los PTS (sin decimales) alineados a la derecha
