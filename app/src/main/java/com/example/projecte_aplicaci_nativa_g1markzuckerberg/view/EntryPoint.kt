@@ -41,7 +41,8 @@ fun EntryPoint(
         factory = HomeLogedViewModelFactory(RetrofitClient.authRepository)
     ),
     draftViewModel: DraftViewModel = viewModel(),
-    notificationViewModel: NotificationViewModel = viewModel()
+    notificationViewModel: NotificationViewModel = viewModel(),
+    settingsVM: SettingsViewModel,
 ) {
     val context = LocalContext.current
 
@@ -152,7 +153,7 @@ fun EntryPoint(
                 HomeLogedView(navController = navigationController, homeLogedViewModel = homeLogedViewModel)
             }
             composable(Routes.Settings.route) {
-                SettingsScreen(navController = navigationController)
+                SettingsScreen(navController = navigationController, viewModel = settingsVM)
             }
             composable(Routes.LigaView.route) { backStackEntry ->
                 val ligaCode = backStackEntry.arguments?.getString("ligaCode") ?: ""

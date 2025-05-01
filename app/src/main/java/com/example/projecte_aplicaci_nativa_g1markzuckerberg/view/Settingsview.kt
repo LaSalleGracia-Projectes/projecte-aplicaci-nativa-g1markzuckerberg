@@ -1,31 +1,36 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.GradientHeader
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.SettingsViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.factory.SettingsViewModelFactory
 
+/* ---------- ENTRY (llamada desde NavHost) ---------- */
 @Composable
-fun SettingsScreen(navController: NavController) {
-    // Usamos el factory para inyectar el AuthRepository
-    val settingsViewModel: SettingsViewModel = viewModel(
-        factory = SettingsViewModelFactory(RetrofitClient.authRepository)
-    )
-    // Simplemente llama a SettingsView, pasándole todo lo que necesites
-    SettingsView(navController = navController, viewModel = settingsViewModel)
+fun SettingsScreen(navController: NavController,
+                   viewModel: SettingsViewModel
+) {
+    SettingsView(navController, viewModel)
 }
 
+/* ---------- UI PRINCIPAL ---------- */
 @Composable
 fun SettingsView(
     navController: NavController,
@@ -33,65 +38,122 @@ fun SettingsView(
 ) {
     val isLoading by viewModel.isLoading.observeAsState(false)
     val errorMessage by viewModel.errorMessage.observeAsState()
+    val scrollState = rememberScrollState()
+    val isDark by viewModel.isDarkTheme.observeAsState(initial = false)
 
+    /* Para diálogos de “Lorem ipsum” */
+    var dialogTitle by remember { mutableStateOf<String?>(null) }
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.LightGray)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                AjustesSeccion("Creadores del proyecto")
-                AjustesSeccion("Contacto")
-                AjustesSeccion("Modo oscuro (switch)")
-                AjustesSeccion("Política de privacidad")
-                AjustesSeccion("Conoce nuestra API")
-
-                if (isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
-                }
-                errorMessage?.let { error ->
-                    Text(text = error, color = MaterialTheme.colorScheme.error)
-                }
+    dialogTitle?.let { title ->
+        AlertDialog(
+            onDismissRequest = { dialogTitle = null },
+            title = { Text(title) },
+            text  = { Text("Lorem ipsum dolor sit amet, consectetur adipiscing elit…") },
+            confirmButton = {
+                TextButton(onClick = { dialogTitle = null }) { Text("Cerrar") }
             }
-
-            // BOTÓN DE CERRAR SESIÓN
-            Button(
-                onClick = {
-                    viewModel.logout {
-                        // Limpiar token y volver a Home
-                        navController.navigate(Routes.Home.route) {
-                            popUpTo(Routes.Home.route) { inclusive = true }
-                        }
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            ) {
-                Text(text = "Cerrar sesión")
-            }
-        }
+        )
     }
 
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.LightGray)
+            .verticalScroll(scrollState)
+    ) {
+        /* Header degradado */
+        GradientHeader(title = "Ajustes")
+
+        Spacer(Modifier.height(16.dp))
+
+        /* Tarjetas */
+        SettingsCard("Creadores del proyecto") { dialogTitle = it }
+        SettingsCard("Contacto") { dialogTitle = it }
+        DarkModeCard(isDark) { viewModel.toggleTheme() }
+        SettingsCard("Política de privacidad") { dialogTitle = it }
+        SettingsCard("Conoce nuestra API") { dialogTitle = it }
+
+        /* Espaciador y botón inferior */
+        Spacer(Modifier.height(24.dp))
+
+        Button(
+            onClick = {
+                viewModel.logout {
+                    navController.navigate(Routes.Home.route) {
+                        popUpTo(Routes.Home.route) { inclusive = true }
+                    }
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .padding(horizontal = 16.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            )
+        ) { Text("Cerrar sesión") }
+
+        if (isLoading) {
+            Spacer(Modifier.height(16.dp))
+            CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally))
+        }
+
+        errorMessage?.let {
+            Spacer(Modifier.height(8.dp))
+            Text(it, color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.align(Alignment.CenterHorizontally))
+        }
+
+        Spacer(Modifier.height(24.dp))
+    }
+}
+
+/* ---------- COMPONENTES REUTILIZABLES ---------- */
 @Composable
-fun AjustesSeccion(titulo: String) {
-    ElevatedCard(
-        modifier = Modifier.fillMaxWidth()
+fun SettingsCard(
+    title: String,
+    onClick: (String) -> Unit          // devolvemos el título para el diálogo
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .clickable { onClick(title) },
+        shape = RoundedCornerShape(18.dp),
+        tonalElevation = 2.dp,
+        color = MaterialTheme.colorScheme.surface
     ) {
         Text(
-            text = titulo,
+            text = title,
             style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(20.dp)
         )
+    }
+}
+
+@Composable
+fun DarkModeCard(
+    isDark: Boolean,
+    onToggle: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+        shape = RoundedCornerShape(18.dp),
+        tonalElevation = 2.dp,
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Modo oscuro", style = MaterialTheme.typography.bodyLarge)
+            Switch(checked = isDark, onCheckedChange = { onToggle() })
+        }
     }
 }
