@@ -10,8 +10,10 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -33,38 +35,33 @@ import coil.transform.CircleCropTransformation
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.PlayerModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.PlayersViewModel
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.PlayersViewModelFactory
-
-private val laLigaTeams = listOf(
-    "Celta de Vigo", "FC Barcelona", "Getafe", "Valencia", "Girona",
-    "Real Valladolid", "Rayo Vallecano", "Osasuna", "Real Betis", "Espanyol",
-    "Real Sociedad", "Mallorca", "Sevilla", "Leganés", "Las Palmas",
-    "Deportivo Alavés", "Real Madrid", "Villarreal", "Atlético Madrid", "Athletic Club"
-)
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.LoadingTransitionScreen
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayersView(navController: NavController) {
-    val repo = remember { RetrofitClient.playerRepository }
-    val vm: PlayersViewModel = viewModel(factory = remember { PlayersViewModelFactory(repo) })
-    val state = vm.uiState
-    val onPrimary = MaterialTheme.colorScheme.onPrimary
+    val vm: PlayersViewModel = viewModel(factory = remember { PlayersViewModelFactory(RetrofitClient.playerRepository) })
+    val teamVm: TeamViewModel  = viewModel(factory = remember { TeamViewModelFactory(RetrofitClient.teamRepository) })
 
-    val listState = rememberLazyListState()
+    val state      = vm.uiState
+    val listState  = rememberLazyListState()
+    val onPrimary  = MaterialTheme.colorScheme.onPrimary
+
     var showTeamPopup by remember { mutableStateOf(false) }
     var targetScroll by remember { mutableStateOf<Pair<Int, Int>?>(null) }
 
     LaunchedEffect(state.pointsOrder, targetScroll) {
-        targetScroll?.let { (index, offset) ->
-            listState.scrollToItem(index, offset)
+        targetScroll?.let { (i, off) ->
+            listState.scrollToItem(i, off)
             targetScroll = null
         }
     }
 
     Box(Modifier.fillMaxSize()) {
+        /* ─────────── HEADER + FILTROS + LISTA ─────────── */
         Column(Modifier.fillMaxSize()) {
-            // HEADER
+            /* header */
             Box(
                 Modifier
                     .fillMaxWidth()
@@ -76,36 +73,18 @@ fun PlayersView(navController: NavController) {
                                 MaterialTheme.colorScheme.secondary
                             )
                         )
-                    )
-                    .padding(horizontal = 20.dp),
+                    ),
                 contentAlignment = Alignment.Center
             ) {
-                Row(
-                    Modifier.fillMaxSize(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver",
-                            tint = onPrimary
-                        )
-                    }
-                    Text(
-                        "Jugadores",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontSize = 26.sp,
-                            fontWeight = FontWeight.ExtraBold
-                        ),
-                        color = onPrimary,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Spacer(Modifier.width(48.dp))
-                }
+                Text(
+                    "Jugadores",
+                    style  = MaterialTheme.typography.titleLarge.copy(fontSize = 26.sp, fontWeight = FontWeight.ExtraBold),
+                    color  = onPrimary,
+                    textAlign = TextAlign.Center
+                )
             }
 
-            // FILTROS
+            /* filtros */
             Row(
                 Modifier
                     .fillMaxWidth()
@@ -114,7 +93,7 @@ fun PlayersView(navController: NavController) {
             ) {
                 OutlinedButton(onClick = { showTeamPopup = true }) {
                     Text(state.selectedTeam ?: "Equipo", fontSize = 14.sp)
-                    Icon(Icons.Filled.KeyboardArrowDown, contentDescription = null)
+                    Icon(Icons.Filled.KeyboardArrowDown, null)
                 }
 
                 OutlinedTextField(
@@ -126,25 +105,19 @@ fun PlayersView(navController: NavController) {
                 )
 
                 IconButton(onClick = {
-                    val index = listState.firstVisibleItemIndex
-                    val offset = listState.firstVisibleItemScrollOffset
-                    vm.toggleOrder()
-                    targetScroll = index to offset
+                    val i = listState.firstVisibleItemIndex
+                    val off = listState.firstVisibleItemScrollOffset
+                    vm.toggleOrder(); targetScroll = i to off
                 }) {
                     Icon(
-                        imageVector = if (state.pointsOrder == "up")
-                            Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                        if (state.pointsOrder == "up") Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
                         contentDescription = "Ordenar puntos"
                     )
                 }
             }
 
-            // LISTADO
-            if (state.isLoading) {
-                Box(Modifier.fillMaxSize(), Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-            } else {
+            /* listado */
+            LoadingTransitionScreen(isLoading = state.isLoading) {
                 LazyColumn(
                     state = listState,
                     contentPadding = PaddingValues(8.dp),
@@ -159,7 +132,7 @@ fun PlayersView(navController: NavController) {
             }
         }
 
-        // POPUP SELECCIÓN EQUIPO
+        /* ─────────── POP‑UP EQUIPOS ─────────── */
         if (showTeamPopup) {
             Box(
                 Modifier
@@ -174,38 +147,59 @@ fun PlayersView(navController: NavController) {
                         .fillMaxHeight(0.6f),
                     shape = RoundedCornerShape(16.dp)
                 ) {
-                    LazyColumn {
-                        item {
-                            Text(
-                                "Seleccionar equipo",
-                                style = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier.padding(16.dp)
-                            )
+                    when {
+                        teamVm.isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
                         }
-                        item {
-                            ListItem(
-                                headlineContent = { Text("Todos") },
-                                modifier = Modifier.clickable {
-                                    vm.onTeamSelected(null)
-                                    showTeamPopup = false
-                                }
-                            )
+
+                        teamVm.error != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text(teamVm.error!!, color = MaterialTheme.colorScheme.error)
                         }
-                        items(laLigaTeams) { team ->
-                            ListItem(
-                                headlineContent = { Text(team) },
-                                modifier = Modifier.clickable {
-                                    vm.onTeamSelected(team)
-                                    showTeamPopup = false
-                                }
-                            )
+
+                        else -> LazyColumn {
+                            item {
+                                Text(
+                                    "Seleccionar equipo",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    modifier = Modifier.padding(16.dp)
+                                )
+                            }
+                            item {
+                                ListItem(
+                                    leadingContent  = { Icon(Icons.Outlined.Star, null, tint = Color.Transparent) },
+                                    headlineContent = { Text("Todos") },
+                                    modifier = Modifier.clickable {
+                                        vm.onTeamSelected(null); showTeamPopup = false
+                                    }
+                                )
+                            }
+                            items(teamVm.teams, key = { it.id }) { team ->
+                                ListItem(
+                                    leadingContent = {
+                                        AsyncImage(
+                                            model = ImageRequest.Builder(LocalContext.current)
+                                                .data(team.imagePath)
+                                                .crossfade(true)
+                                                .build(),
+                                            contentDescription = team.name,
+                                            modifier = Modifier.size(32.dp),
+                                            contentScale = ContentScale.Fit
+                                        )
+                                    },
+                                    headlineContent = { Text(team.name) },
+                                    modifier = Modifier.clickable {
+                                        vm.onTeamSelected(team.name)
+                                        showTeamPopup = false
+                                    }
+                                )
+                            }
                         }
                     }
                 }
             }
         }
 
-        // BOTÓN ESTRELLAS
+        /* ─────────── BOTÓN FILTRO ESTRELLAS ─────────── */
         IconButton(
             onClick = vm::toggleStarFilter,
             modifier = Modifier
@@ -215,43 +209,18 @@ fun PlayersView(navController: NavController) {
                 .background(MaterialTheme.colorScheme.primary, CircleShape)
         ) {
             if (state.starFilter == 0) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        Icons.Filled.Close,
-                        contentDescription = "Sin filtro",
-                        tint = Color.Red,
-                        modifier = Modifier.size(30.dp)
-                    )
-                }
+                Icon(Icons.Filled.Close, "Sin filtro", tint = Color.Red, modifier = Modifier.size(30.dp))
             } else {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    val top = minOf(2, state.starFilter)
+                Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                    val top    = minOf(2, state.starFilter)
                     val bottom = state.starFilter - top
                     Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                        repeat(top) {
-                            Icon(
-                                Icons.Filled.Star,
-                                contentDescription = null,
-                                tint = Color.Yellow,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
+                        repeat(top) { Icon(Icons.Filled.Star, null, tint = Color.Yellow, modifier = Modifier.size(24.dp)) }
                     }
                     if (bottom > 0) {
                         Spacer(Modifier.height(2.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                            repeat(bottom) {
-                                Icon(
-                                    Icons.Filled.Star,
-                                    contentDescription = null,
-                                    tint = Color.Yellow,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
+                            repeat(bottom) { Icon(Icons.Filled.Star, null, tint = Color.Yellow, modifier = Modifier.size(16.dp)) }
                         }
                     }
                 }
@@ -260,6 +229,7 @@ fun PlayersView(navController: NavController) {
     }
 }
 
+/* ──────────── CARD JUGADOR ──────────── */
 @Composable
 private fun PlayerCard(p: PlayerModel, onClick: () -> Unit) {
     val gradient = when (p.estrellas ?: 0) {
@@ -273,10 +243,10 @@ private fun PlayerCard(p: PlayerModel, onClick: () -> Unit) {
 
     Card(
         onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        shape   = RoundedCornerShape(16.dp),
+        colors  = CardDefaults.cardColors(containerColor = Color.Transparent),
+        elevation = CardDefaults.cardElevation(4.dp),
+        modifier = Modifier.fillMaxWidth()
     ) {
         Box(Modifier.background(gradient)) {
             Row(
@@ -290,9 +260,6 @@ private fun PlayerCard(p: PlayerModel, onClick: () -> Unit) {
                         .data(p.imagePath)
                         .crossfade(true)
                         .transformations(CircleCropTransformation())
-                        .listener(onError = { _, r ->
-                            Log.e("PLAYERS_CARD", "Error cargando imagen: ${r.throwable.message}")
-                        })
                         .build(),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,

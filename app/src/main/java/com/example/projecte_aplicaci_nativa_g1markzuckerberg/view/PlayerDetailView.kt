@@ -2,13 +2,14 @@ package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -28,10 +29,10 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import coil.transform.CircleCropTransformation
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.grafanaPlayerUrl
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.PlayerDetailViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.PlayerDetailViewModelFactory
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayerDetailView(navController: NavController, playerId: String) {
     val repo = remember { RetrofitClient.playerRepository }
@@ -44,14 +45,13 @@ fun PlayerDetailView(navController: NavController, playerId: String) {
     val onPrimary = MaterialTheme.colorScheme.onPrimary
 
     Column(Modifier.fillMaxSize()) {
-        // ─── HEADER ─────────────────────────────────────────
         Box(
-            modifier = Modifier
+            Modifier
                 .fillMaxWidth()
                 .height(110.dp)
                 .background(
                     Brush.horizontalGradient(
-                        colors = listOf(
+                        listOf(
                             MaterialTheme.colorScheme.primary,
                             MaterialTheme.colorScheme.secondary
                         )
@@ -66,26 +66,25 @@ fun PlayerDetailView(navController: NavController, playerId: String) {
             ) {
                 IconButton(onClick = { navController.popBackStack() }) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Volver",
                         tint = onPrimary
                     )
                 }
                 Text(
-                    text = player?.displayName ?: "Jugador",
+                    player?.displayName ?: "Jugador",
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontSize = 26.sp,
                         fontWeight = FontWeight.ExtraBold
                     ),
                     color = onPrimary,
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.weight(1f)
                 )
-                Spacer(modifier = Modifier.width(48.dp))
+                Spacer(Modifier.width(48.dp))
             }
         }
 
-        // ─── BODY ───────────────────────────────────────────
         Box(Modifier.fillMaxSize()) {
             when {
                 isLoading -> Box(Modifier.fillMaxSize(), Alignment.Center) {
@@ -101,79 +100,113 @@ fun PlayerDetailView(navController: NavController, playerId: String) {
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
                         .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(20.dp)
+                    verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
-                    // Foto + datos básicos
-                    val imgUrl = player.imagePath
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(imgUrl)
-                            .crossfade(true)
-                            .transformations(CircleCropTransformation())
-                            .listener(onError = { _, r ->
-                                Log.e("DETAIL_VIEW", "Error cargando avatar: ${r.throwable.message}")
-                            })
-                            .build(),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.size(100.dp)
-                    )
-                    Text("⭐ ${player.estrellas ?: 0}", fontSize = 14.sp)
+                    Spacer(Modifier.height(6.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(player.teamImage)
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = "Logo equipo",
+                            modifier = Modifier.size(56.dp),
+                            contentScale = ContentScale.Fit
+                        )
+                        Text(
+                            text = player.teamName ?: "--",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
+                    val avatarBg = when (player.estrellas ?: 0) {
+                        1 -> Brush.verticalGradient(listOf(Color(0xFFB0B0B0), Color(0xFFE0E0E0)))
+                        2 -> Brush.verticalGradient(listOf(Color(0xFF4CAF50), Color(0xFFA5D6A7)))
+                        3 -> Brush.verticalGradient(listOf(Color(0xFF2196F3), Color(0xFF90CAF9)))
+                        4 -> Brush.verticalGradient(listOf(Color(0xFF9C27B0), Color(0xFFE1BEE7)))
+                        5 -> Brush.verticalGradient(listOf(Color(0xFFFFD700), Color(0xFFFFF59D)))
+                        else -> Brush.verticalGradient(listOf(Color.LightGray, Color.White))
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .size(140.dp)
+                            .align(Alignment.CenterHorizontally)
+                            .background(avatarBg, RoundedCornerShape(16.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(player.imagePath)
+                                .crossfade(true)
+                                .transformations(CircleCropTransformation())
+                                .build(),
+                            contentDescription = "Jugador",
+                            modifier = Modifier.size(116.dp),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        repeat(player.estrellas ?: 0) {
+                            Icon(
+                                Icons.Filled.Star,
+                                contentDescription = null,
+                                tint = Color(0xFFFFD700),
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                    }
+
                     Text(
-                        "Puntos totales: ${player.puntosTotales ?: 0}",
-                        fontWeight = FontWeight.SemiBold
+                        "${player.puntosTotales} pts",
+                        fontSize = 34.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
                     )
 
-                    // Detalles
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp)
+                        shape = RoundedCornerShape(16.dp),
+                        elevation = CardDefaults.cardElevation(4.dp),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
                             Modifier
                                 .fillMaxWidth()
                                 .padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            DetailLine("Posición", player.positionId.toString())
-                            DetailLine("Equipo ID", player.teamId.toString())
-                            DetailLine("Player ID", player.id.toString())
+                            DetailLine("Posición", mapPosition(player.positionId))
                         }
                     }
 
-                    // ─── GRÁFICO ───────────────────────────────────
-                    // Asegúrate de que tu BASE_URL termina sin slash
-                    val chartUrl = "${RetrofitClient.BASE_URL}/api/v1/grafico/${player.id}?theme=light"
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp)
                     ) {
-                        Column {
-                            Text(
-                                "Evolución de puntos",
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.padding(16.dp)
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState())
+                        ) {
+                            AsyncImage(
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data(grafanaPlayerUrl(player.id))
+                                    .crossfade(true)
+                                    .build(),
+                                contentDescription = "Gráfico de evolución de puntos",
+                                modifier = Modifier
+                                    .height(260.dp)
+                                    .padding(16.dp),
+                                contentScale = ContentScale.FillHeight
                             )
-                            Row(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .horizontalScroll(rememberScrollState())
-                            ) {
-                                AsyncImage(
-                                    model = ImageRequest.Builder(LocalContext.current)
-                                        .data(chartUrl)
-                                        .crossfade(true)
-                                        .listener(onError = { _, r ->
-                                            Log.e("DETAIL_VIEW", "Error cargando gráfico: ${r.throwable.message}")
-                                        })
-                                        .build(),
-                                    contentDescription = "Gráfico puntos",
-                                    modifier = Modifier
-                                        .height(240.dp)
-                                        .padding(16.dp),
-                                    contentScale = ContentScale.FillWidth
-                                )
-                            }
                         }
                     }
                 }
@@ -188,7 +221,15 @@ private fun DetailLine(label: String, value: String) {
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(label, fontWeight = FontWeight.Medium)
-        Text(value, fontWeight = FontWeight.SemiBold)
+        Text(label, fontWeight = FontWeight.Medium, fontSize = 16.sp)
+        Text(value, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
     }
+}
+
+private fun mapPosition(positionId: Int): String = when (positionId) {
+    27 -> "Delantero"
+    26 -> "Mediocentro"
+    25 -> "Defensa"
+    24 -> "Portero"
+    else -> "Posición $positionId"
 }
