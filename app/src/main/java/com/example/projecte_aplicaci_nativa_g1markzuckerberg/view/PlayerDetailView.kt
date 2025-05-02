@@ -11,8 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -191,6 +190,7 @@ fun PlayerDetailView(navController: NavController, playerId: String) {
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp)
                     ) {
+                        var chartLoading by remember { mutableStateOf(true) }
                         Box(
                             Modifier
                                 .fillMaxWidth()
@@ -200,6 +200,10 @@ fun PlayerDetailView(navController: NavController, playerId: String) {
                                 model = ImageRequest.Builder(LocalContext.current)
                                     .data(grafanaPlayerUrl(player.id))
                                     .crossfade(true)
+                                    .listener(
+                                        onSuccess = { _, _ -> chartLoading = false },
+                                        onError = { _, _ -> chartLoading = false }
+                                    )
                                     .build(),
                                 contentDescription = "Gráfico de evolución de puntos",
                                 modifier = Modifier
@@ -207,6 +211,15 @@ fun PlayerDetailView(navController: NavController, playerId: String) {
                                     .padding(16.dp),
                                 contentScale = ContentScale.FillHeight
                             )
+                            if (chartLoading) {
+                                Box(
+                                    Modifier
+                                        .matchParentSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator()
+                                }
+                            }
                         }
                     }
                 }
