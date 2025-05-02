@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.repository.ContactRepository
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.SettingsViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.factory.SettingsViewModelFactory
 
@@ -31,12 +32,18 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.R)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Inicializamos el TokenManager
+
+        // Token + Auth repo  ───────────────────────────
         val tokenManager = TokenManager(applicationContext)
         // Creamos el repositorio de autenticación usando el authService de RetrofitClient
-        RetrofitClient.authRepository = AuthRepository(RetrofitClient.authService, tokenManager)
+        RetrofitClient.authRepository =
+            AuthRepository(RetrofitClient.authService, tokenManager)
+
+        // Contact repo  ──────────────────────────────
+        val contactRepository = ContactRepository(RetrofitClient.contactService)
+
         val settingsVM: SettingsViewModel by viewModels {
-            SettingsViewModelFactory(RetrofitClient.authRepository)
+            SettingsViewModelFactory(RetrofitClient.authRepository, contactRepository)
         }
         // Hacer que el contenido ocupe toda la pantalla
         WindowCompat.setDecorFitsSystemWindows(window, false)

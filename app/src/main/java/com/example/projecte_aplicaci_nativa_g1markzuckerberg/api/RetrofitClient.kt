@@ -1,6 +1,7 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.api
 
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.Interface.AuthService
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.Interface.ContactService
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.Interface.LigaService
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.Interface.UserService
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.interface_service.NotificationsService
@@ -13,7 +14,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
 
-    const val BASE_URL = "http://10.0.2.2:3000/"
+    const val BASE_URL = "http://192.168.1.41:3000/"
 
     lateinit var authRepository: AuthRepository
 
@@ -73,5 +74,15 @@ object RetrofitClient {
             .build()
             .create(NotificationsService::class.java)
     }
+
+    val contactService: ContactService by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(ContactService::class.java)
+    }
+
 
 }

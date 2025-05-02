@@ -11,11 +11,13 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -547,5 +549,82 @@ fun LigaDialog(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ContactFormDialog(
+    onDismiss: () -> Unit,
+    onSubmit : (String) -> Unit
+) {
+    var message by remember { mutableStateOf("") }
 
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape     = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(8.dp),
+            modifier  = Modifier.fillMaxWidth(0.9f)
+        ) {
+            Column {
+                // ─── ENCABEZADO igual que CustomAlertDialog ───
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(
+                                    MaterialTheme.colorScheme.primary,
+                                    MaterialTheme.colorScheme.secondary
+                                )
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text  = "Contacto",
+                        color = Color.White,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
 
+                // ─── CONTENIDO: campo de texto ────────────────
+                Column(modifier = Modifier.padding(16.dp)) {
+                    OutlinedTextField(
+                        value           = message,
+                        onValueChange   = { message = it },
+                        label           = { Text("Tu mensaje") },
+                        placeholder     = { Text("Escribe tu consulta aquí…") },
+                        modifier        = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 100.dp),
+                        colors          = TextFieldDefaults.outlinedTextFieldColors(
+                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            focusedBorderColor   = MaterialTheme.colorScheme.primary
+                        )
+                    )
+
+                    Spacer(Modifier.height(16.dp))
+
+                    // ─── BOTONES ─────────────────────────────
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(onClick = onDismiss) {
+                            Text("Cancelar", color = MaterialTheme.colorScheme.error)
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        TextButton(
+                            onClick = {
+                                onSubmit(message.trim())
+                                onDismiss()
+                            },
+                            enabled = message.isNotBlank()
+                        ) {
+                            Text("Enviar", color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
