@@ -45,7 +45,7 @@ fun EntryPoint(
 ) {
     val context = LocalContext.current
 
-    // 0️⃣ Permiso para notificaciones (Android 13+)
+    // Permiso para notificaciones (Android 13+)
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -57,7 +57,7 @@ fun EntryPoint(
         }
     }
 
-    // 1️⃣ Redirección si ya hay token
+    // Redirección si ya hay token
     LaunchedEffect(Unit) {
         RetrofitClient.authRepository.getToken()
             ?.takeIf { it.isNotEmpty() }
@@ -68,7 +68,7 @@ fun EntryPoint(
             }
     }
 
-    // 2️⃣ Arranca el servicio de socket si hay token + permiso
+    // Arranca el servicio de socket si hay token + permiso
     LaunchedEffect(RetrofitClient.authRepository.getToken()) {
         RetrofitClient.authRepository.getToken()
             ?.takeIf { it.isNotEmpty() }
@@ -91,7 +91,7 @@ fun EntryPoint(
             }
     }
 
-    // 3️⃣ Mostrar / ocultar navbar según ruta
+    // Mostrar / ocultar navbar según ruta
     val navBackStackEntry by navigationController.currentBackStackEntryAsState()
     val routesConNavbar = listOf(
         Routes.HomeLoged.route,
@@ -106,7 +106,7 @@ fun EntryPoint(
     val currentRoute = navBackStackEntry?.destination?.route
     val showNavBar = currentRoute in routesConNavbar
 
-    // 4️⃣ Scaffold + NavHost
+    // Scaffold + NavHost
     Scaffold(
         modifier = Modifier
             .fillMaxSize()

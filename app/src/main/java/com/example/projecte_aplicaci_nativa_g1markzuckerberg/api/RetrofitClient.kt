@@ -2,11 +2,13 @@ package com.example.projecte_aplicaci_nativa_g1markzuckerberg.api
 
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.Interface.AuthService
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.Interface.LigaService
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.Interface.PlayerService
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.Interface.UserService
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.interface_service.NotificationsService
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.interfaz.SportMonksService
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.network.AuthInterceptor
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.repository.AuthRepository
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.repository.PlayerRepository
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -72,6 +74,19 @@ object RetrofitClient {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(NotificationsService::class.java)
+    }
+
+    val playerService: PlayerService by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(PlayerService::class.java)
+    }
+
+    val playerRepository: PlayerRepository by lazy {
+        PlayerRepository(playerService)
     }
 
 }
