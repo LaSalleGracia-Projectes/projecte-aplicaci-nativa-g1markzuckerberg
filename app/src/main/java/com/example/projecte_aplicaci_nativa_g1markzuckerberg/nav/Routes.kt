@@ -37,4 +37,7 @@ sealed class Routes(val route: String) {
         fun createRoute(playerId: String) = "player/$playerId"
     }
 
+    /* ---------- Perfil ---------- */
+    object UserSelf : Routes("user_self")
+
 }
