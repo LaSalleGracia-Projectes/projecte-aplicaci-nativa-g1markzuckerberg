@@ -100,18 +100,6 @@ fun HomeLogedView(
         }
     }
 
-    // Al recibir el resultado de crear una liga
-    LaunchedEffect(createLigaResult) {
-        createLigaResult
-            ?.getContentIfNotHandled()
-            ?.let {
-                alertTitle   = "Crear Liga"
-                alertMessage = "Liga creada correctamente."
-                showCustomAlert = true
-            }
-    }
-
-
     // Para mostrar errores en un modal
     LaunchedEffect(key1 = errorEvent) {
         errorEvent?.getContentIfNotHandled()?.let { error: String ->
@@ -120,17 +108,6 @@ fun HomeLogedView(
             alertOnConfirm = { showCustomAlert = false }
             showCustomAlert = true
         }
-    }
-
-    // --------- Efecto para detectar éxito en la actualización ------------
-    LaunchedEffect(updateLigaSuccess) {
-        updateLigaSuccess
-            ?.getContentIfNotHandled()
-            ?.let {
-                alertTitle   = "Liga actualizada"
-                alertMessage = "Liga actualizada con éxito."
-                showCustomAlert = true
-            }
     }
 
     editingLiga?.let { liga ->
