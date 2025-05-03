@@ -547,5 +547,98 @@ fun LigaDialog(
     }
 }
 
+@Composable
+fun ContactFormDialog(
+    onDismiss: () -> Unit,
+    onSubmit: (String) -> Unit
+) {
+    var message by remember { mutableStateOf("") }
 
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape     = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(8.dp),
+            modifier  = Modifier
+                .fillMaxWidth(0.9f)    // solo anchura
+            // .wrapContentHeight() // opcional, por defecto el Card se adapta al contenido
+        ) {
+            Column {
+                // ─── HEADER ───
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(
+                                    MaterialTheme.colorScheme.primary,
+                                    MaterialTheme.colorScheme.secondary
+                                )
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text  = "Contacto",
+                        color = Color.White,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
 
+                // ─── DESCRIPCIÓN ───
+                Text(
+                    text = "¿Tienes dudas o sugerencias? Escríbenos y te responderemos lo antes posible.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    textAlign = TextAlign.Center
+                )
+
+                // ─── CAMPO DE TEXTO ───
+                OutlinedTextField(
+                    value         = message,
+                    onValueChange = { message = it },
+                    label         = { Text("Tu mensaje") },
+                    placeholder   = { Text("Escribe tu consulta aquí…") },
+                    modifier      = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 100.dp)
+                        .padding(horizontal = 16.dp),
+                    shape      = RoundedCornerShape(12.dp),
+                    singleLine = false,
+                    maxLines   = 6
+                )
+
+                // ─── BOTONES ───
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("Cancelar", color = MaterialTheme.colorScheme.error)
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    TextButton(
+                        onClick = {
+                            onSubmit(message.trim())
+                            onDismiss()
+                        },
+                        enabled = message.isNotBlank()
+                    ) {
+                        Text(
+                            text  = "Enviar",
+                            color = if (message.isNotBlank())
+                                MaterialTheme.colorScheme.primary
+                            else
+                                Color.Gray
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
