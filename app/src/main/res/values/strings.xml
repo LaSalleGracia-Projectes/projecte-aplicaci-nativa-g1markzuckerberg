@@ -1,5 +1,8 @@
 <resources>
+    <!-- General -->
     <string name="app_name">projecte-aplicaci-nativa-g1markzuckerberg</string>
+
+    <!-- Notificaciones -->
     <string name="notifications_title">Notificaciones</string>
     <string name="no_notifications">No hay notificaciones</string>
     <string name="notification_created">Has creado la liga %1$s correctamente</string>
@@ -8,4 +11,51 @@
     <string name="notification_expulsado">Has sido expulsado de la liga %1$s</string>
     <string name="notification_expelled_self">Has sido expulsado de la liga %1$s</string>
     <string name="notification_draft_opening">Ya se abre el plazo para crear los drafts hasta el %1$s</string>
+
+    <!-- DraftScreen -->
+    <string name="back">Volver</string>
+    <string name="draft_title">DRAFT</string>
+    <string name="save">Guardar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="info">Información</string>
+
+    <string name="dialog_save_title">¿Guardar plantilla?</string>
+    <string name="dialog_save_msg">¿Estás seguro de que quieres guardar la plantilla?\n\nUna vez la guardes se enviará la convocatoria y no podrás volver a editarla.</string>
+
+    <string name="dialog_incomplete_title">Plantilla incompleta</string>
+    <string name="dialog_incomplete_msg">Debes seleccionar un jugador para cada posición antes de guardar la alineación.</string>
+    <string name="ok">Entendido</string>
+
+    <string name="select_player">Elige un jugador</string>
+    <string name="guide_title">Guía de puntuación</string>
+
+    <string name="bonus_events">📋 Bono y Eventos:</string>
+    <string name="bonus_list">• Titular → +3 puntos\n• Gol → +4 puntos\n• Asistencia → +3 puntos\n• Tarjeta amarilla → −1 punto\n• Falta grave → −3 puntos\n• Sustitución → el jugador que entra obtendrá la mitad de los puntos</string>
+
+    <string name="stats_by_pos">📚 Estadísticas (según posición):</string>
+
+    <string name="pos_goalkeeper">• Portero</string>
+    <string name="gk_stats">- Paradas realizadas\n- Balones recuperados\n- Goles encajados</string>
+
+    <string name="pos_defender">• Defensa</string>
+    <string name="df_stats">- Entradas, intercepciones y despejes\n- Bloqueos de disparos\n- Precisión en pases\n- Goles encajados</string>
+
+    <string name="pos_midfielder">• Mediocentro</string>
+    <string name="mf_stats">- Posesión\n- Total de pases\n- % de acierto en pases\n- Intercepciones\n- Regates\n- Centros</string>
+
+    <string name="pos_forward">• Delantero</string>
+    <string name="fw_stats">- Disparos totales y a puerta\n- Ataques y ataques peligrosos\n- Regates\n- Centros</string>
+
+    <string name="no_play_zero">❗ Si no juega, puntos = 0</string>
+    <string name="close">Cerrar</string>
+    <string name="zero_points">0 pts</string>
+
+    <string name="position_forward">Delantero</string>
+    <string name="position_midfielder">Mediocampista</string>
+    <string name="position_defender">Defensa</string>
+    <string name="position_goalkeeper">Portero</string>
+
+    <string name="dialog_save_msg_line1">¿Estás seguro de que quieres guardar la plantilla?</string>
+    <string name="dialog_save_msg_line2">Una vez la guardes se enviará la convocatoria y no podrás volver a editarla.</string>
+
 </resources>

@@ -36,8 +36,8 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -45,6 +45,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -98,17 +99,16 @@ fun initializeSelectedPlayersFromDraft(
     val selected = mutableMapOf<String, PlayerOption?>()
     val keys = getPositionKeys(formation)
     parsedOptions.forEachIndexed { index, group ->
-        // Se asume que el quinto elemento es el índice seleccionado (puede ser null)
         val chosenIndex = if (group.size >= 5 && group[4] is Number) {
             (group[4] as Number).toInt()
         } else null
         val selectedPlayer = if (chosenIndex != null && chosenIndex in 0..3) {
             val item = group[chosenIndex]
-            if (item is Map<*, *>) {
-                Gson().fromJson(Gson().toJson(item), PlayerOption::class.java)
-            } else if (item is PlayerOption) {
-                item
-            } else null
+            when (item) {
+                is Map<*, *>    -> Gson().fromJson(Gson().toJson(item), PlayerOption::class.java)
+                is PlayerOption -> item
+                else            -> null
+            }
         } else null
         val key = keys.getOrElse(index) { "grupo_$index" }
         selected[key] = selectedPlayer
@@ -147,9 +147,9 @@ fun DraftScreen(
 
     val selectedPlayers = remember { mutableStateMapOf<String, PlayerOption?>() }
 
-    var showSaveDialog by remember { mutableStateOf(false) }     // ← diálogo guardar
-    var showInfoDialog by remember { mutableStateOf(false) }     // ← diálogo info
-    var showErrorDialog  by remember { mutableStateOf(false) }   // ← nuevo
+    var showSaveDialog by remember { mutableStateOf(false) }
+    var showInfoDialog by remember { mutableStateOf(false) }
+    var showErrorDialog  by remember { mutableStateOf(false) }
 
     LaunchedEffect(tempDraftResponse, parsedPlayerOptions) {
         if (parsedPlayerOptions.isNotEmpty() && tempDraftResponse != null) {
@@ -191,195 +191,161 @@ fun DraftScreen(
 
     LoadingTransitionScreen(isLoading = isSaving) {
 
-    /* =================  LAYOUT  ================= */
-    Box(Modifier.fillMaxSize()) {
+        /* =================  LAYOUT  ================= */
+        Box(Modifier.fillMaxSize()) {
 
-        /* ----------  FONDO  ---------- */
-        Image(
-            painter = painterResource(R.drawable.futbol_pitch_background),
-            contentDescription = null,
-            contentScale = ContentScale.FillBounds,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = headerHeight)
-                .graphicsLayer { scaleX = 1.25f }
-                .clipToBounds()
-                .zIndex(-1f)
-        )
+            /* ----------  FONDO  ---------- */
+            Image(
+                painter = painterResource(R.drawable.futbol_pitch_background),
+                contentDescription = null,
+                contentScale = ContentScale.FillBounds,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = headerHeight)
+                    .graphicsLayer { scaleX = 1.25f }
+                    .clipToBounds()
+                    .zIndex(-1f)
+            )
 
-        /* ----------  CONTENIDO (header + cartas)  ---------- */
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(
-                    start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
-                    end   = innerPadding.calculateEndPadding(LayoutDirection.Ltr),
-                    top   = innerPadding.calculateTopPadding()
-                )
-        ) {
+            /* ----------  CONTENIDO (header + cartas)  ---------- */
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(
+                        start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
+                        end   = innerPadding.calculateEndPadding(LayoutDirection.Ltr),
+                        top   = innerPadding.calculateTopPadding()
+                    )
+            ) {
 
-            /* ---------  HEADER  --------- */
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(headerHeight)
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(
-                                MaterialTheme.colorScheme.primary,
-                                MaterialTheme.colorScheme.secondary
+                /* ---------  HEADER  --------- */
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(headerHeight)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(
+                                    MaterialTheme.colorScheme.primary,
+                                    MaterialTheme.colorScheme.secondary
+                                )
                             )
                         )
-                    )
-                    .padding(horizontal = 20.dp)
-            ) {
-                IconButton(
-                    onClick = { navController.popBackStack() },
-                    modifier = Modifier
-                        .size(28.dp)
-                        .align(Alignment.CenterStart)
+                        .padding(horizontal = 20.dp)
                 ) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Volver",
-                        tint = MaterialTheme.colorScheme.onPrimary
+                    IconButton(
+                        onClick = { navController.popBackStack() },
+                        modifier = Modifier
+                            .size(28.dp)
+                            .align(Alignment.CenterStart)
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back),
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+
+                    Text(
+                        stringResource(R.string.draft_title),
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontSize      = 20.sp,
+                            fontWeight    = FontWeight.ExtraBold,
+                            letterSpacing = 0.3.sp
+                        ),
+                        color     = MaterialTheme.colorScheme.onPrimary,
+                        textAlign = TextAlign.Center,
+                        modifier  = Modifier.align(Alignment.Center)
                     )
+
+                    FilledTonalButton(
+                        onClick = {
+                            val plantillaCompleta = selectedPlayers.values.none { it == null }
+                            if (plantillaCompleta) showSaveDialog = true else showErrorDialog = true
+                        },
+                        shape   = RoundedCornerShape(50.dp),
+                        colors  = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor   = Color.White
+                        ),
+                        modifier = Modifier
+                            .height(buttonHeight)
+                            .align(Alignment.CenterEnd)
+                    ) {
+                        Text(stringResource(R.string.save), style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp))
+                    }
                 }
 
-                Text(
-                    "DRAFT",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontSize      = 20.sp,
-                        fontWeight    = FontWeight.ExtraBold,
-                        letterSpacing = 0.3.sp
-                    ),
-                    color     = MaterialTheme.colorScheme.onPrimary,
-                    textAlign = TextAlign.Center,
-                    modifier  = Modifier.align(Alignment.Center)   // ← centrado real
-                )
-
-                FilledTonalButton(
-                    onClick = {
-                        val plantillaCompleta = selectedPlayers.values.none { it == null }
-                        if (plantillaCompleta) {
-                            showSaveDialog = true           // plantilla OK → confirmar guardado
-                        } else {
-                            showErrorDialog = true          // falta algún jugador → error
-                        }
-                    },                    shape   = RoundedCornerShape(50.dp),
-                    colors  = ButtonDefaults.filledTonalButtonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor   = Color.White
-                    ),
+                /* ---------  CAMPO & CARTAS  --------- */
+                Box(
                     modifier = Modifier
-                        .height(buttonHeight)
-                        .align(Alignment.CenterEnd)
+                        .weight(1f)
+                        .fillMaxWidth()
                 ) {
-                    Text("Guardar", style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp))
+                    DraftLayout(
+                        formation       = viewModel.selectedFormation.value,
+                        playerOptions   = playerOptionsForDisplay,
+                        selectedPlayers = selectedPlayers,
+                        onPlayerSelectedWithUpdate = { k, p ->
+                            selectedPlayers[k] = p; updateDraftOnServer()
+                        },
+                        updateDraftOnServer = { updateDraftOnServer() }
+                    )
                 }
             }
 
-            /* ---------  CAMPO & CARTAS  --------- */
-            Box(
+            /* ----------  BOTÓN INFO FLOTANTE  ---------- */
+            val bottomInset = innerPadding.calculateBottomPadding()
+            val bottomPad   = (bottomInset - 28.dp).coerceAtLeast(0.dp)
+
+            IconButton(
+                onClick = { showInfoDialog = true },
                 modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 20.dp, bottom = bottomPad)
+                    .size(56.dp)
+                    .background(MaterialTheme.colorScheme.primary, CircleShape)
             ) {
-                DraftLayout(
-                    formation           = viewModel.selectedFormation.value,
-                    playerOptions       = playerOptionsForDisplay,
-                    selectedPlayers     = selectedPlayers,
-                    onPlayerSelectedWithUpdate = { k, p ->
-                        selectedPlayers[k] = p
-                        updateDraftOnServer()
-                    },
-                    updateDraftOnServer = { updateDraftOnServer() }
+                Icon(
+                    imageVector = Icons.Default.Info,
+                    contentDescription = stringResource(R.string.info),
+                    tint = Color.White,
+                    modifier = Modifier.size(28.dp)
                 )
             }
         }
-
-        /* ----------  BOTÓN INFO FLOTANTE  ---------- */
-        val bottomInset = innerPadding.calculateBottomPadding()
-        val bottomPad   = (bottomInset - 28.dp).coerceAtLeast(0.dp)   // ↓ media altura del botón
-
-        IconButton(
-            onClick = { showInfoDialog = true },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(
-                    end   = 20.dp,
-                    bottom = bottomPad      // ahora está casi pegado al borde
-                )
-                .size(56.dp)
-                .background(MaterialTheme.colorScheme.primary, CircleShape)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Info,
-                contentDescription = "Información",
-                tint = Color.White,
-                modifier = Modifier.size(28.dp)
-            )
-        }
-    }
 
         /* -------------  DIÁLOGO CONFIRMAR GUARDAR ------------- */
-    if (showSaveDialog) {
-        CustomAlertDialog(
-            title   = "¿Guardar plantilla?",
-            message = "¿Estás seguro de que quieres guardar la plantilla?\n\n" +
-                    "Una vez la guardes se enviará la convocatoria y **no podrás volver a editarla**.",
-            confirmButtonText = "Guardar",
-            cancelButtonText  = "Cancelar",
-            onDismiss = { showSaveDialog = false },
-            onConfirm = {
-                showSaveDialog = false
-                viewModel.saveDraft(selectedPlayers) {
-                    navController.popBackStack()   // ← vuelve a la pantalla anterior
+        if (showSaveDialog) {
+            CustomAlertDialog(
+                title   = stringResource(R.string.dialog_save_title),
+                message = stringResource(R.string.dialog_save_msg),
+                confirmButtonText = stringResource(R.string.save),
+                cancelButtonText  = stringResource(R.string.cancel),
+                onDismiss = { showSaveDialog = false },
+                onConfirm = {
+                    showSaveDialog = false
+                    viewModel.saveDraft(selectedPlayers) { navController.popBackStack() }
                 }
-            }
-        )
-    }
+            )
+        }
 
-    if (showErrorDialog) {
-        CustomAlertDialogSingleButton(
-            title   = "Plantilla incompleta",
-            message = "Debes seleccionar un jugador para cada posición antes de guardar la alineación.",
-            confirmButtonText = "Entendido",
-            onAccept = { showErrorDialog = false }
-        )
-    }
+        if (showErrorDialog) {
+            CustomAlertDialogSingleButton(
+                title   = stringResource(R.string.dialog_incomplete_title),
+                message = stringResource(R.string.dialog_incomplete_msg),
+                confirmButtonText = stringResource(R.string.ok),
+                onAccept = { showErrorDialog = false }
+            )
+        }
 
-
-
-    /* -------------  DIÁLOGO INSTRUCCIONES ------------- */
+        /* -------------  DIÁLOGO INSTRUCCIONES ------------- */
         if (showInfoDialog) {
             GuideDialog(onDismiss = { showInfoDialog = false })
         }
-
     }
 }
-    /* -------------  DIMENSIONES DE LAS CARTAS ------------- */
-    // Se calcula el tamaño de las cartas en función del ancho de la pantalla
-    // y se devuelve como un par (ancho, alto)
-@Composable
-fun getPlayerCardDimensions(): Pair<Dp, Dp> {
-    val density        = LocalDensity.current
-    val screenWidthDp  = LocalConfiguration.current.screenWidthDp.dp
 
-    val availableWidth = screenWidthDp - 24.dp                // padding lateral (12×2)
-    val cardWidth      = (availableWidth - (3 * 8.dp)) / 4
-
-    // 122:80 + margen -> redondeamos siempre hacia ARRIBA
-    val cardHeight = with(density) {
-        kotlin.math.ceil(cardWidth.toPx() * 122f / 80f).toDp() + 6.dp // +4 dp
-    }
-
-    return cardWidth to cardHeight
-}
-
-
-
-@SuppressLint("RememberReturnType")
 @Composable
 fun DraftLayout(
     formation: String,
@@ -400,7 +366,7 @@ fun DraftLayout(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.SpaceEvenly
     ) {
-        formationRows.forEach { (positionName, count) ->
+        formationRows.forEach { (positionKey, count) ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -409,21 +375,18 @@ fun DraftLayout(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 repeat(count) { index ->
-                    val key = "${positionName}_$index"
-                    val candidates = if (groupIndex < playerOptions.size) {
-                        playerOptions[groupIndex]
-                    } else {
-                        emptyList()
-                    }
+                    val key = "${positionKey}_$index"
+                    val candidates = playerOptions.getOrNull(groupIndex) ?: emptyList()
                     Log.d("DraftLayout", "Posición: $key, grupo: $groupIndex, candidatos: ${candidates.size}")
                     PositionCard(
-                        positionName = "$positionName ${index + 1}",
+                        positionKey = positionKey,
+                        positionIndex = index,
                         selectedPlayer = selectedPlayers[key],
                         candidates = candidates,
                         onPlayerSelected = { chosenPlayer ->
                             onPlayerSelectedWithUpdate(key, chosenPlayer)
                         },
-                        updateDraftOnServer = { updateDraftOnServer() }
+                        updateDraftOnServer = updateDraftOnServer
                     )
                     groupIndex++
                 }
@@ -434,7 +397,8 @@ fun DraftLayout(
 
 @Composable
 fun PositionCard(
-    positionName: String,
+    positionKey: String,
+    positionIndex: Int,
     selectedPlayer: PlayerOption?,
     candidates: List<PlayerOption>,
     onPlayerSelected: (PlayerOption) -> Unit,
@@ -469,11 +433,17 @@ fun PositionCard(
             label = "SwapPlayerAnimation"
         ) { player ->
             if (player == null) {
-                // Ports "Portero_0" → "Portero1", "Defensa_2" → "Defensa3", etc.
-                val label = positionName.substringBeforeLast("_") +
-                        (positionName.substringAfterLast("_").toIntOrNull()?.plus(1) ?: "")
+                val baseName = positionKey
+                val labelText = when (baseName) {
+                    "Delantero"     -> stringResource(R.string.position_forward)
+                    "Mediocentro"   -> stringResource(R.string.position_midfielder)
+                    "Mediocampista" -> stringResource(R.string.position_midfielder)
+                    "Defensa"       -> stringResource(R.string.position_defender)
+                    "Portero"       -> stringResource(R.string.position_goalkeeper)
+                    else            -> baseName
+                } + " ${positionIndex + 1}"
                 CompactPlaceholderCard(
-                    positionName = label,
+                    positionName = labelText,
                     width        = cardWidth,
                     height       = cardHeight,
                     onClick      = { showDialog = true }
@@ -521,7 +491,7 @@ fun PlayerSelectionDialog(
                         .padding(16.dp)
                 ) {
                     Text(
-                        text = "Elige un jugador",
+                        text = stringResource(R.string.select_player),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
@@ -554,27 +524,202 @@ fun PlayerSelectionDialog(
 }
 
 @Composable
-fun StyledPlayerCard(
-    player: PlayerOption,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    cardWidth: Dp = 140.dp,
-    cardHeight: Dp = 200.dp
-) {
-    val gradientBackground = when (player.estrellas) {
-        1 -> Brush.verticalGradient(listOf(Color(0xFFB0B0B0), Color(0xFFE0E0E0)))
-        2 -> Brush.verticalGradient(listOf(Color(0xFF4CAF50), Color(0xFFA5D6A7)))
-        3 -> Brush.verticalGradient(listOf(Color(0xFF2196F3), Color(0xFF90CAF9)))
-        4 -> Brush.verticalGradient(listOf(Color(0xFF9C27B0), Color(0xFFE1BEE7)))
-        5 -> Brush.verticalGradient(listOf(Color(0xFFFFD700), Color(0xFFFFF59D)))
-        else -> Brush.verticalGradient(listOf(Color.LightGray, Color.White))
+fun GuideDialog(onDismiss: () -> Unit) {
+    val scrollState = rememberScrollState()
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(8.dp),
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .fillMaxHeight(0.5f)
+        ) {
+            Column {
+                // Header de gradiente
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                colors = listOf(
+                                    MaterialTheme.colorScheme.primary,
+                                    MaterialTheme.colorScheme.secondary
+                                )
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = stringResource(R.string.guide_title),
+                        color = Color.White,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+
+                // Contenido scrolleable
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .verticalScroll(scrollState)
+                ) {
+                    // -------- Bono y eventos --------
+                    Text(
+                        text = stringResource(R.string.bonus_events),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Start
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = """
+• Titular → +3 puntos
+• Gol → +4 puntos
+• Asistencia → +3 puntos
+• Tarjeta amarilla → -1 punto
+• Falta grave → -3 puntos
+• Sustitución → el jugador que entra obtendrá la mitad de los puntos
+                        """.trimIndent(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Start
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // -------- Estadísticas por posición --------
+                    Text(
+                        text = stringResource(R.string.stats_by_pos),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Start
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Portero
+                    Text(
+                        text = stringResource(R.string.pos_goalkeeper),
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        ),
+                        textAlign = TextAlign.Start
+                    )
+                    Text(
+                        text = "- Paradas realizadas\n- Balones recuperados" +
+                                "\n- Goles encajados",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Start
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Defensa
+                    Text(
+                        text = stringResource(R.string.pos_defender),
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        ),
+                        textAlign = TextAlign.Start
+                    )
+                    Text(
+                        text = "- Entradas, intercepciones y despejes\n- Bloqueos de disparos\n- Precisión en pases" +
+                                "\n- Goles encajados",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Start
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Mediocentro
+                    Text(
+                        text = stringResource(R.string.pos_midfielder),
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        ),
+                        textAlign = TextAlign.Start
+                    )
+                    Text(
+                        text = "- Posesión\n- Total de pases\n- % de acierto en pases\n- Intercepciones\n- Regates\n- Centros",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Start
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Delantero
+                    Text(
+                        text = stringResource(R.string.pos_forward),
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        ),
+                        textAlign = TextAlign.Start
+                    )
+                    Text(
+                        text = "- Disparos totales y a puerta\n- Ataques y ataques peligrosos\n- Regates\n- Centros",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Start
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Aviso final
+                    Text(
+                        text = stringResource(R.string.no_play_zero),
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.error
+                        ),
+                        textAlign = TextAlign.Start
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Botón Cerrar
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        TextButton(onClick = { onDismiss() }) {
+                            Text(
+                                text = stringResource(R.string.close),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
+}
+
+@Composable
+fun CompactPlaceholderCard(
+    positionName: String,
+    modifier: Modifier = Modifier,
+    width: Dp,
+    height: Dp,
+    onClick: () -> Unit
+) {
+    // mismo estilo de fondo que CompactPlayerCard
+    val gradientBackground = Brush.verticalGradient(listOf(Color.LightGray, Color.White))
+
     Card(
         modifier = modifier
-            .width(cardWidth)
-            .height(cardHeight)
+            .width(width)
+            .height(height)
             .clickable { onClick() },
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(10.dp),
         border = BorderStroke(2.dp, Color.White),
         elevation = CardDefaults.cardElevation(0.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent)
@@ -584,49 +729,41 @@ fun StyledPlayerCard(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(6.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Top
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                // slot de imagen igual que CompactPlayerCard
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(0.85f)
-                        .height(80.dp)
+                        .height(70.dp)
                         .background(Color.White, shape = RoundedCornerShape(8.dp))
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(RoundedCornerShape(8.dp)),
+                    contentAlignment = Alignment.Center
                 ) {
                     Image(
-                        painter = rememberAsyncImagePainter(model = player.imagePath),
-                        contentDescription = player.displayName,
+                        painter = painterResource(R.drawable.player_placeholder),
+                        contentDescription = positionName,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
                 }
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = player.displayName,
-                    fontSize = 12.sp,
+                    text = positionName,
+                    fontSize = 10.sp,
                     fontWeight = FontWeight.SemiBold,
+                    color = Color.DarkGray,
                     textAlign = TextAlign.Center,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = "${player.puntos_totales} pts",
-                    fontSize = 10.sp,
+                    text = stringResource(R.string.zero_points),
+                    fontSize = 9.sp,
                     color = Color.DarkGray,
                     textAlign = TextAlign.Center
                 )
-                Row(
-                    modifier = Modifier
-                        .padding(top = 2.dp)
-                        .wrapContentWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    repeat(player.estrellas) {
-                        Text(text = "⭐", fontSize = 12.sp)
-                    }
-                }
+                // no mostramos estrellas
             }
         }
     }
@@ -712,251 +849,17 @@ fun CompactPlayerCard(
 }
 
 @Composable
-fun CompactPlaceholderCard(
-    positionName: String,
-    modifier: Modifier = Modifier,
-    width: Dp,
-    height: Dp,
-    onClick: () -> Unit
-) {
-    // mismo estilo de fondo que CompactPlayerCard
-    val gradientBackground = Brush.verticalGradient(listOf(Color.LightGray, Color.White))
+fun getPlayerCardDimensions(): Pair<Dp, Dp> {
+    val density        = LocalDensity.current
+    val screenWidthDp  = LocalConfiguration.current.screenWidthDp.dp
 
-    Card(
-        modifier = modifier
-            .width(width)
-            .height(height)
-            .clickable { onClick() },
-        shape = RoundedCornerShape(10.dp),
-        border = BorderStroke(2.dp, Color.White),
-        elevation = CardDefaults.cardElevation(0.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
-    ) {
-        Box(modifier = Modifier.background(gradientBackground)) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(6.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // slot de imagen igual que CompactPlayerCard
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(0.85f)
-                        .height(70.dp)
-                        .background(Color.White, shape = RoundedCornerShape(8.dp))
-                        .clip(RoundedCornerShape(8.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Image(
-                        painter = painterResource(R.drawable.player_placeholder),
-                        contentDescription = positionName,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                }
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = positionName,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.DarkGray,
-                    textAlign = TextAlign.Center,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = "0 pts",
-                    fontSize = 9.sp,
-                    color = Color.DarkGray,
-                    textAlign = TextAlign.Center
-                )
-                // no mostramos estrellas
-            }
-        }
+    val availableWidth = screenWidthDp - 24.dp                // padding lateral (12×2)
+    val cardWidth      = (availableWidth - (3 * 8.dp)) / 4
+
+    // 122:80 + margen -> redondeamos siempre hacia ARRIBA
+    val cardHeight = with(density) {
+        kotlin.math.ceil(cardWidth.toPx() * 122f / 80f).toDp() + 6.dp // +4 dp
     }
+
+    return cardWidth to cardHeight
 }
-
-
-@Composable
-fun GuideDialog(onDismiss: () -> Unit) {
-    val scrollState = rememberScrollState()
-
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            elevation = CardDefaults.cardElevation(8.dp),
-            modifier = Modifier
-                .fillMaxWidth(0.9f)
-                .fillMaxHeight(0.5f)
-        ) {
-            Column {
-                // Header de gradiente
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(60.dp)
-                        .background(
-                            Brush.horizontalGradient(
-                                colors = listOf(
-                                    MaterialTheme.colorScheme.primary,
-                                    MaterialTheme.colorScheme.secondary
-                                )
-                            )
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Guía de puntuación",
-                        color = Color.White,
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                }
-
-                // Contenido scrolleable
-                Column(
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .verticalScroll(scrollState)
-                ) {
-                    // -------- Bono y eventos --------
-                    Text(
-                        text = "📋 Bono y Eventos:",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Start
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = """
-• Titular → +3 puntos
-• Gol → +4 puntos
-• Asistencia → +3 puntos
-• Tarjeta amarilla → -1 punto
-• Falta grave → -3 puntos
-• Sustitución → el jugador que entra obtendrá la mitad de los puntos
-                        """.trimIndent(),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Start
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // -------- Estadísticas por posición --------
-                    Text(
-                        text = "📚 Estadísticas (según posición):",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Start
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Portero
-                    Text(
-                        text = "• Portero",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        ),
-                        textAlign = TextAlign.Start
-                    )
-                    Text(
-                        text = "- Paradas realizadas\n- Balones recuperados" +
-                                "\n- Goles encajados",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Start
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Defensa
-                    Text(
-                        text = "• Defensa",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        ),
-                        textAlign = TextAlign.Start
-                    )
-                    Text(
-                        text = "- Entradas, intercepciones y despejes\n- Bloqueos de disparos\n- Precisión en pases" +
-                                "\n- Goles encajados",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Start
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Mediocentro
-                    Text(
-                        text = "• Mediocentro",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        ),
-                        textAlign = TextAlign.Start
-                    )
-                    Text(
-                        text = "- Posesión\n- Total de pases\n- % de acierto en pases\n- Intercepciones\n- Regates\n- Centros",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Start
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Delantero
-                    Text(
-                        text = "• Delantero",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        ),
-                        textAlign = TextAlign.Start
-                    )
-                    Text(
-                        text = "- Disparos totales y a puerta\n- Ataques y ataques peligrosos\n- Regates\n- Centros",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Start
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Aviso final
-                    Text(
-                        text = "❗ Si no juega, puntos = 0",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.error
-                        ),
-                        textAlign = TextAlign.Start
-                    )
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // Botón Cerrar
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        TextButton(onClick = { onDismiss() }) {
-                            Text(
-                                text = "Cerrar",
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-

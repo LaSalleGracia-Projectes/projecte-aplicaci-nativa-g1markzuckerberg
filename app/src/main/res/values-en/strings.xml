@@ -1,12 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- General -->
     <string name="app_name">projecte-aplicaci-nativa-g1markzuckerberg</string>
+
+    <!-- Notifications -->
     <string name="notifications_title">Notifications</string>
     <string name="no_notifications">No notifications</string>
     <string name="notification_created">You created the league %1$s successfully</string>
     <string name="notification_joined">You joined the league %1$s successfully</string>
     <string name="notification_expelled">You expelled %1$s from the league %2$s</string>
     <string name="notification_expulsado">You have been expelled from the league %1$s</string>
-    <string name="notification_expelled_self">Has sido expulsado de la liga %1$s</string>
+    <string name="notification_expelled_self">You have been expelled from the league %1$s</string>
     <string name="notification_draft_opening">The draft creation period opens until %1$s</string>
+
+    <!-- DraftScreen -->
+    <string name="back">Back</string>
+    <string name="draft_title">Draft</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="info">Info</string>
+
+    <string name="dialog_save_title">Save lineup?</string>
+    <string name="dialog_save_msg">Are you sure you want to save the lineup?\n\nOnce saved, the squad will be submitted and you won’t be able to edit it again.</string>
+
+    <string name="dialog_incomplete_title">Incomplete lineup</string>
+    <string name="dialog_incomplete_msg">You must select a player for every position before saving the lineup.</string>
+    <string name="ok">OK</string>
+
+    <string name="select_player">Choose a player</string>
+    <string name="guide_title">Scoring guide</string>
+
+    <string name="bonus_events">📋 Bonus &amp; events:</string>
+    <string name="bonus_list">• Starter → +3 points\n• Goal → +4 points\n• Assist → +3 points\n• Yellow card → −1 point\n• Serious foul → −3 points\n• Substitution → the incoming player earns half the points</string>
+
+    <string name="stats_by_pos">📚 Statistics (by position):</string>
+
+    <string name="pos_goalkeeper">• Goalkeeper</string>
+    <string name="gk_stats">- Saves made\n- Balls recovered\n- Goals conceded</string>
+
+    <string name="pos_defender">• Defender</string>
+    <string name="df_stats">- Tackles, interceptions and clearances\n- Shot blocks\n- Pass accuracy\n- Goals conceded</string>
+
+    <string name="pos_midfielder">• Midfielder</string>
+    <string name="mf_stats">- Possession\n- Total passes\n- Pass accuracy %\n- Interceptions\n- Dribbles\n- Crosses</string>
+
+    <string name="pos_forward">• Forward</string>
+    <string name="fw_stats">- Total shots and on target\n- Attacks &amp; dangerous attacks\n- Dribbles\n- Crosses</string>
+
+    <string name="no_play_zero">❗ If the player doesn’t play, points = 0</string>
+    <string name="close">Close</string>
+    <string name="zero_points">0 pts</string>
+
+    <string name="position_forward">Striker</string>
+    <string name="position_midfielder">Mid Fielder</string>
+    <string name="position_defender">Defender</string>
+    <string name="position_goalkeeper">Goal Keeper</string>
+
+    <string name="dialog_save_msg_line1">Are you sure you want to save the lineup?</string>
+    <string name="dialog_save_msg_line2">Once saved, the squad will be submitted and you won’t be able to edit it again.</string>
 </resources>
