@@ -27,7 +27,6 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.factory.HomeLogedVi
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.service.NotificationSocketService
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.NavbarView
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.view.screens.*
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.*
 
 @Composable
