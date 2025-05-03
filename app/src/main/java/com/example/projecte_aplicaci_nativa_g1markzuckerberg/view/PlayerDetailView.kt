@@ -3,6 +3,7 @@ package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,6 +29,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import coil.transform.CircleCropTransformation
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.LocalAppDarkTheme
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.grafanaPlayerUrl
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.PlayerDetailViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.PlayerDetailViewModelFactory
@@ -38,10 +40,12 @@ fun PlayerDetailView(navController: NavController, playerId: String) {
     val vm: PlayerDetailViewModel = viewModel(
         factory = remember { PlayerDetailViewModelFactory(playerId.toInt(), repo) }
     )
+    val darkTheme = LocalAppDarkTheme.current
+
     val player = vm.player
     val isLoading = vm.isLoading
     val error = vm.errorMessage
-    val onPrimary = MaterialTheme.colorScheme.onPrimary
+    val onPrimary = if (darkTheme) Color.White else MaterialTheme.colorScheme.onPrimary
 
     Column(Modifier.fillMaxSize()) {
         Box(
@@ -190,7 +194,15 @@ fun PlayerDetailView(navController: NavController, playerId: String) {
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp)
                     ) {
+
                         var chartLoading by remember { mutableStateOf(true) }
+                        // 1) URL base sin parámetros
+                        val rawUrl   = grafanaPlayerUrl(player.id)
+                        val cleanUrl = rawUrl.substringBefore("?")
+
+                        // 2) Fuerza el tema que corresponda
+                        val grafanaUrl = "$cleanUrl?theme=${if (darkTheme) "dark" else "light"}"
+
                         Box(
                             Modifier
                                 .fillMaxWidth()
@@ -198,11 +210,11 @@ fun PlayerDetailView(navController: NavController, playerId: String) {
                         ) {
                             AsyncImage(
                                 model = ImageRequest.Builder(LocalContext.current)
-                                    .data(grafanaPlayerUrl(player.id))
+                                    .data(grafanaUrl)
                                     .crossfade(true)
                                     .listener(
                                         onSuccess = { _, _ -> chartLoading = false },
-                                        onError = { _, _ -> chartLoading = false }
+                                        onError   = { _, _ -> chartLoading = false }
                                     )
                                     .build(),
                                 contentDescription = "Gráfico de evolución de puntos",

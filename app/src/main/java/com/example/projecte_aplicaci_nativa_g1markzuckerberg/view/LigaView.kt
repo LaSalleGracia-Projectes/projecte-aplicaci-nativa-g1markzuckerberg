@@ -126,7 +126,7 @@ fun LigaView(
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Volver",
-                                tint = MaterialTheme.colorScheme.onPrimary
+                                tint = Color.White
                             )
                         }
                         Text(
@@ -136,7 +136,7 @@ fun LigaView(
                                 fontWeight = FontWeight.ExtraBold,
                                 letterSpacing = 0.3.sp
                             ),
-                            color = MaterialTheme.colorScheme.onPrimary,
+                            color     = Color.White,
                             maxLines = 1,
                             modifier = Modifier.weight(1f),
                             textAlign = TextAlign.Center
@@ -177,7 +177,7 @@ fun LigaView(
                                 onSelected = { jornada ->
                                     ligaViewModel.setSelectedJornada(jornada)
                                 },
-                                textColor = MaterialTheme.colorScheme.onPrimary
+                                textColor = Color.White
                             )
                         }
                         Spacer(modifier = Modifier.width(12.dp))
@@ -288,7 +288,8 @@ fun LigaView(
                                                         text = rankingText,
                                                         style = MaterialTheme.typography.bodyLarge.copy(
                                                             fontWeight = FontWeight.Bold,
-                                                            fontSize = 20.sp
+                                                            fontSize = 20.sp,
+                                                            color = Color.Black
                                                         ),
                                                         modifier = Modifier.width(30.dp)
                                                     )
@@ -298,14 +299,16 @@ fun LigaView(
                                                     Text(
                                                         text = user.username,
                                                         style = MaterialTheme.typography.bodyLarge,
-                                                        modifier = Modifier.weight(1f)
+                                                        modifier = Modifier.weight(1f),
+                                                        color = Color.Black
                                                     )
                                                     Spacer(modifier = Modifier.width(8.dp))
                                                     val puntos = if (selectedJornada == 0) user.puntos_acumulados else user.puntos_jornada
                                                     Text(
                                                         text = "$puntos pts",
                                                         style = MaterialTheme.typography.bodyMedium,
-                                                        modifier = Modifier.padding(end = 8.dp)
+                                                        modifier = Modifier.padding(end = 8.dp),
+                                                        color = Color.Black
                                                     )
                                                 }
                                             }
@@ -319,7 +322,8 @@ fun LigaView(
                                                 Text(
                                                     text = rankingText,
                                                     style = MaterialTheme.typography.bodyLarge,
-                                                    modifier = Modifier.width(30.dp)
+                                                    modifier = Modifier.width(30.dp),
+                                                    color = Color.Black
                                                 )
                                                 Spacer(modifier = Modifier.width(8.dp))
                                                 UserImage(url = fullUserImageUrl)
@@ -327,14 +331,16 @@ fun LigaView(
                                                 Text(
                                                     text = user.username,
                                                     style = MaterialTheme.typography.bodyLarge,
-                                                    modifier = Modifier.weight(1f)
+                                                    modifier = Modifier.weight(1f),
+                                                    color = Color.Black
                                                 )
                                                 Spacer(modifier = Modifier.width(8.dp))
                                                 val puntos = if (selectedJornada == 0) user.puntos_acumulados else user.puntos_jornada
                                                 Text(
                                                     text = "$puntos pts",
                                                     style = MaterialTheme.typography.bodyMedium,
-                                                    modifier = Modifier.padding(end = 8.dp)
+                                                    modifier = Modifier.padding(end = 8.dp),
+                                                    color = Color.Black
                                                 )
                                             }
                                         }
@@ -368,7 +374,8 @@ fun LigaView(
                                                         fontWeight = FontWeight.Bold,
                                                         fontSize = 20.sp
                                                     ),
-                                                    modifier = Modifier.width(30.dp)
+                                                    modifier = Modifier.width(30.dp),
+                                                    color = Color.Black
                                                 )
                                                 Spacer(modifier = Modifier.width(8.dp))
                                                 UserImage(url = fullUserImageUrl)
@@ -376,14 +383,16 @@ fun LigaView(
                                                 Text(
                                                     text = user.username,
                                                     style = MaterialTheme.typography.bodyLarge,
-                                                    modifier = Modifier.weight(1f)
+                                                    modifier = Modifier.weight(1f),
+                                                    color = Color.Black
                                                 )
                                                 Spacer(modifier = Modifier.width(8.dp))
                                                 val puntos = if (selectedJornada == 0) user.puntos_acumulados else user.puntos_jornada
                                                 Text(
                                                     text = "$puntos pts",
                                                     style = MaterialTheme.typography.bodyMedium,
-                                                    modifier = Modifier.padding(end = 8.dp)
+                                                    modifier = Modifier.padding(end = 8.dp),
+                                                    color = Color.Black
                                                 )
                                             }
                                         }
@@ -397,7 +406,8 @@ fun LigaView(
                                             Text(
                                                 text = rankingText,
                                                 style = MaterialTheme.typography.bodyLarge,
-                                                modifier = Modifier.width(30.dp)
+                                                modifier = Modifier.width(30.dp),
+                                                color = Color.Black
                                             )
                                             Spacer(modifier = Modifier.width(8.dp))
                                             UserImage(url = fullUserImageUrl)
@@ -405,14 +415,16 @@ fun LigaView(
                                             Text(
                                                 text = user.username,
                                                 style = MaterialTheme.typography.bodyLarge,
-                                                modifier = Modifier.weight(1f)
+                                                modifier = Modifier.weight(1f),
+                                                color = Color.Black
                                             )
                                             Spacer(modifier = Modifier.width(8.dp))
                                             val puntos = if (selectedJornada == 0) user.puntos_acumulados else user.puntos_jornada
                                             Text(
                                                 text = "$puntos pts",
                                                 style = MaterialTheme.typography.bodyMedium,
-                                                modifier = Modifier.padding(end = 8.dp)
+                                                modifier = Modifier.padding(end = 8.dp),
+                                                color = Color.Black
                                             )
                                         }
                                     }
@@ -511,7 +523,7 @@ fun JornadaDropdown(
             Icon(
                 imageVector = Icons.Default.ArrowDropDown,
                 contentDescription = "Mostrar opciones",
-                tint = textColor
+                tint = Color.White
             )
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {

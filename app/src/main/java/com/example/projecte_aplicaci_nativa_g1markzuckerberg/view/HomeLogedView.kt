@@ -169,9 +169,9 @@ fun HomeLogedView(
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontSize = 26.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = 0.5.sp
+                            letterSpacing = 0.5.sp,
                         ),
-                        color = MaterialTheme.colorScheme.onPrimary,
+                        color = Color.White,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center,
@@ -274,7 +274,8 @@ fun HomeLogedView(
                                         )
                                     }
                                 }
-                            }
+                            },
+                            color = Color.White
                         )
                     }
 
@@ -317,7 +318,10 @@ fun HomeLogedView(
 
                     homeLogedViewModel.jornadaData.value?.let { jornada ->
                         item {
-                            SectionHeader(title = "PARTIDOS – JORNADA ${jornada.jornada}")
+                            SectionHeader(
+                                title = "PARTIDOS – JORNADA ${jornada.jornada}",
+                                color = Color.White
+                            )
                             Spacer(modifier = Modifier.height(8.dp))
                         }
                         items(jornada.fixtures) { fixture ->
@@ -398,9 +402,10 @@ fun HomeLogedView(
     /** Encabezado de sección con título y contenido opcional de botón */
 @Composable
 fun SectionHeader(
-    title: String,
-    buttonContent: (@Composable () -> Unit)? = null
-) {
+        title: String,
+        buttonContent: @Composable() (() -> Unit)? = null,
+        color: Color
+    ) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,

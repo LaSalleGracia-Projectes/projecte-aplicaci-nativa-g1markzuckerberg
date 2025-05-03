@@ -686,7 +686,8 @@ fun CompactPlayerCard(
                     fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    color = Color.Black
                 )
                 Text(
                     text = "${player.puntos_totales} pts",

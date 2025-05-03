@@ -8,6 +8,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -50,22 +51,23 @@ fun GradientHeader(
         ) {
             IconButton(
                 onClick = onBack,
-                modifier = Modifier.size(28.dp)
-            ) {
+                modifier = Modifier.size(28.dp),
+                colors = IconButtonDefaults.iconButtonColors(
+                    contentColor = Color.White
+                )            ) {
                 // Puedes usar un icono personalizado o el predeterminado
                 androidx.compose.material3.Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Volver",
-                    tint = MaterialTheme.colorScheme.onPrimary
+                    tint = Color.White,
                 )
             }
             Text(
                 text = title,
                 fontSize = 26.sp,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onPrimary
+                color = Color.White,
             )
-            // Spacer para equilibrar si no se necesita un botón a la derecha
             Spacer(modifier = Modifier.width(28.dp))
         }
     }

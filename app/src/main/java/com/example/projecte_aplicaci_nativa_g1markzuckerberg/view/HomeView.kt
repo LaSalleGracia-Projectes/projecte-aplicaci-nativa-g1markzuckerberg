@@ -65,7 +65,7 @@ fun HomeView(
                 text = "Crea tu liga con tus amigos!",
                 fontSize = 26.sp,
                 fontWeight = FontWeight.Bold,
-                color = OnBluePrimary,
+                color = Color.White,
                 style = MaterialTheme.typography.headlineMedium
             )
         }
@@ -98,6 +98,7 @@ fun HomeView(
             // Botón con gradiente para Crear Cuenta
             GradientButton(
                 text = "CREAR CUENTA",
+                color = Color.White,
                 onClick = {
                     navController.navigate(Routes.Register.route)
                 },
@@ -135,7 +136,8 @@ fun GradientButton(
             colorScheme.secondary
         )
     ),
-    textColor: Color = colorScheme.onPrimary
+    textColor: Color = colorScheme.onPrimary,
+    color: Color
 ) {
     Button(
         onClick = onClick,
@@ -151,7 +153,7 @@ fun GradientButton(
         ) {
             Text(
                 text = text,
-                color = textColor,
+                color = Color.White,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold
             )

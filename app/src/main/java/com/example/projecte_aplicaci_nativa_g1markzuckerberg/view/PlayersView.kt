@@ -3,6 +3,7 @@ package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -35,6 +36,7 @@ import coil.transform.CircleCropTransformation
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.PlayerModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.LocalAppDarkTheme
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.LoadingTransitionScreen
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.*
 
@@ -46,10 +48,9 @@ fun PlayersView(navController: NavController) {
 
     val state      = vm.uiState
     val listState  = rememberLazyListState()
-    val onPrimary  = MaterialTheme.colorScheme.onPrimary
-
     var showTeamPopup by remember { mutableStateOf(false) }
     var targetScroll by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+    val darkTheme = LocalAppDarkTheme.current
 
     LaunchedEffect(state.pointsOrder, targetScroll) {
         targetScroll?.let { (i, off) ->
@@ -79,7 +80,7 @@ fun PlayersView(navController: NavController) {
                 Text(
                     "Jugadores",
                     style  = MaterialTheme.typography.titleLarge.copy(fontSize = 26.sp, fontWeight = FontWeight.ExtraBold),
-                    color  = onPrimary,
+                    color     = if (darkTheme) Color.White else MaterialTheme.colorScheme.onPrimary,
                     textAlign = TextAlign.Center
                 )
             }
@@ -248,6 +249,8 @@ private fun PlayerCard(p: PlayerModel, onClick: () -> Unit) {
         elevation = CardDefaults.cardElevation(4.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
+        val textColor = Color.Black
+
         Box(Modifier.background(gradient)) {
             Row(
                 Modifier
@@ -267,10 +270,10 @@ private fun PlayerCard(p: PlayerModel, onClick: () -> Unit) {
                 )
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(p.displayName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    Text(p.teamName ?: "--", style = MaterialTheme.typography.bodySmall)
+                    Text(p.displayName, color = textColor, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(p.teamName ?: "--", color = textColor, style = MaterialTheme.typography.bodySmall)
                 }
-                Text("${p.puntosTotales} pts", fontWeight = FontWeight.SemiBold)
+                Text("${p.puntosTotales} pts", color = textColor, fontWeight = FontWeight.SemiBold)
             }
         }
     }

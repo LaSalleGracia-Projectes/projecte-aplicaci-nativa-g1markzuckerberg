@@ -2,6 +2,7 @@ package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -36,6 +37,7 @@ import androidx.navigation.NavController
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.Notifications
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.LocalAppDarkTheme
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.LoadingTransitionScreen
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.NotificationViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.NotificationsUiState
@@ -102,6 +104,7 @@ fun NotificationScreen(
     LaunchedEffect(token) { viewModel.forceReloadIfTokenExists() }
 
     val uiState by viewModel.uiState.collectAsState()
+    val darkTheme = LocalAppDarkTheme.current
 
     Column(
         Modifier
@@ -129,7 +132,7 @@ fun NotificationScreen(
                     fontSize = 26.sp,
                     fontWeight = FontWeight.ExtraBold
                 ),
-                color = MaterialTheme.colorScheme.onPrimary,
+                color     = if (darkTheme) Color.White else MaterialTheme.colorScheme.onPrimary,
                 textAlign = TextAlign.Center
             )
         }

@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -58,6 +59,7 @@ import androidx.compose.ui.unit.Velocity
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.LocalAppDarkTheme
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.FancyLoadingAnimation
 
 @Composable
@@ -151,13 +153,13 @@ fun UserDraftView(
                         Icon(
                             imageVector   = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Volver",
-                            tint          = MaterialTheme.colorScheme.onPrimary
+                            tint          = Color.White,
                         )
                     }
                     Text(
                     text      = userName,
                     style     = MaterialTheme.typography.titleLarge,
-                    color     = MaterialTheme.colorScheme.onPrimary,
+                    color     = Color.White,
                     modifier  = Modifier.weight(1f),
                     textAlign = TextAlign.Center
                         )
@@ -222,7 +224,7 @@ fun UserDraftView(
                 ) {
                     item {
                         Spacer(modifier = Modifier.height(18.dp))
-                        SectionHeader(title = "USUARIO")
+                        SectionHeader(title = "USUARIO", color = Color.White)
                         HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
                     }
                     item {
@@ -256,15 +258,19 @@ fun UserDraftView(
                     }
                     item {
                         Spacer(modifier = Modifier.height(18.dp))
-                        SectionHeader(title = "HISTÓRICO DE PUNTOS")
+                        SectionHeader(title = "HISTÓRICO DE PUNTOS", color = Color.White)
                         HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
 
                     }
 
-                    item {
-                        val graphUrl = remember(leagueId, userId) {
-                            grafanaUserUrl(leagueId, userId)
-                        }
+                    item {// 1️⃣ detectamos el tema de la app
+                        val appDark = LocalAppDarkTheme.current
+
+                        // 2️⃣ limpiamos cualquier parámetro previo
+                        val rawUrl  = grafanaUserUrl(leagueId, userId).substringBefore("?")
+                        // 3️⃣ añadimos ?theme=dark solo si la app está en dark
+                        val graphUrl = if (appDark) "$rawUrl?theme=dark" else rawUrl
+
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -337,7 +343,7 @@ fun UserDraftView(
                                                 text = "J$j",
                                                 fontSize = 14.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onPrimary
+                                                color = Color.White
                                             )
                                             if (j == selectedJornada) {
                                                 Spacer(modifier = Modifier.height(4.dp))
@@ -345,7 +351,7 @@ fun UserDraftView(
                                                     text = jornadaPoints.toString(),
                                                     fontSize = 12.sp,
                                                     fontWeight = FontWeight.SemiBold,
-                                                    color = MaterialTheme.colorScheme.onPrimary
+                                                    color = Color.White
                                                 )
                                             }
                                         }
@@ -529,11 +535,14 @@ fun UserDraftTabs(
     onTabSelected: (page: Int) -> Unit
 ) {
     val tabTitles = listOf("Usuario", "Draft")
+    // colores fijos para texto e indicador
+    val selectedColor   = Color.White
+    val unselectedColor = Color.White.copy(alpha = 0.6f)
+    val indicatorColor  = Color.White
 
     BoxWithConstraints {
         val fullWidth = constraints.maxWidth.toFloat()
         val tabWidth  = fullWidth / tabTitles.size
-        // Offset en px: página actual + fracción de desplazamiento
         val indicatorOffsetPx by remember {
             derivedStateOf {
                 (pagerState.currentPage + pagerState.currentPageOffsetFraction) * tabWidth
@@ -550,17 +559,17 @@ fun UserDraftTabs(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = title,
+                            text  = title,
+                            style = MaterialTheme.typography.titleMedium,
                             color = if (pagerState.currentPage == index)
-                                MaterialTheme.colorScheme.onPrimary
+                                selectedColor
                             else
-                                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f),
-                            style = MaterialTheme.typography.titleMedium
+                                unselectedColor
                         )
                     }
                 }
             }
-            // Indicador
+            // Indicador siempre blanco
             Box(
                 Modifier
                     .fillMaxWidth()
@@ -571,9 +580,10 @@ fun UserDraftTabs(
                         .offset { IntOffset(indicatorOffsetPx.roundToInt(), 0) }
                         .width(with(LocalDensity.current) { tabWidth.toDp() })
                         .fillMaxHeight()
-                        .background(MaterialTheme.colorScheme.onPrimary)
+                        .background(indicatorColor)
                 )
             }
         }
     }
 }
+

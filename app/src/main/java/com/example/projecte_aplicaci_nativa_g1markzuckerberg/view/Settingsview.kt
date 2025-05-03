@@ -121,7 +121,7 @@ fun SettingsView(
                         .padding(horizontal = 16.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor   = MaterialTheme.colorScheme.onPrimary
+                        contentColor = if (isDark) Color.White else MaterialTheme.colorScheme.onPrimary
                     )
                 ) { Text("Cerrar sesión") }
             }

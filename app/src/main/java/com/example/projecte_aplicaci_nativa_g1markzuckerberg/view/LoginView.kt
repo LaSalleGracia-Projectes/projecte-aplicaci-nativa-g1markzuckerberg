@@ -4,6 +4,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -26,6 +27,7 @@ import androidx.navigation.NavController
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.LocalAppDarkTheme
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialogSingleButton
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.ForgotPasswordDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.GradientHeader
@@ -50,6 +52,25 @@ fun LoginView(
     navController: NavController,
     viewModel: LoginViewModel
 ) {
+    // 1. Detectamos tema oscuro
+    val isDarkTheme = LocalAppDarkTheme.current
+
+    // 2. Recursos según el tema
+    @DrawableRes
+    val emailIconRes = if (isDarkTheme) R.drawable.ic_email_dark else R.drawable.ic_email
+    @DrawableRes
+    val passwordIconRes = if (isDarkTheme) R.drawable.password_dark else R.drawable.password
+    @DrawableRes
+    val visibilityOnIconRes = if (isDarkTheme) R.drawable.visibility_on_dark else R.drawable.visibility_on
+    @DrawableRes
+    val visibilityOffIconRes = if (isDarkTheme) R.drawable.visibility_dark else R.drawable.visibility_off
+
+    // 3. Colores dinámicos para botones Outlined
+    val outlinedButtonColors = ButtonDefaults.outlinedButtonColors(
+        containerColor = if (isDarkTheme) Color.DarkGray else Color.White,
+        contentColor   = if (isDarkTheme) Color.LightGray else Color.Black
+    )
+
     val email by viewModel.email.observeAsState("")
     val password by viewModel.password.observeAsState("")
     val passwordVisible by viewModel.passwordVisible.observeAsState(false)
@@ -93,7 +114,7 @@ fun LoginView(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(color = MaterialTheme.colorScheme.background)
     ) {
         // Barra superior: Usando GradientHeader
         GradientHeader(
@@ -125,8 +146,8 @@ fun LoginView(
                 label = { Text("Correo") },
                 leadingIcon = {
                     Image(
-                        painter = painterResource(id = R.drawable.ic_email),
-                        contentDescription = "Correo",
+                        painter = painterResource(id = emailIconRes),
+                        contentDescription = "Email icon",
                         modifier = Modifier.size(24.dp)
                     )
                 },
@@ -144,7 +165,7 @@ fun LoginView(
                 label = { Text("Contraseña") },
                 leadingIcon = {
                     Image(
-                        painter = painterResource(id = R.drawable.password),
+                        painter = painterResource(id = passwordIconRes),
                         contentDescription = "Contraseña",
                         modifier = Modifier.size(24.dp)
                     )
@@ -158,7 +179,12 @@ fun LoginView(
                         if (passwordVisible) R.drawable.visibility_on else R.drawable.visibility_off
                     IconButton(onClick = { viewModel.togglePasswordVisibility() }) {
                         Image(
-                            painter = painterResource(id = iconRes),
+                            painter = painterResource(
+                                id = if (passwordVisible)
+                                    visibilityOnIconRes
+                                else
+                                    visibilityOffIconRes
+                            ),
                             contentDescription = "Mostrar/Ocultar contraseña",
                             modifier = Modifier.size(24.dp)
                         )
@@ -194,7 +220,8 @@ fun LoginView(
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
                     text = "Iniciar sesión",
-                    fontSize = 16.sp
+                    fontSize = 16.sp,
+                    color = Color.White,
                 )
             }
 
@@ -207,10 +234,7 @@ fun LoginView(
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    containerColor = Color.White,
-                    contentColor = Color.Black
-                )
+                colors = outlinedButtonColors
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.google),

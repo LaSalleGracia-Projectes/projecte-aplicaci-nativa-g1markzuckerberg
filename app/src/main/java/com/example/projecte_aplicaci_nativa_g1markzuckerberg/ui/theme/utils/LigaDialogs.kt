@@ -497,6 +497,7 @@ fun LigaDialog(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
+                            color = Color.White,
                             text = if (selectedImageUri == null)
                                 "Seleccionar imagen"
                             else
@@ -508,7 +509,7 @@ fun LigaDialog(
                     selectedImageUri?.let {
                         Text(
                             text = "Imagen seleccionada ✅",
-                            color = MaterialTheme.colorScheme.primary,
+                            color = Color.White,
                             modifier = Modifier
                                 .padding(top = 8.dp)
                                 .fillMaxWidth(),
