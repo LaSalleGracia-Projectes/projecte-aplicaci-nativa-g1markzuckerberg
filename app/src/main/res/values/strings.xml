@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">projecte-aplicaci-nativa-g1markzuckerberg</string>
+    <string name="notifications_title">Notificaciones</string>
+    <string name="no_notifications">No hay notificaciones</string>
+    <string name="notification_created">Has creado la liga %1$s correctamente</string>
+    <string name="notification_joined">Te has unido a la liga %1$s con éxito</string>
+    <string name="notification_expelled">Has expulsado a %1$s de la liga %2$s</string>
+    <string name="notification_expulsado">Has sido expulsado de la liga %1$s</string>
+    <string name="notification_expelled_self">Has sido expulsado de la liga %1$s</string>
+    <string name="notification_draft_opening">Ya se abre el plazo para crear los drafts hasta el %1$s</string>
 </resources>

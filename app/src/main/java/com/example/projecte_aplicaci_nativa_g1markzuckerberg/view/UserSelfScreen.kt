@@ -33,13 +33,13 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.LigaConPuntos
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.LoadingTransitionScreen
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.grafanaUserUrl
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.*
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
-/* ─────────── ENTRY ─────────── */
 @Composable
 fun UserSelfScreen(
     navController: NavHostController,
@@ -48,37 +48,33 @@ fun UserSelfScreen(
     val ui   by vm.state.collectAsState()
     val edit by vm.edit.collectAsState()
 
-    if (edit is UserEditState.Loading)
-        Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
-
-    when (ui) {
-        UserSelfUiState.Loading -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
-        is UserSelfUiState.Error -> Box(Modifier.fillMaxSize(), Alignment.Center) {
-            Text((ui as UserSelfUiState.Error).message, color = MaterialTheme.colorScheme.error)
+    LoadingTransitionScreen(isLoading = ui is UserSelfUiState.Loading || edit is UserEditState.Loading) {
+        when (ui) {
+            is UserSelfUiState.Error -> Box(Modifier.fillMaxSize(), Alignment.Center) {
+                Text((ui as UserSelfUiState.Error).message, color = MaterialTheme.colorScheme.error)
+            }
+            is UserSelfUiState.Ready -> ProfileContent(vm, ui as UserSelfUiState.Ready)
+            else -> {}
         }
-        is UserSelfUiState.Ready -> ProfileContent(vm, ui as UserSelfUiState.Ready)
     }
 }
 
-/* ─────────── MAIN CONTENT ─────────── */
 @Composable
 private fun ProfileContent(vm: UserSelfViewModel, st: UserSelfUiState.Ready) {
     val ctx = LocalContext.current
-
     var dlgName   by remember { mutableStateOf(false) }
     var dlgBirth  by remember { mutableStateOf(false) }
     var dlgPass   by remember { mutableStateOf(false) }
     var popLiga   by remember { mutableStateOf(false) }
     var dlgAvatar by remember { mutableStateOf(false) }
 
-    val token      = remember { RetrofitClient.authRepository.getToken().orEmpty() }
-    val avatarUrl  = remember(st.avatarStamp) {
+    val token = remember { RetrofitClient.authRepository.getToken().orEmpty() }
+    val avatarUrl = remember(st.avatarStamp) {
         "${RetrofitClient.BASE_URL}api/v1/user/get-image?userId=${st.user.id}&ts=${st.avatarStamp}"
     }
 
     Column(Modifier.fillMaxSize()) {
         Header()
-
         Column(
             Modifier
                 .fillMaxSize()
@@ -86,7 +82,6 @@ private fun ProfileContent(vm: UserSelfViewModel, st: UserSelfUiState.Ready) {
                 .padding(vertical = 24.dp, horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            /* avatar */
             AsyncImage(
                 model = ImageRequest.Builder(ctx)
                     .data(avatarUrl)
@@ -105,13 +100,10 @@ private fun ProfileContent(vm: UserSelfViewModel, st: UserSelfUiState.Ready) {
             )
 
             Spacer(Modifier.height(32.dp))
-
-            EditRow("Nombre de usuario", st.user.username)                 { dlgName  = true }
+            EditRow("Nombre de usuario", st.user.username) { dlgName = true }
             EditRow("Fecha nacimiento", st.user.birthDate?.prettyDate() ?: "--") { dlgBirth = true }
-            EditRow("Cambiar contraseña", "********")                      { dlgPass  = true }
-
+            EditRow("Cambiar contraseña", "********") { dlgPass = true }
             Spacer(Modifier.height(28.dp))
-
             if (st.leagues.isNotEmpty()) {
                 LeagueSelector(st) { popLiga = true }
                 Spacer(Modifier.height(20.dp))
@@ -120,65 +112,41 @@ private fun ProfileContent(vm: UserSelfViewModel, st: UserSelfUiState.Ready) {
         }
     }
 
-    /* dialogs / popups */
-    if (dlgName)  SimpleEditDialog("Nuevo nombre", st.user.username) {
-        dlgName = false; it?.let(vm::updateUsername)
-    }
-    if (dlgBirth) SimpleEditDialog("Fecha (YYYY‑MM‑DD)", st.user.birthDate ?: "") {
-        dlgBirth = false; it?.let(vm::updateBirth)
-    }
-    if (dlgPass)  PassDialog { o, n, c ->
-        dlgPass = false; if (n.isNotBlank()) vm.updatePassword(o, n, c)
-    }
-    if (popLiga)  LeaguePopup(
-        st.leagues,
-        onSelect = { vm.selectLeague(it); popLiga = false },
-        onDismiss = { popLiga = false }
-    )
-    if (dlgAvatar) AvatarDialog(
-        currentUrl = avatarUrl,
-        onDismiss  = { dlgAvatar = false },
-        onSave     = { uri -> vm.uploadImage(ctx.uriToTmpFile(uri)) }
-    )
+    if (dlgName)  SimpleEditDialog("Nuevo nombre", st.user.username) { dlgName = false; it?.let(vm::updateUsername) }
+    if (dlgBirth) SimpleEditDialog("Fecha (YYYY‑MM‑DD)", st.user.birthDate ?: "") { dlgBirth = false; it?.let(vm::updateBirth) }
+    if (dlgPass)  PassDialog { o, n, c -> dlgPass = false; if (n.isNotBlank()) vm.updatePassword(o, n, c) }
+    if (popLiga)  LeaguePopup(st.leagues, onSelect = { vm.selectLeague(it); popLiga = false }, onDismiss = { popLiga = false })
+    if (dlgAvatar) AvatarDialog(avatarUrl, onDismiss = { dlgAvatar = false }, onSave = { uri -> vm.uploadImage(ctx.uriToTmpFile(uri)) })
 }
 
-/* ─────────── REUSABLE UI COMPONENTS ─────────── */
-@Composable
-private fun Header() {
+@Composable private fun Header() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(110.dp)
             .background(
                 Brush.horizontalGradient(
-                    listOf(
-                        MaterialTheme.colorScheme.primary,
-                        MaterialTheme.colorScheme.secondary
-                    )
+                    listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary)
                 )
             ),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = "Mi perfil",
-            style = MaterialTheme.typography.titleLarge.copy(
-                fontSize = 26.sp,
-                fontWeight = FontWeight.ExtraBold
-            ),
+            style = MaterialTheme.typography.titleLarge.copy(fontSize = 26.sp, fontWeight = FontWeight.ExtraBold),
             color = MaterialTheme.colorScheme.onPrimary,
             textAlign = TextAlign.Center
         )
     }
 }
 
-@Composable
-private fun EditRow(label: String, value: String, onClick: () -> Unit) {
+@Composable private fun EditRow(label: String, value: String, onClick: () -> Unit) {
     Card(
         Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .clickable(onClick = onClick),
-        shape  = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
@@ -196,91 +164,48 @@ private fun EditRow(label: String, value: String, onClick: () -> Unit) {
     }
 }
 
-/* ----- avatar dialog ----- */
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun AvatarDialog(
-    currentUrl: String,
-    onDismiss: () -> Unit,
-    onSave: (Uri) -> Unit
-) {
+@Composable private fun AvatarDialog(currentUrl: String, onDismiss: () -> Unit, onSave: (Uri) -> Unit) {
     var selected by remember { mutableStateOf<Uri?>(null) }
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) {
-        selected = it
-    }
-
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { selected = it }
     val ctx = LocalContext.current
     val token = remember { RetrofitClient.authRepository.getToken().orEmpty() }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = {
-            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Text("Foto de perfil")
-            }
-        },
+        title = { Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Text("Foto de perfil") } },
         text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                if (selected != null) {
-                    AsyncImage(
-                        model = selected,
-                        contentDescription = null,
-                        modifier = Modifier.size(180.dp).clip(CircleShape),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    AsyncImage(
-                        model = ImageRequest.Builder(ctx)
-                            .data(currentUrl)
-                            .addHeader("Authorization", "Bearer $token")
-                            .diskCachePolicy(CachePolicy.DISABLED)
-                            .memoryCachePolicy(CachePolicy.DISABLED)
-                            .crossfade(true)
-                            .build(),
-                        contentDescription = null,
-                        modifier = Modifier.size(180.dp).clip(CircleShape),
-                        contentScale = ContentScale.Crop
-                    )
-                }
-
+            Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                val imageModel = selected ?: ImageRequest.Builder(ctx)
+                    .data(currentUrl)
+                    .addHeader("Authorization", "Bearer $token")
+                    .diskCachePolicy(CachePolicy.DISABLED)
+                    .memoryCachePolicy(CachePolicy.DISABLED)
+                    .crossfade(true)
+                    .build()
+                AsyncImage(
+                    model = imageModel,
+                    contentDescription = null,
+                    modifier = Modifier.size(180.dp).clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
                 Spacer(Modifier.height(16.dp))
-                OutlinedButton(onClick = { picker.launch("image/*") }) {
-                    Text("Elegir de galería")
-                }
+                OutlinedButton(onClick = { picker.launch("image/*") }) { Text("Elegir de galería") }
             }
         },
         confirmButton = {
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Row(
-                    Modifier.padding(bottom = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    TextButton(onClick = onDismiss) {
-                        Text("Cancelar")
-                    }
-                    TextButton(
-                        enabled = selected != null,
-                        onClick = { selected?.let(onSave) }
-                    ) {
-                        Text("Guardar")
-                    }
+                Row(Modifier.padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    TextButton(onClick = onDismiss) { Text("Cancelar") }
+                    TextButton(enabled = selected != null, onClick = { selected?.let(onSave) }) { Text("Guardar") }
                 }
             }
         }
     )
 }
 
-/* ----- ligas & gráfico ----- */
-@Composable
-private fun LeagueSelector(st: UserSelfUiState.Ready, onClick: () -> Unit) {
-    OutlinedButton(
-        onClick = onClick,
-        shape   = RoundedCornerShape(50),
-        border  = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
-    ) {
+@Composable private fun LeagueSelector(st: UserSelfUiState.Ready, onClick: () -> Unit) {
+    OutlinedButton(onClick = onClick, shape = RoundedCornerShape(50), border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)) {
         AsyncImage(
             model = "${RetrofitClient.BASE_URL}api/v1/liga/image/${st.selectedLeague.id}",
             contentDescription = null,
@@ -293,51 +218,27 @@ private fun LeagueSelector(st: UserSelfUiState.Ready, onClick: () -> Unit) {
     }
 }
 
-@Composable
-private fun PointsGraph(st: UserSelfUiState.Ready) {
+@Composable private fun PointsGraph(st: UserSelfUiState.Ready) {
     var loading by remember(st.selectedLeague.id) { mutableStateOf(true) }
     Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-        ) {
+        Box(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
             AsyncImage(
-                model = grafanaUserUrl(
-                    st.selectedLeague.id.toString(),
-                    st.user.id.toString()
-                ),
+                model = grafanaUserUrl(st.selectedLeague.id.toString(), st.user.id.toString()),
                 contentDescription = null,
-                modifier = Modifier
-                    .height(260.dp)
-                    .padding(16.dp),
+                modifier = Modifier.height(260.dp).padding(16.dp),
                 contentScale = ContentScale.FillHeight,
                 onSuccess = { loading = false },
-                onError   = { loading = false }
+                onError = { loading = false }
             )
             if (loading) Box(Modifier.matchParentSize(), Alignment.Center) { CircularProgressIndicator() }
         }
     }
 }
 
-/* ----- pop‑up selección liga ----- */
-@Composable
-private fun LeaguePopup(
-    leagues: List<LigaConPuntos>,
-    onSelect: (LigaConPuntos) -> Unit,
-    onDismiss: () -> Unit
-) {
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(0.4f))
-            .clickable { onDismiss() }
-    ) {
+@Composable private fun LeaguePopup(leagues: List<LigaConPuntos>, onSelect: (LigaConPuntos) -> Unit, onDismiss: () -> Unit) {
+    Box(Modifier.fillMaxSize().background(Color.Black.copy(0.4f)).clickable { onDismiss() }) {
         Card(
-            Modifier
-                .align(Alignment.Center)
-                .fillMaxWidth(0.85f)
-                .fillMaxHeight(0.6f),
+            Modifier.align(Alignment.Center).fillMaxWidth(0.85f).fillMaxHeight(0.6f),
             shape = RoundedCornerShape(16.dp)
         ) {
             Box {
@@ -359,32 +260,27 @@ private fun LeaguePopup(
                 }
                 IconButton(
                     onClick = onDismiss,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(4.dp)
+                    modifier = Modifier.align(Alignment.TopEnd).padding(4.dp)
                 ) { Icon(Icons.Filled.Close, null) }
             }
         }
     }
 }
 
-/* ----- simple dialogs ----- */
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SimpleEditDialog(title: String, init: String, onRes: (String?) -> Unit) {
+@Composable private fun SimpleEditDialog(title: String, init: String, onRes: (String?) -> Unit) {
     var txt by remember { mutableStateOf(init) }
     AlertDialog(
         onDismissRequest = { onRes(null) },
         title = { Text(title) },
-        text  = { OutlinedTextField(txt, { txt = it }, singleLine = true) },
+        text = { OutlinedTextField(txt, { txt = it }, singleLine = true) },
         confirmButton = { TextButton(onClick = { onRes(txt.trim()) }) { Text("Guardar") } },
         dismissButton = { TextButton(onClick = { onRes(null) }) { Text("Cancelar") } }
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun PassDialog(onSave: (String, String, String) -> Unit) {
+@Composable private fun PassDialog(onSave: (String, String, String) -> Unit) {
     var o by remember { mutableStateOf("") }
     var n by remember { mutableStateOf("") }
     var c by remember { mutableStateOf("") }
@@ -394,7 +290,7 @@ private fun PassDialog(onSave: (String, String, String) -> Unit) {
         text = {
             Column {
                 OutlinedTextField(o, { o = it }, label = { Text("Actual") }, singleLine = true)
-                OutlinedTextField(n, { n = it }, label = { Text("Nueva")  }, singleLine = true)
+                OutlinedTextField(n, { n = it }, label = { Text("Nueva") }, singleLine = true)
                 OutlinedTextField(c, { c = it }, label = { Text("Confirmar") }, singleLine = true)
             }
         },
@@ -403,9 +299,8 @@ private fun PassDialog(onSave: (String, String, String) -> Unit) {
     )
 }
 
-/* ----- utils ----- */
 private fun String.prettyDate(): String = try {
-    val inFmt  = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    val inFmt = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
     val outFmt = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     outFmt.format(inFmt.parse(take(10))!!)
 } catch (_: Exception) { this }
