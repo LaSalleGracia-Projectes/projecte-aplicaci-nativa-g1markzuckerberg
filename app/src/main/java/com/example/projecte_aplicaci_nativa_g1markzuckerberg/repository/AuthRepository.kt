@@ -53,6 +53,7 @@ class AuthRepository(
     }
 
     fun getToken(): String? = tokenManager.getToken()
+    fun isLoggedIn(): Boolean = !getToken().isNullOrEmpty()
 
     suspend fun logoutMobile(): Result<Unit> {
         return withContext(Dispatchers.IO) {

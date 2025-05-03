@@ -27,13 +27,16 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.repository.ContactRepository
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.SettingsViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.factory.SettingsViewModelFactory
+import com.google.firebase.FirebaseApp
 
 class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.R)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Token + Auth repo  ───────────────────────────
+        FirebaseApp.initializeApp(this)
+        
+        // Inicializamos el TokenManager
         val tokenManager = TokenManager(applicationContext)
         // Creamos el repositorio de autenticación usando el authService de RetrofitClient
         RetrofitClient.authRepository =

@@ -1,6 +1,11 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
-/* -------- imports originales -------- */
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.tween
@@ -8,6 +13,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.window.WindowInsets
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -18,20 +26,9 @@ import androidx.navigation.navArgument
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.factory.HomeLogedViewModelFactory
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.NavbarView
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.view.screens.NotificationScreen
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.*
-
-/* -------- imports AÑADIDOS -------- */
-import android.Manifest
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Build
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.ContextCompat
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.service.NotificationSocketService
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.NavbarView
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.*
 
 @Composable
 fun EntryPoint(
@@ -42,23 +39,20 @@ fun EntryPoint(
     ),
     draftViewModel: DraftViewModel = viewModel(),
     notificationViewModel: NotificationViewModel = viewModel(),
-    settingsVM: SettingsViewModel,
+    settingsVM: SettingsViewModel
 ) {
     val context = LocalContext.current
 
-    // 0️⃣ Permiso para notificaciones (Android 13+)
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
             ContextCompat.startForegroundService(
-                context,
-                Intent(context, NotificationSocketService::class.java)
+                context, Intent(context, NotificationSocketService::class.java)
             )
         }
     }
 
-    // 1️⃣ Redirección si ya hay token
     LaunchedEffect(Unit) {
         RetrofitClient.authRepository.getToken()
             ?.takeIf { it.isNotEmpty() }
@@ -69,13 +63,12 @@ fun EntryPoint(
             }
     }
 
-    // 2️⃣ Arranca el servicio de socket si hay token + permiso
     LaunchedEffect(RetrofitClient.authRepository.getToken()) {
         RetrofitClient.authRepository.getToken()
             ?.takeIf { it.isNotEmpty() }
             ?.let {
                 val hasPermission =
-                    if (Build.VERSION.SDK_INT >= 33) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         ContextCompat.checkSelfPermission(
                             context, Manifest.permission.POST_NOTIFICATIONS
                         ) == PackageManager.PERMISSION_GRANTED
@@ -83,8 +76,7 @@ fun EntryPoint(
 
                 if (hasPermission) {
                     ContextCompat.startForegroundService(
-                        context,
-                        Intent(context, NotificationSocketService::class.java)
+                        context, Intent(context, NotificationSocketService::class.java)
                     )
                 } else {
                     permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -92,9 +84,8 @@ fun EntryPoint(
             }
     }
 
-    // 3️⃣ Mostrar / ocultar navbar según ruta
     val navBackStackEntry by navigationController.currentBackStackEntryAsState()
-    val routesConNavbar = listOf(
+    val routesWithNavbar = listOf(
         Routes.HomeLoged.route,
         Routes.Settings.route,
         Routes.LigaView.route,
@@ -102,25 +93,25 @@ fun EntryPoint(
         Routes.DraftScreen.route,
         Routes.NotificationScreen.route,
         Routes.PlayersList.route,
-        Routes.PlayerDetail.route
+        Routes.PlayerDetail.route,
+        Routes.UserSelf.route
     )
     val currentRoute = navBackStackEntry?.destination?.route
-    val showNavBar = currentRoute in routesConNavbar
+    val showNavbar = currentRoute in routesWithNavbar
 
-    // 4️⃣ Scaffold + NavHost
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
             .consumeWindowInsets(WindowInsets.systemBars),
         contentWindowInsets = WindowInsets.systemBars,
         bottomBar = {
-            if (showNavBar) {
+            if (showNavbar) {
                 NavbarView(
                     navController = navigationController,
-                    onProfileClick = { /* Acción perfil */ },
+                    onProfileClick = { navigationController.navigate(Routes.UserSelf.route) },
                     onHomeClick = { navigationController.navigate(Routes.HomeLoged.route) },
                     onNotificationsClick = { navigationController.navigate(Routes.NotificationScreen.route) },
-                    onPlayersClick = { navigationController.navigate(Routes.PlayersList.createRoute()) },
+                    onPlayersClick = { navigationController.navigate(Routes.PlayersList.route) },
                     onSettingsClick = { navigationController.navigate(Routes.Settings.route) }
                 )
             }
@@ -157,11 +148,10 @@ fun EntryPoint(
             }
             composable(Routes.LigaView.route) { backStackEntry ->
                 val ligaCode = backStackEntry.arguments?.getString("ligaCode") ?: ""
-                val ligaViewModel: LigaViewModel = viewModel()
                 LigaView(
                     navController = navigationController,
                     ligaCode = ligaCode,
-                    ligaViewModel = ligaViewModel,
+                    ligaViewModel = viewModel(),
                     draftViewModel = draftViewModel
                 )
             }
@@ -178,7 +168,7 @@ fun EntryPoint(
             ) { backStackEntry ->
                 UserDraftView(
                     navController = navigationController,
-                    userDraftViewModel = UserDraftViewModel(),
+                    userDraftViewModel = viewModel(),
                     leagueId = backStackEntry.arguments?.getString("leagueId") ?: "",
                     userId = backStackEntry.arguments?.getString("userId") ?: "",
                     userName = backStackEntry.arguments?.getString("userName") ?: "",
@@ -188,17 +178,10 @@ fun EntryPoint(
                 )
             }
             composable(Routes.DraftScreen.route) {
-                DraftScreen(
-                    navController = navigationController,
-                    viewModel = draftViewModel,
-                    innerPadding = innerPadding
-                )
+                DraftScreen(navController = navigationController, viewModel = draftViewModel, innerPadding = innerPadding)
             }
             composable(Routes.NotificationScreen.route) {
-                NotificationScreen(
-                    navController = navigationController,
-                    viewModel = notificationViewModel
-                )
+                NotificationScreen(navController = navigationController, viewModel = notificationViewModel)
             }
             composable(Routes.PlayersList.route) {
                 PlayersView(navController = navigationController)
@@ -207,11 +190,10 @@ fun EntryPoint(
                 route = Routes.PlayerDetail.route,
                 arguments = listOf(navArgument("playerId") { type = NavType.StringType })
             ) { backStackEntry ->
-                val playerId = backStackEntry.arguments!!.getString("playerId")!!
-                PlayerDetailView(
-                    navController = navigationController,
-                    playerId = playerId
-                )
+                PlayerDetailView(navController = navigationController, playerId = backStackEntry.arguments!!.getString("playerId")!!)
+            }
+            composable(Routes.UserSelf.route) {
+                UserSelfScreen(navController = navigationController)
             }
         }
     }

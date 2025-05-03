@@ -12,3 +12,12 @@ data class Notifications(
 data class NotificationsResponse(
     val notifications: List<Notifications>
 )
+
+data class FcmTokenRequest(
+    val fcmToken: String
+)
+
+// Para el GET /fcm-token/{id}
+data class FcmTokenResponse(
+    val fcmToken: String
+)
