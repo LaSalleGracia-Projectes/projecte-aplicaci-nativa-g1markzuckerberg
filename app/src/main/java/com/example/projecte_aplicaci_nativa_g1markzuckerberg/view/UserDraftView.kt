@@ -41,7 +41,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.Player
@@ -56,6 +55,10 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.UserDraft
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import androidx.compose.ui.unit.Velocity
+import coil.compose.AsyncImagePainter
+import coil.compose.SubcomposeAsyncImage
+import coil.compose.SubcomposeAsyncImageContent
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.FancyLoadingAnimation
 
 @Composable
 fun UserDraftView(
@@ -85,7 +88,6 @@ fun UserDraftView(
     val leagueUserResponse by userDraftViewModel.leagueUserResponse.observeAsState()
 
     // 3) Dropdowns y diálogos (igual que antes)
-    var dropDownExpanded by remember { mutableStateOf(false) }
     var showConfirmationDialog by remember { mutableStateOf(false) }
     var confirmationAction by remember { mutableStateOf("") }
     var resultDialogData by remember { mutableStateOf<ResultDialogData?>(null) }
@@ -267,17 +269,31 @@ fun UserDraftView(
                                 .horizontalScroll(imageScroll),
                             horizontalArrangement = Arrangement.Start
                         ) {
-                            AsyncImage(                       // coil‑compose
+                            SubcomposeAsyncImage(           // ⬅️ nuevo
                                 model = graphUrl,
                                 contentDescription = "Gráfico de rendimiento",
-                                contentScale = ContentScale.FillHeight,
                                 modifier = Modifier
-                                    .height(220.dp)           // alto fijo
-                                    .clip(MaterialTheme.shapes.medium)
-                            )
+                                    .height(220.dp)
+                                    .clip(MaterialTheme.shapes.medium),
+                                contentScale = ContentScale.FillHeight
+                            ) {
+                                when (painter.state) {
+                                    is AsyncImagePainter.State.Loading ->         // ⏳
+                                        Box(                                      // 👉 centra el spinner
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            FancyLoadingAnimation(Modifier.size(120.dp))
+                                        }
+
+                                    else ->                                       // ✅ imagen cargada
+                                        SubcomposeAsyncImageContent()
+                                }
+
+                            }
+                        }
                         }
                     }
-                }
 
             } else { /* ---------- PÁGINA DRAFT ---------- */
                 OverlayLoading(isLoading = isLoadingDraft) {
@@ -347,7 +363,24 @@ fun UserDraftView(
                                 .graphicsLayer { scaleX = 1.25f },
                             contentScale      = ContentScale.FillBounds
                         )
-
+                        if (draftPlayers.isEmpty() && !isLoadingDraft) {
+                            Surface(
+                                color  = MaterialTheme.colorScheme.surface.copy(alpha = 0.65f),
+                                shape  = MaterialTheme.shapes.medium,
+                                tonalElevation = 6.dp,
+                                modifier = Modifier
+                                    .align(Alignment.Center)
+                                    .padding(horizontal = 24.dp)
+                            ) {
+                                Text(
+                                    text      = "El usuario \"$userName\" no envió la convocatoria.",
+                                    style     = MaterialTheme.typography.bodyLarge,
+                                    color     = MaterialTheme.colorScheme.onSurface,
+                                    textAlign = TextAlign.Center,
+                                    modifier  = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                                )
+                            }
+                        }
                         // Solo si hay jugadores, dibujamos su plantilla
                         if (draftPlayers.isNotEmpty()) {
                             ReadonlyDraftLayout(
