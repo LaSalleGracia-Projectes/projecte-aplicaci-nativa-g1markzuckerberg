@@ -11,13 +11,11 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -549,11 +547,10 @@ fun LigaDialog(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContactFormDialog(
     onDismiss: () -> Unit,
-    onSubmit : (String) -> Unit
+    onSubmit: (String) -> Unit
 ) {
     var message by remember { mutableStateOf("") }
 
@@ -561,10 +558,12 @@ fun ContactFormDialog(
         Card(
             shape     = RoundedCornerShape(16.dp),
             elevation = CardDefaults.cardElevation(8.dp),
-            modifier  = Modifier.fillMaxWidth(0.9f)
+            modifier  = Modifier
+                .fillMaxWidth(0.9f)    // solo anchura
+            // .wrapContentHeight() // opcional, por defecto el Card se adapta al contenido
         ) {
             Column {
-                // ─── ENCABEZADO igual que CustomAlertDialog ───
+                // ─── HEADER ───
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -586,42 +585,57 @@ fun ContactFormDialog(
                     )
                 }
 
-                // ─── CONTENIDO: campo de texto ────────────────
-                Column(modifier = Modifier.padding(16.dp)) {
-                    OutlinedTextField(
-                        value           = message,
-                        onValueChange   = { message = it },
-                        label           = { Text("Tu mensaje") },
-                        placeholder     = { Text("Escribe tu consulta aquí…") },
-                        modifier        = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 100.dp),
-                        colors          = TextFieldDefaults.outlinedTextFieldColors(
-                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            focusedBorderColor   = MaterialTheme.colorScheme.primary
-                        )
-                    )
+                // ─── DESCRIPCIÓN ───
+                Text(
+                    text = "¿Tienes dudas o sugerencias? Escríbenos y te responderemos lo antes posible.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    textAlign = TextAlign.Center
+                )
 
-                    Spacer(Modifier.height(16.dp))
+                // ─── CAMPO DE TEXTO ───
+                OutlinedTextField(
+                    value         = message,
+                    onValueChange = { message = it },
+                    label         = { Text("Tu mensaje") },
+                    placeholder   = { Text("Escribe tu consulta aquí…") },
+                    modifier      = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 100.dp)
+                        .padding(horizontal = 16.dp),
+                    shape      = RoundedCornerShape(12.dp),
+                    singleLine = false,
+                    maxLines   = 6
+                )
 
-                    // ─── BOTONES ─────────────────────────────
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
+                // ─── BOTONES ───
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("Cancelar", color = MaterialTheme.colorScheme.error)
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    TextButton(
+                        onClick = {
+                            onSubmit(message.trim())
+                            onDismiss()
+                        },
+                        enabled = message.isNotBlank()
                     ) {
-                        TextButton(onClick = onDismiss) {
-                            Text("Cancelar", color = MaterialTheme.colorScheme.error)
-                        }
-                        Spacer(Modifier.width(8.dp))
-                        TextButton(
-                            onClick = {
-                                onSubmit(message.trim())
-                                onDismiss()
-                            },
-                            enabled = message.isNotBlank()
-                        ) {
-                            Text("Enviar", color = MaterialTheme.colorScheme.primary)
-                        }
+                        Text(
+                            text  = "Enviar",
+                            color = if (message.isNotBlank())
+                                MaterialTheme.colorScheme.primary
+                            else
+                                Color.Gray
+                        )
                     }
                 }
             }

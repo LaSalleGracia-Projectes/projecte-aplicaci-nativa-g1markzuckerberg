@@ -17,27 +17,23 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.repository.AuthRepository
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.repository.ContactRepository
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.ContactFormDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.GradientHeader
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.TokenManager
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.SettingsViewModel
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.factory.SettingsViewModelFactory
 
-/* ---------- ENTRY (llamada desde NavHost) ---------- */
 /* ---------- ENTRY (llamada desde NavHost) ---------- */
 @Composable
 fun SettingsScreen(
     navController: NavController,
-    viewModel:    SettingsViewModel        // ← ahora lo recibes
+    viewModel:    SettingsViewModel
 ) {
     SettingsView(navController, viewModel)
 }
@@ -53,10 +49,11 @@ fun SettingsView(
     val isLoading by viewModel.isLoading.observeAsState(false)
     val errorMessage by viewModel.errorMessage.observeAsState()
     var showContactDialog by remember { mutableStateOf(false) }
+    var showPrivacyDialog by remember { mutableStateOf(false) }
 
     /* diálogo lorem… */
-    var dialogTitle by remember { mutableStateOf<String?>(null) }
-    dialogTitle?.let { /* tu AlertDialog… */ }
+    val dialogTitle by remember { mutableStateOf<String?>(null) }
+    dialogTitle?.let {  }
 
     /** Altura del header para usarla como padding top */
     val headerHeight = 110.dp
@@ -73,15 +70,37 @@ fun SettingsView(
             item { Spacer(Modifier.height(16.dp)) }
 
             /* ─── tus tarjetas ─── */
-            item { ExpandableSettingsCard("Creadores del proyecto") }
+            item {
+                ExpandableSettingsCard(
+                    title = "Creadores del proyecto",
+                    body = """
+            Este proyecto ha sido desarrollado por:
+            • Albert Garrido
+            • Joan Linares
+        """.trimIndent()
+                )
+            }
             item {
                 SettingsCard("Contacto") {
                     showContactDialog = true
                 }
             }
             item { DarkModeCard(isDark) { viewModel.toggleTheme() } }
-            item { ExpandableSettingsCard("Política de privacidad") }
-            item { ExpandableSettingsCard("Conoce nuestra API") }
+            item {
+                SettingsCard("Política de privacidad") {
+                    showPrivacyDialog = true
+                }
+            }
+            item {
+                ExpandableSettingsCard(
+                    title = "Conoce nuestra API",
+                    body = """
+            • Toda la información de partidos, jugadores y estadísticas la obtenemos a través de la API de SportMonks.  
+            • Gracias a SportMonks por permitirnos usar su servicio y facilitarnos datos actualizados en tiempo real.  
+            • Su API es la base de nuestro sistema de puntuaciones, alineaciones y clasificación.
+        """.trimIndent()
+                )
+            }
 
             /* hueco antes del botón */
             item { Spacer(Modifier.height(24.dp)) }
@@ -130,6 +149,11 @@ fun SettingsView(
                     ) { Text(msg, color = MaterialTheme.colorScheme.error) }
                 }
             }
+            if (showPrivacyDialog) {
+                item {
+                    PrivacyPolicyDialog(onDismiss = { showPrivacyDialog = false })
+                }
+            }
 
             /* margen inferior */
             item { Spacer(Modifier.height(24.dp)) }
@@ -137,20 +161,19 @@ fun SettingsView(
 
 
         /* 2️⃣  HEADER FIJO -------------------------------------- */
-        Box(                                       // caja contenedora
+        Box(
             modifier = Modifier
                 .height(headerHeight)
                 .fillMaxWidth()
                 .align(Alignment.TopCenter)
         ) {
-            GradientHeader(title = "Ajustes")      // tu función original
+            GradientHeader(title = "Ajustes")
         }
     }
     if (showContactDialog) {
         ContactFormDialog(
             onDismiss = { showContactDialog = false },
-            onSubmit  = { mensaje ->
-                // aquí llamas al ViewModel / Repositorio que envía el form:
+            onSubmit  = {
                 // viewModel.sendContactForm(mensaje)
             }
         )
@@ -168,18 +191,12 @@ fun SettingsView(
     /* observar resultado */
     val contactResult by viewModel.contactResult.observeAsState()
     LaunchedEffect(contactResult) {
-        contactResult?.let { res ->
+        contactResult?.let {
             viewModel.clearContactResult()
-            if (res.isSuccess) {
-                // mostrar CustomAlertDialogSingleButton de éxito
-            } else {
-                // mostrar error
-            }
         }
     }
 
 }
-
 
         /* ---------- COMPONENTES REUTILIZABLES ---------- */
         @Composable
@@ -194,7 +211,6 @@ fun SettingsView(
                     .clickable { onClick(title) },
                 shape = RoundedCornerShape(18.dp),
                 tonalElevation = 2.dp,
-                // 🔥 cambiamos a surfaceVariant (más oscuro que surface)
                 color = MaterialTheme.colorScheme.surfaceVariant
             ) {
                 Text(
@@ -216,7 +232,6 @@ fun DarkModeCard(
             .padding(horizontal = 16.dp, vertical = 6.dp),
         shape = RoundedCornerShape(18.dp),
         tonalElevation = 2.dp,
-        // 🔥 también aquí
         color = MaterialTheme.colorScheme.surfaceVariant
     ) {
         Row(
@@ -235,7 +250,7 @@ fun DarkModeCard(
 @Composable
 fun ExpandableSettingsCard(
     title: String,
-    body: String = loremIpsum,
+    body: String,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val interactionSource = remember { MutableInteractionSource() }
@@ -251,7 +266,6 @@ fun ExpandableSettingsCard(
             .animateContentSize(),
         shape = RoundedCornerShape(18.dp),
         tonalElevation = 2.dp,
-        // 🔥 y aquí
         color = MaterialTheme.colorScheme.surfaceVariant
     ) {
         Column(Modifier.padding(20.dp)) {
@@ -286,6 +300,142 @@ fun ExpandableSettingsCard(
     }
 }
 
+@Composable
+fun PrivacyPolicyDialog(onDismiss: () -> Unit) {
+    val scrollState = rememberScrollState()
 
-private const val loremIpsum =
-    "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer non dui ut est gravida luctus."
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(8.dp),
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .fillMaxHeight(0.5f)
+        ) {
+            Column {
+                // Header de gradiente
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                colors = listOf(
+                                    MaterialTheme.colorScheme.primary,
+                                    MaterialTheme.colorScheme.secondary
+                                )
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Política de privacidad",
+                        color = Color.White,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+
+                // Contenido scrolleable
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .verticalScroll(scrollState)
+                ) {
+                    // -------- 1. Información que recopilamos --------
+                    Text(
+                        text = "1. Información que recopilamos",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Start
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "Recopilamos los datos que nos proporcionas al registrarte (nombre de usuario, correo electrónico) y la información de uso (alineaciones enviadas, puntuaciones obtenidas) para ofrecerte una experiencia personalizada.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Start
+                    )
+                    Spacer(Modifier.height(16.dp))
+
+                    // -------- 2. Cómo usamos tus datos --------
+                    Text(
+                        text = "2. Cómo usamos tus datos",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Start
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "• Procesamos tu información para gestionar tu cuenta y mostrarte tu historial de rendimiento.\n" +
+                                "• No compartimos ni vendemos tus datos a terceros.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Start
+                    )
+                    Spacer(Modifier.height(16.dp))
+
+                    // -------- 3. Seguridad --------
+                    Text(
+                        text = "3. Seguridad",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Start
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "Tus datos se almacenan en servidores seguros con cifrado TLS. Solo personal autorizado tiene acceso a la base de datos.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Start
+                    )
+                    Spacer(Modifier.height(16.dp))
+
+                    // -------- 4. Derechos del usuario --------
+                    Text(
+                        text = "4. Derechos del usuario",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Start
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "Tienes derecho a acceder, rectificar o eliminar tus datos en cualquier momento. Para ello, ponte en contacto con nosotros a través del formulario de contacto.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Start
+                    )
+                    Spacer(Modifier.height(16.dp))
+
+                    // -------- 5. Cambios en esta política --------
+                    Text(
+                        text = "5. Cambios en esta política",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Start
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "Podemos actualizar esta política ocasionalmente. Te informaremos de cualquier cambio significativo antes de que entre en vigor.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Start
+                    )
+                    Spacer(Modifier.height(24.dp))
+
+                    // Botón Cerrar
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        TextButton(onClick = onDismiss) {
+                            Text(
+                                text = "Cerrar",
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

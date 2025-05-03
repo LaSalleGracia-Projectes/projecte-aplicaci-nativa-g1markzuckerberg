@@ -98,7 +98,6 @@ fun UserDraftView(
     // 1 ─ estados NUEVOS junto a dropDownExpanded
     var boxCoords      by remember { mutableStateOf<LayoutCoordinates?>(null) }   // ← NUEVO
 
-
     val jornadas = remember(createdJornada, currentJornada) {
         (createdJornada..currentJornada).toList()
     }
@@ -156,15 +155,12 @@ fun UserDraftView(
                         )
                     }
                     Text(
-                        text      = userName,
-                        style     = MaterialTheme.typography.titleLarge.copy(
-                            fontSize   = 20.sp,
-                            fontWeight = FontWeight.ExtraBold
-                        ),
-                        color     = MaterialTheme.colorScheme.onPrimary,
-                        modifier  = Modifier.weight(1f),
-                        textAlign = TextAlign.Center
-                    )
+                    text      = userName,
+                    style     = MaterialTheme.typography.titleLarge,
+                    color     = MaterialTheme.colorScheme.onPrimary,
+                    modifier  = Modifier.weight(1f),
+                    textAlign = TextAlign.Center
+                        )
                     UserImage(
                         url      = decodedUserPhotoUrl,
                         modifier = Modifier
@@ -225,6 +221,11 @@ fun UserDraftView(
                     contentPadding = PaddingValues(bottom = 56.dp)
                 ) {
                     item {
+                        Spacer(modifier = Modifier.height(18.dp))
+                        SectionHeader(title = "USUARIO")
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
+                    }
+                    item {
                         leagueUserResponse?.let { resp ->
                             // 1) Este Box "envuelve" sólo al TrainerCard y al DropdownMenu
                             Box(
@@ -254,22 +255,25 @@ fun UserDraftView(
 
                     }
                     item {
+                        Spacer(modifier = Modifier.height(18.dp))
+                        SectionHeader(title = "HISTÓRICO DE PUNTOS")
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
+
+                    }
+
+                    item {
                         val graphUrl = remember(leagueId, userId) {
                             grafanaUserUrl(leagueId, userId)
                         }
-
-                        // 220 dp alto; 16 dp margen superior‑inferior
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 16.dp)
-                                // 3) Primero nestedScroll con nuestra lógica condicional
                                 .nestedScroll(grafanaConn)
-                                // 4) Luego horizontalScroll con el state que definimos
                                 .horizontalScroll(imageScroll),
                             horizontalArrangement = Arrangement.Start
                         ) {
-                            SubcomposeAsyncImage(           // ⬅️ nuevo
+                            SubcomposeAsyncImage(
                                 model = graphUrl,
                                 contentDescription = "Gráfico de rendimiento",
                                 modifier = Modifier
@@ -278,124 +282,124 @@ fun UserDraftView(
                                 contentScale = ContentScale.FillHeight
                             ) {
                                 when (painter.state) {
-                                    is AsyncImagePainter.State.Loading ->         // ⏳
-                                        Box(                                      // 👉 centra el spinner
+                                    is AsyncImagePainter.State.Loading ->
+                                        Box(
                                             modifier = Modifier.fillMaxSize(),
                                             contentAlignment = Alignment.Center
                                         ) {
                                             FancyLoadingAnimation(Modifier.size(120.dp))
                                         }
 
-                                    else ->                                       // ✅ imagen cargada
+                                    else ->
                                         SubcomposeAsyncImageContent()
                                 }
-
                             }
-                        }
-                        }
-                    }
-
-            } else { /* ---------- PÁGINA DRAFT ---------- */
-                OverlayLoading(isLoading = isLoadingDraft) {
-
-                Column(modifier = Modifier.fillMaxSize()) {
-                    val jornadaPoints =
-                        draftPlayers.sumOf { it.puntos_jornada.toDouble().roundToInt() }
-
-
-                    /* 1️⃣  LazyRow — SIEMPRE visible arriba */
-                    LazyRow(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 12.dp),
-                        contentPadding = PaddingValues(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(jornadas) { j ->
-                            Box(
-                                modifier = Modifier
-                                    .size(44.dp)        // un poco más grande que 36.dp
-                                    .clip(CircleShape)
-                                    .background(
-                                        if (j == selectedJornada)
-                                            MaterialTheme.colorScheme.secondary
-                                        else
-                                            MaterialTheme.colorScheme.primary
-                                    )
-                                    .clickable { selectedJornada = j },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    Text(
-                                        text = "J$j",
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onPrimary
-                                    )
-                                    if (j == selectedJornada) {
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Text(
-                                            text = jornadaPoints.toString(),
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = MaterialTheme.colorScheme.onPrimary
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    /* 2️⃣  Lo que queda de alto: campo + contenido */
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clipToBounds()
-                    ) {
-                        Image(
-                            painter           = painterResource(R.drawable.futbol_pitch_background),
-                            contentDescription = null,
-                            modifier          = Modifier
-                                .fillMaxSize()
-                                .graphicsLayer { scaleX = 1.25f },
-                            contentScale      = ContentScale.FillBounds
-                        )
-                        if (draftPlayers.isEmpty() && !isLoadingDraft) {
-                            Surface(
-                                color  = MaterialTheme.colorScheme.surface.copy(alpha = 0.65f),
-                                shape  = MaterialTheme.shapes.medium,
-                                tonalElevation = 6.dp,
-                                modifier = Modifier
-                                    .align(Alignment.Center)
-                                    .padding(horizontal = 24.dp)
-                            ) {
-                                Text(
-                                    text      = "El usuario \"$userName\" no envió la convocatoria.",
-                                    style     = MaterialTheme.typography.bodyLarge,
-                                    color     = MaterialTheme.colorScheme.onSurface,
-                                    textAlign = TextAlign.Center,
-                                    modifier  = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                                )
-                            }
-                        }
-                        // Solo si hay jugadores, dibujamos su plantilla
-                        if (draftPlayers.isNotEmpty()) {
-                            ReadonlyDraftLayout(
-                                formation = draftFormation,
-                                players   = draftPlayers
-                            )
                         }
                     }
                 }
-            }
+
+            } else { /* ---------- PÁGINA DRAFT ---------- */
+                OverlayLoading(isLoading = isLoadingDraft) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(modifier = Modifier.fillMaxSize()) {
+
+                        val jornadaPoints =
+                                draftPlayers.sumOf { it.puntos_jornada.toDouble().roundToInt() }
+
+
+                            /* 1️⃣  LazyRow — SIEMPRE visible arriba */
+                            LazyRow(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 12.dp),
+                                contentPadding = PaddingValues(horizontal = 16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                items(jornadas) { j ->
+                                    Box(
+                                        modifier = Modifier
+                                            .size(44.dp)
+                                            .clip(CircleShape)
+                                            .background(
+                                                if (j == selectedJornada)
+                                                    MaterialTheme.colorScheme.secondary
+                                                else
+                                                    MaterialTheme.colorScheme.primary
+                                            )
+                                            .clickable { selectedJornada = j },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.Center
+                                        ) {
+                                            Text(
+                                                text = "J$j",
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onPrimary
+                                            )
+                                            if (j == selectedJornada) {
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Text(
+                                                    text = jornadaPoints.toString(),
+                                                    fontSize = 12.sp,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    color = MaterialTheme.colorScheme.onPrimary
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            /* 2️⃣  Lo que queda de alto: campo + contenido */
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clipToBounds()
+                            ) {
+                                Image(
+                                    painter           = painterResource(R.drawable.futbol_pitch_background),
+                                    contentDescription = null,
+                                    modifier          = Modifier
+                                        .fillMaxSize()
+                                        .graphicsLayer { scaleX = 1.25f },
+                                    contentScale      = ContentScale.FillBounds
+                                )
+                                if (draftPlayers.isEmpty() && !isLoadingDraft) {
+                                    Surface(
+                                        color  = MaterialTheme.colorScheme.surface.copy(alpha = 0.65f),
+                                        shape  = MaterialTheme.shapes.medium,
+                                        tonalElevation = 6.dp,
+                                        modifier = Modifier
+                                            .align(Alignment.Center)
+                                            .padding(horizontal = 24.dp)
+                                    ) {
+                                        Text(
+                                            text      = "El usuario \"$userName\" no envió la convocatoria.",
+                                            style     = MaterialTheme.typography.bodyLarge,
+                                            color     = MaterialTheme.colorScheme.onSurface,
+                                            textAlign = TextAlign.Center,
+                                            modifier  = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                                        )
+                                    }
+                                }
+                                // Solo si hay jugadores, dibujamos su plantilla
+                                if (draftPlayers.isNotEmpty()) {
+                                    ReadonlyDraftLayout(
+                                        formation = draftFormation,
+                                        players   = draftPlayers
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
         }
         }
 
             // ─── DROPDOWN / DIÁLOGOS ───────────────────────────
-
 
         if (showConfirmationDialog) {
             val title = if (confirmationAction == "expulsar") "Confirmar expulsión" else "Confirmar capitán"
@@ -461,7 +465,7 @@ private fun ReadonlyDraftLayout(
     players  : List<Player>,
 ) {
     val byPos = remember(players) {
-        players.groupBy { it.positionId }   // 24‑27 según ejemplo
+        players.groupBy { it.positionId }
     }
 
     val rows: List<Pair<Int, Int>> = when (formation) {
@@ -496,10 +500,10 @@ private fun ReadonlyDraftLayout(
                     ) {
                         if (p != null) {
                             CompactPlayerCard(
-                                player = p.toPlayerOption(),   // extensión abajo
+                                player = p.toPlayerOption(),
                                 width  = cardW,
                                 height = cardH,
-                                onClick = {}                   // 🔒 NO hace nada
+                                onClick = {}
                             )
                         }
                     }
