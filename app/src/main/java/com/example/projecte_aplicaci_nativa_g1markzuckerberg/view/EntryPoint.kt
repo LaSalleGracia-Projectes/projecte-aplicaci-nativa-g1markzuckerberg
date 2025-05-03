@@ -14,6 +14,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.window.WindowInsets
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -37,7 +38,8 @@ fun EntryPoint(
         factory = HomeLogedViewModelFactory(RetrofitClient.authRepository)
     ),
     draftViewModel: DraftViewModel = viewModel(),
-    notificationViewModel: NotificationViewModel = viewModel()
+    notificationViewModel: NotificationViewModel = viewModel(),
+    settingsVM: SettingsViewModel
 ) {
     val context = LocalContext.current
 
@@ -65,14 +67,14 @@ fun EntryPoint(
         RetrofitClient.authRepository.getToken()
             ?.takeIf { it.isNotEmpty() }
             ?.let {
-                val ok =
-                    if (Build.VERSION.SDK_INT >= 33) {
+                val hasPermission =
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         ContextCompat.checkSelfPermission(
                             context, Manifest.permission.POST_NOTIFICATIONS
                         ) == PackageManager.PERMISSION_GRANTED
                     } else true
 
-                if (ok) {
+                if (hasPermission) {
                     ContextCompat.startForegroundService(
                         context, Intent(context, NotificationSocketService::class.java)
                     )
@@ -83,7 +85,7 @@ fun EntryPoint(
     }
 
     val navBackStackEntry by navigationController.currentBackStackEntryAsState()
-    val routesConNavbar = listOf(
+    val routesWithNavbar = listOf(
         Routes.HomeLoged.route,
         Routes.Settings.route,
         Routes.LigaView.route,
@@ -92,10 +94,10 @@ fun EntryPoint(
         Routes.NotificationScreen.route,
         Routes.PlayersList.route,
         Routes.PlayerDetail.route,
-        Routes.UserSelf.route          // ← añadido
+        Routes.UserSelf.route
     )
     val currentRoute = navBackStackEntry?.destination?.route
-    val showNavBar = currentRoute in routesConNavbar
+    val showNavbar = currentRoute in routesWithNavbar
 
     Scaffold(
         modifier = Modifier
@@ -103,14 +105,14 @@ fun EntryPoint(
             .consumeWindowInsets(WindowInsets.systemBars),
         contentWindowInsets = WindowInsets.systemBars,
         bottomBar = {
-            if (showNavBar) {
+            if (showNavbar) {
                 NavbarView(
-                    navController        = navigationController,
-                    onProfileClick       = { navigationController.navigate(Routes.UserSelf.route) },
-                    onHomeClick          = { navigationController.navigate(Routes.HomeLoged.route) },
+                    navController = navigationController,
+                    onProfileClick = { navigationController.navigate(Routes.UserSelf.route) },
+                    onHomeClick = { navigationController.navigate(Routes.HomeLoged.route) },
                     onNotificationsClick = { navigationController.navigate(Routes.NotificationScreen.route) },
-                    onPlayersClick       = { navigationController.navigate(Routes.PlayersList.route) },
-                    onSettingsClick      = { navigationController.navigate(Routes.Settings.route) }
+                    onPlayersClick = { navigationController.navigate(Routes.PlayersList.route) },
+                    onSettingsClick = { navigationController.navigate(Routes.Settings.route) }
                 )
             }
         }
@@ -122,65 +124,77 @@ fun EntryPoint(
                 .consumeWindowInsets(innerPadding)
                 .padding(innerPadding),
             enterTransition = { fadeIn(tween(300)) },
-            exitTransition  = { fadeOut(tween(300)) },
+            exitTransition = { fadeOut(tween(300)) },
             popEnterTransition = { fadeIn(tween(300)) },
-            popExitTransition  = { fadeOut(tween(300)) }
+            popExitTransition = { fadeOut(tween(300)) }
         ) {
-
-            composable(Routes.Home.route)        { HomeView(navController = navigationController) }
-            composable(Routes.Register.route)    { RegisterView(navController = navigationController, viewModel = registerViewModel) }
-            composable(Routes.Login.route)       { LoginScreen(navController = navigationController) }
-            composable(Routes.LoginMobile.route) { RegisterScreen(navController = navigationController) }
-            composable(Routes.HomeLoged.route)   { HomeLogedView(navController = navigationController, homeLogedViewModel = homeLogedViewModel) }
-            composable(Routes.Settings.route)    { SettingsScreen(navController = navigationController) }
-
+            composable(Routes.Home.route) {
+                HomeView(navController = navigationController)
+            }
+            composable(Routes.Register.route) {
+                RegisterView(navController = navigationController, viewModel = registerViewModel)
+            }
+            composable(Routes.Login.route) {
+                LoginScreen(navController = navigationController)
+            }
+            composable(Routes.LoginMobile.route) {
+                RegisterScreen(navController = navigationController)
+            }
+            composable(Routes.HomeLoged.route) {
+                HomeLogedView(navController = navigationController, homeLogedViewModel = homeLogedViewModel)
+            }
+            composable(Routes.Settings.route) {
+                SettingsScreen(navController = navigationController, viewModel = settingsVM)
+            }
             composable(Routes.LigaView.route) { backStackEntry ->
                 val ligaCode = backStackEntry.arguments?.getString("ligaCode") ?: ""
                 LigaView(
-                    navController  = navigationController,
-                    ligaCode       = ligaCode,
-                    ligaViewModel  = viewModel(),
+                    navController = navigationController,
+                    ligaCode = ligaCode,
+                    ligaViewModel = viewModel(),
                     draftViewModel = draftViewModel
                 )
             }
-
             composable(
                 Routes.UserDraftView.route,
                 arguments = listOf(
-                    navArgument("leagueId")       { type = NavType.StringType },
-                    navArgument("userId")         { type = NavType.StringType },
-                    navArgument("userName")       { type = NavType.StringType },
-                    navArgument("userPhotoUrl")   { type = NavType.StringType },
+                    navArgument("leagueId") { type = NavType.StringType },
+                    navArgument("userId") { type = NavType.StringType },
+                    navArgument("userName") { type = NavType.StringType },
+                    navArgument("userPhotoUrl") { type = NavType.StringType },
                     navArgument("createdJornada") { type = NavType.IntType },
                     navArgument("currentJornada") { type = NavType.IntType }
                 )
             ) { backStackEntry ->
                 UserDraftView(
-                    navController     = navigationController,
-                    userDraftViewModel= viewModel(),
-                    leagueId          = backStackEntry.arguments?.getString("leagueId") ?: "",
-                    userId            = backStackEntry.arguments?.getString("userId") ?: "",
-                    userName          = backStackEntry.arguments?.getString("userName") ?: "",
-                    userPhotoUrl      = backStackEntry.arguments?.getString("userPhotoUrl") ?: "",
-                    createdJornada    = backStackEntry.arguments!!.getInt("createdJornada"),
-                    currentJornada    = backStackEntry.arguments!!.getInt("currentJornada")
+                    navController = navigationController,
+                    userDraftViewModel = viewModel(),
+                    leagueId = backStackEntry.arguments?.getString("leagueId") ?: "",
+                    userId = backStackEntry.arguments?.getString("userId") ?: "",
+                    userName = backStackEntry.arguments?.getString("userName") ?: "",
+                    userPhotoUrl = backStackEntry.arguments?.getString("userPhotoUrl") ?: "",
+                    createdJornada = backStackEntry.arguments!!.getInt("createdJornada"),
+                    currentJornada = backStackEntry.arguments!!.getInt("currentJornada")
                 )
             }
-
-            composable(Routes.DraftScreen.route)        { DraftScreen(navController = navigationController, viewModel = draftViewModel, innerPadding = innerPadding) }
-            composable(Routes.NotificationScreen.route) { NotificationScreen(navController = navigationController, viewModel = notificationViewModel) }
-            composable(Routes.PlayersList.route)        { PlayersView(navController = navigationController) }
+            composable(Routes.DraftScreen.route) {
+                DraftScreen(navController = navigationController, viewModel = draftViewModel, innerPadding = innerPadding)
+            }
+            composable(Routes.NotificationScreen.route) {
+                NotificationScreen(navController = navigationController, viewModel = notificationViewModel)
+            }
+            composable(Routes.PlayersList.route) {
+                PlayersView(navController = navigationController)
+            }
             composable(
                 route = Routes.PlayerDetail.route,
                 arguments = listOf(navArgument("playerId") { type = NavType.StringType })
             ) { backStackEntry ->
-                PlayerDetailView(
-                    navController = navigationController,
-                    playerId      = backStackEntry.arguments!!.getString("playerId")!!
-                )
+                PlayerDetailView(navController = navigationController, playerId = backStackEntry.arguments!!.getString("playerId")!!)
             }
-
-            composable(Routes.UserSelf.route) { UserSelfScreen(navController = navigationController) }
+            composable(Routes.UserSelf.route) {
+                UserSelfScreen(navController = navigationController)
+            }
         }
     }
 }
