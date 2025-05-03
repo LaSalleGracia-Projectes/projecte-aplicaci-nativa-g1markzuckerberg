@@ -58,4 +58,10 @@
 
     <string name="dialog_save_msg_line1">Are you sure you want to save the lineup?</string>
     <string name="dialog_save_msg_line2">Once saved, the squad will be submitted and you won’t be able to edit it again.</string>
+
+    <!-- HomeView -->
+    <string name="home_title">Create your league with your friends!</string>
+    <string name="fantasy_logo_desc">Fantasy Draft Logo</string>
+    <string name="create_account">CREATE ACCOUNT</string>
+    <string name="login">LOG IN</string>
 </resources>

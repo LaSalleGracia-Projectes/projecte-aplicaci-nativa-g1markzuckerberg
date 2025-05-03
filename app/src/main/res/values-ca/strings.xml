@@ -59,4 +59,9 @@
     <string name="dialog_save_msg_line1">Estàs segur que vols desar la plantilla?</string>
     <string name="dialog_save_msg_line2">Un cop la desis s\'enviarà la convocatòria i no podràs tornar a editar-la.</string>
 
+    <!-- HomeView -->
+    <string name="home_title">Crea la teva lliga amb els teus amics!</string>
+    <string name="fantasy_logo_desc">Logotip de Fantasy Draft</string>
+    <string name="create_account">CREA COMPTE</string>
+    <string name="login">INICIA SESSIÓ</string>
 </resources>

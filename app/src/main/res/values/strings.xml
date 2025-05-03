@@ -58,4 +58,9 @@
     <string name="dialog_save_msg_line1">¿Estás seguro de que quieres guardar la plantilla?</string>
     <string name="dialog_save_msg_line2">Una vez la guardes se enviará la convocatoria y no podrás volver a editarla.</string>
 
+    <!-- HomeView -->
+    <string name="home_title">¡Crea tu liga con tus amigos!</string>
+    <string name="fantasy_logo_desc">Logo de Fantasy Draft</string>
+    <string name="create_account">CREAR CUENTA</string>
+    <string name="login">INICIAR SESIÓN</string>
 </resources>
