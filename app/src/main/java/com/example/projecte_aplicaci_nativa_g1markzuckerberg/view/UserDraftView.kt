@@ -6,6 +6,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -59,6 +60,7 @@ import androidx.compose.ui.unit.Velocity
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.LocalAppDarkTheme
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.FancyLoadingAnimation
 
 @Composable
@@ -104,6 +106,7 @@ fun UserDraftView(
     }
 
     var selectedJornada by remember { mutableIntStateOf(currentJornada) }
+
 // cuando cambia la jornada seleccionada → descargar plantilla
     LaunchedEffect(selectedJornada) {
         userDraftViewModel.fetchUserDraft(leagueId, userId, selectedJornada)
@@ -152,13 +155,13 @@ fun UserDraftView(
                         Icon(
                             imageVector   = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.back),
-                            tint          = MaterialTheme.colorScheme.onPrimary
+                            tint          = MaterialTheme.colorScheme.onSecondary
                         )
                     }
                     Text(
                         text      = userName,
                         style     = MaterialTheme.typography.titleLarge,
-                        color     = MaterialTheme.colorScheme.onPrimary,
+                        color     = MaterialTheme.colorScheme.onSecondary,
                         modifier  = Modifier.weight(1f),
                         textAlign = TextAlign.Center
                     )
@@ -188,6 +191,16 @@ fun UserDraftView(
                 .padding(top = 130.dp)
         ) { page ->
             if (page == 0) {
+                val isDarkApp = LocalAppDarkTheme.current
+
+                // 3) Calcula la URL base sin parámetros
+                val baseGrafanaUrl = remember(leagueId, userId) {
+                    grafanaUserUrl(leagueId, userId).substringBefore("?")
+                }
+                val grafanaUrl = remember(baseGrafanaUrl, isDarkApp) {
+                    "$baseGrafanaUrl?theme=${if (isDarkApp) "dark" else "light"}"
+                }
+
                 val imageScroll = rememberScrollState()
                 // === GRAFANA ===
                 val grafanaConn = remember(imageScroll) {
@@ -263,9 +276,6 @@ fun UserDraftView(
                     }
 
                     item {
-                        val graphUrl = remember(leagueId, userId) {
-                            grafanaUserUrl(leagueId, userId)
-                        }
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -275,7 +285,7 @@ fun UserDraftView(
                             horizontalArrangement = Arrangement.Start
                         ) {
                             SubcomposeAsyncImage(
-                                model = graphUrl,
+                                model = grafanaUrl,
                                 contentDescription = stringResource(R.string.performance_chart_desc),
                                 modifier = Modifier
                                     .height(220.dp)
@@ -338,7 +348,7 @@ fun UserDraftView(
                                                 text = "J$j",
                                                 fontSize = 14.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onPrimary
+                                                color = MaterialTheme.colorScheme.onSecondary
                                             )
                                             if (j == selectedJornada) {
                                                 Spacer(modifier = Modifier.height(4.dp))
@@ -346,7 +356,7 @@ fun UserDraftView(
                                                     text = jornadaPoints.toString(),
                                                     fontSize = 12.sp,
                                                     fontWeight = FontWeight.SemiBold,
-                                                    color = MaterialTheme.colorScheme.onPrimary
+                                                    color = MaterialTheme.colorScheme.onSecondary
                                                 )
                                             }
                                         }
@@ -568,9 +578,9 @@ fun UserDraftTabs(
                         Text(
                             text = title,
                             color = if (pagerState.currentPage == index)
-                                MaterialTheme.colorScheme.onPrimary
+                                MaterialTheme.colorScheme.onSecondary
                             else
-                                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f),
+                                MaterialTheme.colorScheme.onSecondary.copy(alpha = 0.6f),
                             style = MaterialTheme.typography.titleMedium
                         )
                     }
@@ -587,7 +597,7 @@ fun UserDraftTabs(
                         .offset { IntOffset(indicatorOffsetPx.roundToInt(), 0) }
                         .width(with(LocalDensity.current) { tabWidth.toDp() })
                         .fillMaxHeight()
-                        .background(MaterialTheme.colorScheme.onPrimary)
+                        .background(MaterialTheme.colorScheme.onSecondary)
                 )
             }
         }

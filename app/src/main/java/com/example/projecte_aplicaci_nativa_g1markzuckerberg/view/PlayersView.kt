@@ -1,6 +1,7 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -45,6 +46,7 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.*
 fun PlayersView(navController: NavController) {
     val vm: PlayersViewModel = viewModel(factory = remember { PlayersViewModelFactory(RetrofitClient.playerRepository) })
     val teamVm: TeamViewModel = viewModel(factory = remember { TeamViewModelFactory(RetrofitClient.teamRepository) })
+    BackHandler(enabled = true) {}
 
     val state = vm.uiState
     val listState = rememberLazyListState()

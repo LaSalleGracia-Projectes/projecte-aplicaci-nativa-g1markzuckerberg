@@ -1,5 +1,6 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -54,6 +55,7 @@ fun SettingsView(
     dialogTitle?.let { }
 
     val headerHeight = 110.dp
+    BackHandler(enabled = true) {}
 
     Box(Modifier.fillMaxSize()) {
         LazyColumn(

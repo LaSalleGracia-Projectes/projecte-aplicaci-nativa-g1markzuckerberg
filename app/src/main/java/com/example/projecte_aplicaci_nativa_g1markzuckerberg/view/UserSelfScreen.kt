@@ -1,6 +1,7 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
@@ -51,6 +52,7 @@ fun UserSelfScreen(
     navController: NavHostController,
     vm: UserSelfViewModel = viewModel(factory = UserSelfViewModel.Factory())
 ) {
+    BackHandler(enabled = true) {}
     val ui by vm.state.collectAsState()
     val edit by vm.edit.collectAsState()
 
