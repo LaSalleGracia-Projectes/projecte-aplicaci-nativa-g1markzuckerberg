@@ -33,6 +33,11 @@ class DraftViewModel : ViewModel() {
     fun setSelectedFormation(formation: String) {
         _selectedFormation.value = formation
     }
+
+    fun clearError() {
+        _errorMessage.value = ""
+    }
+
     fun createAndFetchDraft(
         formation: String,
         ligaId: Int,
@@ -40,39 +45,41 @@ class DraftViewModel : ViewModel() {
     ) {
         _isFetchingDraft.value = true
         viewModelScope.launch {
-            // 1) Intentamos el POST, pero capturamos y sólo logueamos errores de parseo:
+            // 1) Intentamos el POST y miramos si es 500
             try {
                 val createResp = RetrofitClient.draftService.createDraft(
                     CreateDraftRequest(formation, ligaId)
                 )
-                Log.d("DraftViewModel",
-                    "createDraft() code=${createResp.code()} — ignoramos body")
+                if (!createResp.isSuccessful && createResp.code() == 500) {
+                    // tenemos draft ya creado en esta jornada:
+                    _errorMessage.value = "Ya tienes un draft creado en esta jornada."
+                    _isFetchingDraft.value = false
+                    return@launch
+                }
             } catch (ex: Exception) {
-                Log.w("DraftViewModel",
-                    "Error parseando createDraft, lo ignoramos y seguimos al GET", ex)
+                // si hay otro fallo de red, dejamos seguir al GET para ver si hay uno ya
+                Log.w("DraftViewModel", "POST draft fallo inesperado", ex)
             }
 
-            // 2) Ahora, hagamos siempre el GET /draft
+            // 2) Si no era un 500, seguimos con el GET
             try {
                 val fetchResp = RetrofitClient.draftService.getTempDraft(ligaId)
                 if (fetchResp.isSuccessful) {
                     _tempDraft.value = fetchResp.body()!!.tempDraft
                     currentLigaId = ligaId
-                    Log.d("DraftViewModel", "GET tempDraft OK — navegamos")
                     onSuccess()
                 } else {
                     _errorMessage.value = "Error al recuperar draft: ${fetchResp.code()}"
-                    Log.e("DraftViewModel",
-                        "GET tempDraft error ${fetchResp.code()}")
                 }
             } catch (ex: Exception) {
                 _errorMessage.value = "Error de conexión al recuperar draft: ${ex.message}"
-                Log.e("DraftViewModel", "Excepción en GET tempDraft", ex)
+                Log.e("DraftViewModel", "GET tempDraft excepción", ex)
             } finally {
                 _isFetchingDraft.value = false
             }
         }
     }
+
 
 
 

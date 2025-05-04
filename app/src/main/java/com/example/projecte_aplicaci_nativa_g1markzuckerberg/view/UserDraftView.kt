@@ -1,5 +1,6 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.OverlayLoading
 import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -10,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -22,17 +24,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.Player
@@ -46,6 +55,11 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.Tab
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.UserDraftViewModel
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+import androidx.compose.ui.unit.Velocity
+import coil.compose.AsyncImagePainter
+import coil.compose.SubcomposeAsyncImage
+import coil.compose.SubcomposeAsyncImageContent
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.FancyLoadingAnimation
 
 @Composable
 fun UserDraftView(
@@ -68,12 +82,6 @@ fun UserDraftView(
     )
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(pagerState.currentPage) {
-        userDraftViewModel.setSelectedTab(
-            if (pagerState.currentPage == 0) Tab.USER else Tab.DRAFT
-        )
-    }
-
     // 2) Traer info de usuario
     LaunchedEffect(leagueId, userId) {
         userDraftViewModel.fetchUserInfo(leagueId, userId)
@@ -81,21 +89,39 @@ fun UserDraftView(
     val leagueUserResponse by userDraftViewModel.leagueUserResponse.observeAsState()
 
     // 3) Dropdowns y diálogos (igual que antes)
-    var dropDownExpanded by remember { mutableStateOf(false) }
     var showConfirmationDialog by remember { mutableStateOf(false) }
     var confirmationAction by remember { mutableStateOf("") }
     var resultDialogData by remember { mutableStateOf<ResultDialogData?>(null) }
 // variables reactivas
     val draftPlayers   by userDraftViewModel.draftPlayers.observeAsState(emptyList())
     val draftFormation by userDraftViewModel.draftFormation.observeAsState("4-3-3")
+    val isLoadingDraft  by userDraftViewModel.isLoadingDraft.observeAsState(false)
+    // 1 ─ estados NUEVOS junto a dropDownExpanded
+    var boxCoords      by remember { mutableStateOf<LayoutCoordinates?>(null) }   // ← NUEVO
+
     val jornadas = remember(createdJornada, currentJornada) {
         (createdJornada..currentJornada).toList()
     }
+
     var selectedJornada by remember { mutableIntStateOf(currentJornada) }
 // cuando cambia la jornada seleccionada → descargar plantilla
     LaunchedEffect(selectedJornada) {
         userDraftViewModel.fetchUserDraft(leagueId, userId, selectedJornada)
     }
+    LaunchedEffect(pagerState.currentPage) {
+        val nuevaPestanya = if (pagerState.currentPage == 0) Tab.USER else Tab.DRAFT
+        userDraftViewModel.setSelectedTab(nuevaPestanya)
+
+        // Si acabamos de ir a DRAFT, recargamos la plantilla de la jornada seleccionada
+        if (nuevaPestanya == Tab.DRAFT) {
+            userDraftViewModel.fetchUserDraft(
+                leagueId = leagueId,
+                userId   = userId,
+                roundName = selectedJornada
+            )
+        }
+    }
+
 
     Box(Modifier.fillMaxSize()) {
         // ─── HEADER ─────────────────────────────────────────
@@ -125,16 +151,13 @@ fun UserDraftView(
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
                             imageVector   = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver",
+                            contentDescription = stringResource(R.string.back),
                             tint          = MaterialTheme.colorScheme.onPrimary
                         )
                     }
                     Text(
                         text      = userName,
-                        style     = MaterialTheme.typography.titleLarge.copy(
-                            fontSize   = 20.sp,
-                            fontWeight = FontWeight.ExtraBold
-                        ),
+                        style     = MaterialTheme.typography.titleLarge,
                         color     = MaterialTheme.colorScheme.onPrimary,
                         modifier  = Modifier.weight(1f),
                         textAlign = TextAlign.Center
@@ -151,15 +174,11 @@ fun UserDraftView(
                         .fillMaxWidth()
                         .padding(vertical = 8.dp)
                 ) {
-                    TabButton("Usuario", pagerState.currentPage == 0) {
-                        scope.launch { pagerState.animateScrollToPage(0) }
-                    }
-                    TabButton("Draft",   pagerState.currentPage == 1) {
-                        scope.launch { pagerState.animateScrollToPage(1) }
+                    UserDraftTabs(pagerState) { page ->
+                        scope.launch { pagerState.animateScrollToPage(page) }
                     }
                 }
-            }
-        }
+            }}
 
         // ─── PAGER ──────────────────────────────────────────
         HorizontalPager(
@@ -169,6 +188,32 @@ fun UserDraftView(
                 .padding(top = 130.dp)
         ) { page ->
             if (page == 0) {
+                val imageScroll = rememberScrollState()
+                // === GRAFANA ===
+                val grafanaConn = remember(imageScroll) {
+                    object : NestedScrollConnection {
+                        override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                            val canScrollForward  = available.x < 0 && imageScroll.value < imageScroll.maxValue
+                            val canScrollBackward = available.x > 0 && imageScroll.value > 0
+
+                            return if (canScrollForward || canScrollBackward) {
+                                Offset.Zero
+                            } else {
+                                Offset(available.x, 0f)
+                            }
+                        }
+                        override suspend fun onPreFling(available: Velocity): Velocity {
+                            val canFlingForward  = available.x < 0 && imageScroll.value < imageScroll.maxValue
+                            val canFlingBackward = available.x > 0 && imageScroll.value > 0
+
+                            return if (canFlingForward || canFlingBackward) {
+                                Velocity.Zero
+                            } else {
+                                Velocity(available.x, 0f)
+                            }
+                        }
+                    }
+                }
                 // === USUARIO ===
                 LazyColumn(
                     modifier = Modifier
@@ -177,152 +222,222 @@ fun UserDraftView(
                     contentPadding = PaddingValues(bottom = 56.dp)
                 ) {
                     item {
+                        Spacer(modifier = Modifier.height(18.dp))
+                        SectionHeader(title = stringResource(R.string.user_section))
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
+                    }
+                    item {
                         leagueUserResponse?.let { resp ->
-                            Box(Modifier.wrapContentSize()) {
+                            // 1) Este Box "envuelve" sólo al TrainerCard y al DropdownMenu
+                            Box(
+                                modifier = Modifier
+                                    .wrapContentSize(align = Alignment.TopEnd)
+                                    .onGloballyPositioned { boxCoords = it },
+                                contentAlignment = Alignment.TopEnd
+                            ) {
                                 TrainerCard(
-                                    imageUrl = RetrofitClient.BASE_URL.trimEnd('/') + resp.user.imageUrl,
-                                    name = resp.user.username,
-                                    birthDate = resp.user.birthDate,
-                                    isCaptain = resp.user.is_capitan,
-                                    puntosTotales = resp.user.puntos_totales,
-                                    onInfoClick = { dropDownExpanded = true }
+                                    imageUrl     = RetrofitClient.BASE_URL.trimEnd('/') + resp.user.imageUrl,
+                                    name         = resp.user.username,
+                                    birthDate    = resp.user.birthDate,
+                                    isCaptain    = resp.user.is_capitan,
+                                    puntosTotales= resp.user.puntos_totales,
+
+                                    onExpelClick = {          // 🔴 “Expulsar”
+                                        confirmationAction     = "expulsar"
+                                        showConfirmationDialog = true
+                                    },
+                                    onCaptainClick = {        // 🟢 “Hacer Capitán”
+                                        confirmationAction     = "captain"
+                                        showConfirmationDialog = true
+                                    }
                                 )
                             }
-                        } ?: Text("Cargando datos…")
+                        } ?: Text(stringResource(R.string.loading_data))
+
                     }
+                    item {
+                        Spacer(modifier = Modifier.height(18.dp))
+                        SectionHeader(title = stringResource(R.string.historic_section))
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
+
+                    }
+
                     item {
                         val graphUrl = remember(leagueId, userId) {
                             grafanaUserUrl(leagueId, userId)
                         }
-
-                        // 220 dp alto; 16 dp margen superior‑inferior
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 16.dp)
-                                .horizontalScroll(rememberScrollState()),  // ← scroll lateral
+                                .nestedScroll(grafanaConn)
+                                .horizontalScroll(imageScroll),
                             horizontalArrangement = Arrangement.Start
                         ) {
-                            AsyncImage(                       // coil‑compose
+                            SubcomposeAsyncImage(
                                 model = graphUrl,
-                                contentDescription = "Gráfico de rendimiento",
-                                contentScale = ContentScale.FillHeight,
+                                contentDescription = stringResource(R.string.performance_chart_desc),
                                 modifier = Modifier
-                                    .height(220.dp)           // alto fijo
-                                    .clip(MaterialTheme.shapes.medium)
-                            )
+                                    .height(220.dp)
+                                    .clip(MaterialTheme.shapes.medium),
+                                contentScale = ContentScale.FillHeight
+                            ) {
+                                when (painter.state) {
+                                    is AsyncImagePainter.State.Loading ->
+                                        Box(
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            FancyLoadingAnimation(Modifier.size(120.dp))
+                                        }
+
+                                    else ->
+                                        SubcomposeAsyncImageContent()
+                                }
+                            }
                         }
                     }
                 }
 
             } else { /* ---------- PÁGINA DRAFT ---------- */
+                OverlayLoading(isLoading = isLoadingDraft) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(modifier = Modifier.fillMaxSize()) {
 
-                Column(modifier = Modifier.fillMaxSize()) {
+                            val jornadaPoints =
+                                draftPlayers.sumOf { it.puntos_jornada.toDouble().roundToInt() }
 
-                    /* 1️⃣  LazyRow — SIEMPRE visible arriba */
-                    LazyRow(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        contentPadding        = PaddingValues(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(jornadas) { j ->
+
+                            /* 1️⃣  LazyRow — SIEMPRE visible arriba */
+                            LazyRow(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 12.dp),
+                                contentPadding = PaddingValues(horizontal = 16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                items(jornadas) { j ->
+                                    Box(
+                                        modifier = Modifier
+                                            .size(44.dp)
+                                            .clip(CircleShape)
+                                            .background(
+                                                if (j == selectedJornada)
+                                                    MaterialTheme.colorScheme.secondary
+                                                else
+                                                    MaterialTheme.colorScheme.primary
+                                            )
+                                            .clickable { selectedJornada = j },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.Center
+                                        ) {
+                                            Text(
+                                                text = "J$j",
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onPrimary
+                                            )
+                                            if (j == selectedJornada) {
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Text(
+                                                    text = jornadaPoints.toString(),
+                                                    fontSize = 12.sp,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    color = MaterialTheme.colorScheme.onPrimary
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            /* 2️⃣  Lo que queda de alto: campo + contenido */
                             Box(
                                 modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                                    .background(
-                                        if (j == selectedJornada)
-                                            MaterialTheme.colorScheme.secondary
-                                        else
-                                            MaterialTheme.colorScheme.primary
-                                    )
-                                    .clickable {
-                                        selectedJornada = j
-                                        // TODO: userDraftViewModel.fetchUserDraft(...)
-                                    },
-                                contentAlignment = Alignment.Center
+                                    .fillMaxWidth()
+                                    .clipToBounds()
                             ) {
-                                Text(
-                                    "$j",
-                                    fontSize   = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color      = MaterialTheme.colorScheme.onPrimary
+                                Image(
+                                    painter           = painterResource(R.drawable.futbol_pitch_background),
+                                    contentDescription = null,
+                                    modifier          = Modifier
+                                        .fillMaxSize()
+                                        .graphicsLayer { scaleX = 1.25f },
+                                    contentScale      = ContentScale.FillBounds
                                 )
+                                if (draftPlayers.isEmpty() && !isLoadingDraft) {
+                                    Surface(
+                                        color  = MaterialTheme.colorScheme.surface.copy(alpha = 0.65f),
+                                        shape  = MaterialTheme.shapes.medium,
+                                        tonalElevation = 6.dp,
+                                        modifier = Modifier
+                                            .align(Alignment.Center)
+                                            .padding(horizontal = 24.dp)
+                                    ) {
+                                        Text(
+                                            text      = stringResource(R.string.no_draft, userName),
+                                            style     = MaterialTheme.typography.bodyLarge,
+                                            color     = MaterialTheme.colorScheme.onSurface,
+                                            textAlign = TextAlign.Center,
+                                            modifier  = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                                        )
+                                    }
+                                }
+                                // Solo si hay jugadores, dibujamos su plantilla
+                                if (draftPlayers.isNotEmpty()) {
+                                    ReadonlyDraftLayout(
+                                        formation = draftFormation,
+                                        players   = draftPlayers
+                                    )
+                                }
                             }
                         }
-                    }
-
-                    /* 2️⃣  Lo que queda de alto: campo + contenido */
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)   // ocupa TODO tras la LazyRow
-                            .fillMaxWidth()
-                    ) {
-                        Image(
-                            painter           = painterResource(R.drawable.futbol_pitch_background),
-                            contentDescription = null,
-                            modifier          = Modifier
-                                .fillMaxSize()
-                                .graphicsLayer { scaleX = 1.25f } // opcional, como en DraftScreen
-                                .clipToBounds(),
-                            contentScale      = ContentScale.FillBounds
-                        )
-
-                        ReadonlyDraftLayout(
-                            formation = draftFormation,
-                            players   = draftPlayers
-                        )
                     }
                 }
             }
         }
 
-            // ─── DROPDOWN / DIÁLOGOS ───────────────────────────
-        DropdownMenu(
-            expanded = dropDownExpanded,
-            onDismissRequest = { dropDownExpanded = false }
-        ) {
-            DropdownMenuItem(
-                text = { Text("Expulsar", color = Color.White) },
-                onClick = {
-                    dropDownExpanded = false
-                    confirmationAction = "expulsar"
-                    showConfirmationDialog = true
-                }
-            )
-            DropdownMenuItem(
-                text = { Text("Hacer Capitán") },
-                onClick = {
-                    dropDownExpanded = false
-                    confirmationAction = "captain"
-                    showConfirmationDialog = true
-                }
-            )
-        }
+        // ─── DROPDOWN / DIÁLOGOS ───────────────────────────
 
         if (showConfirmationDialog) {
-            val title = if (confirmationAction == "expulsar") "Confirmar expulsión" else "Confirmar capitán"
-            val msg   = if (confirmationAction == "expulsar")
-                "¿Seguro que deseas expulsar a este usuario?"
+            val titleText = if (confirmationAction == "expulsar")
+                stringResource(R.string.confirm_expel_title)
             else
-                "¿Seguro que deseas hacer capitán a este usuario?"
+                stringResource(R.string.confirm_captain_title)
+
+            val msgText = if (confirmationAction == "expulsar")
+                stringResource(R.string.confirm_expel_msg)
+            else
+                stringResource(R.string.confirm_captain_msg)
+
+            // Traducciones anticipadas para evitar error de context
+            val successText = stringResource(R.string.success)
+            val errorText   = stringResource(R.string.error)
 
             CustomAlertDialog(
-                title   = title,
-                message = msg,
+                title = titleText,
+                message = msgText,
                 onDismiss = { showConfirmationDialog = false },
                 onConfirm = {
                     showConfirmationDialog = false
-                    if (confirmationAction == "expulsar")
+                    if (confirmationAction == "expulsar") {
                         userDraftViewModel.kickUser(leagueId, userId) { ok, m ->
-                            resultDialogData = ResultDialogData(if (ok) "Éxito" else "Error", m)
+                            resultDialogData = ResultDialogData(
+                                title = if (ok) successText else errorText,
+                                message = m
+                            )
                         }
-                    else
+                    } else {
                         userDraftViewModel.makeCaptain(leagueId, userId) { ok, m ->
-                            resultDialogData = ResultDialogData(if (ok) "Éxito" else "Error", m)
+                            resultDialogData = ResultDialogData(
+                                title = if (ok) successText else errorText,
+                                message = m
+                            )
                         }
+                    }
                 }
             )
         }
@@ -366,7 +481,7 @@ private fun ReadonlyDraftLayout(
     players  : List<Player>,
 ) {
     val byPos = remember(players) {
-        players.groupBy { it.positionId }   // 24‑27 según ejemplo
+        players.groupBy { it.positionId }
     }
 
     val rows: List<Pair<Int, Int>> = when (formation) {
@@ -401,10 +516,10 @@ private fun ReadonlyDraftLayout(
                     ) {
                         if (p != null) {
                             CompactPlayerCard(
-                                player = p.toPlayerOption(),   // extensión abajo
+                                player = p.toPlayerOption(),
                                 width  = cardW,
                                 height = cardH,
-                                onClick = {}                   // 🔒 NO hace nada
+                                onClick = {}
                             )
                         }
                     }
@@ -424,3 +539,57 @@ private fun Player.toPlayerOption() = com.example.projecte_aplicaci_nativa_g1mar
     puntos_totales = puntos_jornada.toDouble().roundToInt()
 )
 
+@Composable
+fun UserDraftTabs(
+    pagerState: PagerState,
+    onTabSelected: (page: Int) -> Unit
+) {
+    val tabTitles = listOf(stringResource(R.string.user_tab), stringResource(R.string.draft_tab))
+
+    BoxWithConstraints {
+        val fullWidth = constraints.maxWidth.toFloat()
+        val tabWidth  = fullWidth / tabTitles.size
+        // Offset en px: página actual + fracción de desplazamiento
+        val indicatorOffsetPx by remember {
+            derivedStateOf {
+                (pagerState.currentPage + pagerState.currentPageOffsetFraction) * tabWidth
+            }
+        }
+
+        Column {
+            Row(Modifier.fillMaxWidth()) {
+                tabTitles.forEachIndexed { index, title ->
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .clickable { onTabSelected(index) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = title,
+                            color = if (pagerState.currentPage == index)
+                                MaterialTheme.colorScheme.onPrimary
+                            else
+                                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
+                }
+            }
+            // Indicador
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(2.dp)
+            ) {
+                Box(
+                    Modifier
+                        .offset { IntOffset(indicatorOffsetPx.roundToInt(), 0) }
+                        .width(with(LocalDensity.current) { tabWidth.toDp() })
+                        .fillMaxHeight()
+                        .background(MaterialTheme.colorScheme.onPrimary)
+                )
+            }
+        }
+    }
+}

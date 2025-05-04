@@ -1,6 +1,7 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
-import LoadingTransitionScreen
+import androidx.compose.ui.res.stringResource
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.LoadingTransitionScreen
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -37,12 +38,11 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.LigaConPuntos
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CreateLigaDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialogSingleButton
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.EditLigaDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.JoinLigaDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.LeagueCodeDialog
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.LigaDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.HomeLogedViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -76,6 +76,7 @@ fun HomeLogedView(
     var alertTitle by remember { mutableStateOf("") }
     var alertMessage by remember { mutableStateOf("") }
     var alertOnConfirm by remember { mutableStateOf({}) }
+    var editingLiga by remember { mutableStateOf<LigaConPuntos?>(null) }
 
     val createLigaResult by homeLogedViewModel.createLigaResult.observeAsState()
     val joinLigaResult by homeLogedViewModel.joinLigaResult.observeAsState()
@@ -83,65 +84,55 @@ fun HomeLogedView(
     val isLoading by homeLogedViewModel.isLoading.observeAsState(initial = true)
     val userEmail by homeLogedViewModel.userEmail.observeAsState(initial = "")
     val lastImageUpdateTs by homeLogedViewModel.lastImageUpdateTs.observeAsState(initial = 0L)
+    val context = LocalContext.current
+    val updateLigaSuccess by homeLogedViewModel.updateLigaSuccess.observeAsState()
+    val errorEvent       by homeLogedViewModel.errorMessage.observeAsState()
 
     BackHandler {}
 
     // Al recibir el resultado de unirse a una liga
+    val joinedTitle = stringResource(R.string.joined_league_title)
+    val joinedMsg   = stringResource(R.string.joined_league_message)
+    val errorTitle  = stringResource(R.string.error_title)
+
     LaunchedEffect(key1 = joinLigaResult) {
         joinLigaResult?.getContentIfNotHandled()?.let {
-            alertTitle = "Unirse a Liga"
-            alertMessage = "Te has unido correctamente a la liga."
+            alertTitle = joinedTitle
+            alertMessage = joinedMsg
             alertOnConfirm = { showCustomAlert = false }
             showCustomAlert = true
             homeLogedViewModel.fetchUserLeagues()
         }
     }
 
-    // Al recibir el resultado de crear una liga
-    LaunchedEffect(key1 = createLigaResult) {
-        createLigaResult?.getContentIfNotHandled()?.let {
-            alertTitle = "Crear Liga"
-            alertMessage = "Liga creada correctamente."
-            alertOnConfirm = { showCustomAlert = false }
-            showCustomAlert = true
-            homeLogedViewModel.fetchUserLeagues()
-        }
-    }
-
-    // Para mostrar errores en un modal
-    val errorEvent by homeLogedViewModel.errorMessage.observeAsState()
+// Para mostrar errores en un modal
     LaunchedEffect(key1 = errorEvent) {
         errorEvent?.getContentIfNotHandled()?.let { error: String ->
-            alertTitle = "Error"
+            alertTitle = errorTitle
             alertMessage = error
             alertOnConfirm = { showCustomAlert = false }
             showCustomAlert = true
         }
     }
 
-    var editingLiga by remember { mutableStateOf<LigaConPuntos?>(null) }
-    val context = LocalContext.current
-
     editingLiga?.let { liga ->
-        EditLigaDialog(
-            ligaId = liga.id.toString(),
-            currentName = liga.name,
+        LigaDialog(
+            title = stringResource(R.string.edit_league_title),
+            initialName = liga.name,
             onDismiss = { editingLiga = null },
-            onSave = { newName, imageUri ->
+            onConfirm = { newName, imgUri ->
                 editingLiga = null
-
-                // Cambiar el nombre de la liga
+                // Actualizar nombre si cambió
                 if (newName.isNotBlank() && newName != liga.name) {
                     homeLogedViewModel.updateLigaName(liga.id.toString(), newName)
                 }
-                // Cambiar la imagen de la liga
-                imageUri?.let {
+                // Subir imagen si se seleccionó
+                imgUri?.let {
                     homeLogedViewModel.updateLigaWithImage(liga.id.toString(), it, context)
                 }
             }
         )
     }
-
 
     LaunchedEffect(Unit) {
         homeLogedViewModel.fetchUserLeagues()
@@ -217,7 +208,7 @@ fun HomeLogedView(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "¡Crea una liga con tus amigos!",
+                    text = stringResource(R.string.create_subtitle),
                     style = MaterialTheme.typography.bodyLarge.copy(
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold
@@ -241,7 +232,7 @@ fun HomeLogedView(
                     if (userLeagues.isEmpty()) {
                         item {
                             Text(
-                                "No estás en ninguna liga aún",
+                                stringResource(R.string.no_leagues),
                                 style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
                                 color = MaterialTheme.colorScheme.onBackground,
                                 modifier = Modifier.padding(12.dp)
@@ -251,7 +242,7 @@ fun HomeLogedView(
 
                     item {
                         SectionHeader(
-                            title = "MIS LIGAS",
+                            title = stringResource(R.string.my_leagues),
                             buttonContent = {
                                 Row {
                                     FilledTonalButton(
@@ -264,7 +255,7 @@ fun HomeLogedView(
                                         modifier = Modifier.height(34.dp)
                                     ) {
                                         Text(
-                                            "UNIRSE",
+                                            stringResource(R.string.join_league),
                                             style = MaterialTheme.typography.labelSmall.copy(
                                                 fontSize = 12.sp
                                             )
@@ -281,7 +272,7 @@ fun HomeLogedView(
                                         modifier = Modifier.height(34.dp)
                                     ) {
                                         Text(
-                                            "CREAR",
+                                            stringResource(R.string.create_league),
                                             style = MaterialTheme.typography.labelSmall.copy(
                                                 fontSize = 12.sp
                                             )
@@ -293,6 +284,11 @@ fun HomeLogedView(
                     }
 
                     itemsIndexed(userLeagues) { _, liga ->
+                        val editTitle = stringResource(R.string.edit_league_title)
+                        val onlyCaptainMsg = stringResource(R.string.only_captain_can_edit)
+                        val leaveTitle = stringResource(R.string.leave_league)
+                        val confirmLeaveMsg = stringResource(R.string.confirm_leave_league)
+
                         LeagueRow(
                             name = liga.name,
                             puntos = liga.puntos_totales,
@@ -300,23 +296,21 @@ fun HomeLogedView(
                             totalUsers = liga.total_users,
                             onClick = { navController.navigate(Routes.LigaView.createRoute(liga.code)) },
                             onShareLiga = {
-                                // Aquí puedes implementar la acción para compartir, por ejemplo:
-                                // Mostrar un Toast o abrir un diálogo similar a LeagueCodeDialog
                                 selectedLeagueCode = liga.code
                             },
                             onEditLiga = {
                                 if (userEmail != liga.created_by) {
-                                    alertTitle = "Editar Liga"
-                                    alertMessage = "Solo el capitán puede editar la liga"
+                                    alertTitle = editTitle
+                                    alertMessage = onlyCaptainMsg
                                     alertOnConfirm = { showCustomAlert = false }
                                     showCustomAlert = true
                                 } else {
-                                    editingLiga = liga // Aquí abre el nuevo diálogo si eres el creador
+                                    editingLiga = liga
                                 }
                             },
                             onLeaveLiga = {
-                                alertTitle = "Abandonar Liga"
-                                alertMessage = "¿Estás seguro que deseas abandonar la liga?"
+                                alertTitle = leaveTitle
+                                alertMessage = confirmLeaveMsg
                                 alertOnConfirm = {
                                     homeLogedViewModel.leaveLiga(liga.id.toString())
                                     showCustomAlert = false
@@ -333,9 +327,10 @@ fun HomeLogedView(
 
                     homeLogedViewModel.jornadaData.value?.let { jornada ->
                         item {
-                            SectionHeader(title = "PARTIDOS – JORNADA ${jornada.jornada}")
+                            SectionHeader(title = stringResource(R.string.matchday_prefix_param, jornada.jornada))
                             Spacer(modifier = Modifier.height(8.dp))
                         }
+
                         items(jornada.fixtures) { fixture ->
                             val teams = fixture.name.split(" vs ")
                             val team1 = teams.getOrNull(0) ?: "Equipo 1"
@@ -356,13 +351,17 @@ fun HomeLogedView(
 
         /** Diálogos: al enviar, se cierra el diálogo correspondiente antes de llamar a la acción */
         if (openCreateLigaDialog) {
-            CreateLigaDialog(
+            LigaDialog(
+                title     = stringResource(R.string.create_league_title),
                 onDismiss = { openCreateLigaDialog = false },
-                onCreateLiga = { leagueName ->
-                    // Cerrar el diálogo antes de la acción
+                onConfirm = { name, imgUri ->
                     openCreateLigaDialog = false
-                    homeLogedViewModel.createLiga(leagueName)
-                },
+                    homeLogedViewModel.createLiga(
+                        name     = name.trim(),
+                        imageUri = imgUri,
+                        context  = context
+                    )
+                }
             )
         }
         if (openJoinLigaDialog) {
@@ -374,7 +373,6 @@ fun HomeLogedView(
                 },
             )
         }
-        // Muestra el LeagueCodeDialog cuando selectedLeagueCode tiene un valor
         selectedLeagueCode?.let { code ->
             LeagueCodeDialog(
                 leagueCode = code,
@@ -385,8 +383,7 @@ fun HomeLogedView(
 
     // Mostrar nuestro modal de alerta personalizado
     if (showCustomAlert) {
-        if (alertTitle == "Abandonar Liga") {
-            // Utilizamos el CustomAlertDialog de dos botones para confirmación
+        if (alertTitle == stringResource(R.string.leave_league)) {
             CustomAlertDialog(
                 title = alertTitle,
                 message = alertMessage,
@@ -409,7 +406,7 @@ fun HomeLogedView(
 
 
 
-    /** Encabezado de sección con título y contenido opcional de botón */
+/** Encabezado de sección con título y contenido opcional de botón */
 @Composable
 fun SectionHeader(
     title: String,
@@ -476,10 +473,10 @@ fun LeagueRow(
                         model = "${RetrofitClient.BASE_URL}api/v1/liga/image/$leagueId?ts=$lastImageUpdateTs",
                         contentDescription = "Imagen Liga",
                         modifier = Modifier
-                            .size(48.dp) // Imagen más pequeña dentro del borde
+                            .size(48.dp)
                             .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceVariant) // Fondo por si la imagen no llena
-                            .padding(2.dp), // Ajuste fino si lo deseas
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .padding(2.dp),
                         placeholder = painterResource(id = R.drawable.fantasydraft),
                         error = painterResource(id = R.drawable.fantasydraft)
                     )
@@ -519,7 +516,7 @@ fun LeagueRow(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.MoreVert,
-                                    contentDescription = "Opciones",
+                                    contentDescription = stringResource(R.string.options_menu),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(20.dp)
                                 )
@@ -533,9 +530,9 @@ fun LeagueRow(
                                     .clip(RoundedCornerShape(8.dp))
                                     .padding(0.dp)
                             ) {
-                                // NUEVA opción: Compartir liga
+                                // Compartir liga
                                 DropdownMenuItem(
-                                    text = { Text("Compartir liga") },
+                                    text = { Text(stringResource(R.string.share_league)) },
                                     onClick = {
                                         expanded = false
                                         onShareLiga()
@@ -543,7 +540,7 @@ fun LeagueRow(
                                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("Editar liga") },
+                                    text = { Text(stringResource(R.string.edit_league)) },
                                     onClick = {
                                         expanded = false
                                         onEditLiga()
@@ -556,7 +553,7 @@ fun LeagueRow(
                                             listOf(Color(0xFFFF5252), Color(0xFFB71C1C))
                                         )
                                     ),
-                                    text = { Text("Abandonar liga", color = Color.White) },
+                                    text = { Text(stringResource(R.string.leave_league), color = Color.White) },
                                     onClick = {
                                         expanded = false
                                         onLeaveLiga()

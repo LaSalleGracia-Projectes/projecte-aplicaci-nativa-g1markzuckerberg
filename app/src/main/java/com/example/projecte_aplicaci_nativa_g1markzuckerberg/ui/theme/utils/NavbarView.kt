@@ -57,6 +57,7 @@ fun NavbarView(
     onProfileClick: () -> Unit,
     onHomeClick: () -> Unit = { navController.navigate(Routes.HomeLoged.route) },
     onNotificationsClick: () -> Unit,
+    onPlayersClick: () -> Unit,
     onSettingsClick: () -> Unit = { navController.navigate(Routes.Settings.route) },
     modifier: Modifier = Modifier
 ) {
@@ -81,6 +82,8 @@ fun NavbarView(
             NavBarItem(iconResId = R.drawable.ic_profile, contentDescription = "Perfil", onClick = onProfileClick)
             VerticalDivider()
             NavBarItem(iconResId = R.drawable.ic_home, contentDescription = "Inicio", onClick = onHomeClick)
+            VerticalDivider()
+            NavBarItem(iconResId = R.drawable.ic_players, contentDescription = "Jugadores", onClick = onPlayersClick)
             VerticalDivider()
             NavBarItem(iconResId = R.drawable.ic_notifications, contentDescription = "Notificaciones", onClick = onNotificationsClick)
             VerticalDivider()

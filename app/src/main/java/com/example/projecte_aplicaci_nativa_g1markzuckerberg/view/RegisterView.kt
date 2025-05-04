@@ -15,8 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.RegisterViewModel
@@ -25,14 +25,13 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.Grad
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 
-// Color azul principal (ajustar según la guía de estilos)
-
 @Composable
 fun RegisterView(
     navController: NavController,
     viewModel: RegisterViewModel
 ) {
     val context = LocalContext.current
+
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
         try {
@@ -51,26 +50,24 @@ fun RegisterView(
     LaunchedEffect(Unit) {
         viewModel.initGoogle(context)
     }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
     ) {
-        // Barra superior: Usando GradientHeader
         GradientHeader(
-            title = "Crear una cuenta",
+            title = stringResource(R.string.register_title),
             onBack = { navController.popBackStack() },
             height = 140.dp
         )
 
-        // Línea divisoria gris bajo la barra
         Divider(
             modifier = Modifier.fillMaxWidth(),
             thickness = 1.dp,
             color = Color.Gray
         )
 
-        // Contenido principal
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -79,11 +76,8 @@ fun RegisterView(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Botón: Crear cuenta con tu email
             OutlinedButton(
-                onClick = {
-                    navController.navigate(Routes.LoginMobile.route)
-                },
+                onClick = { navController.navigate(Routes.LoginMobile.route) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -95,23 +89,20 @@ fun RegisterView(
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.ic_email),
-                    contentDescription = "Email icon",
+                    contentDescription = stringResource(R.string.email),
                     modifier = Modifier.size(24.dp)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = "Crear cuenta con tu email",
-                    fontSize = 16.sp
+                    text = stringResource(R.string.register_with_email),
+                    style = MaterialTheme.typography.bodyLarge
                 )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Botón: Continuar con Google
             OutlinedButton(
-                onClick = {
-                    launcher.launch(viewModel.getGoogleSignInIntent())
-                },
+                onClick = { launcher.launch(viewModel.getGoogleSignInIntent()) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -123,31 +114,28 @@ fun RegisterView(
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.google),
-                    contentDescription = "Google logo",
+                    contentDescription = stringResource(R.string.google_logo),
                     modifier = Modifier.size(24.dp)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = "Continuar con Google",
-                    fontSize = 16.sp
+                    text = stringResource(R.string.continue_with_google),
+                    style = MaterialTheme.typography.bodyLarge
                 )
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Texto y botón para iniciar sesión
             Text(
-                text = "¿Ya tienes cuenta?",
-                fontSize = 14.sp,
+                text = stringResource(R.string.already_have_account),
+                style = MaterialTheme.typography.bodyMedium,
                 color = Color.Black
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedButton(
-                onClick = {
-                    navController.navigate(Routes.Login.route)
-                },
+                onClick = { navController.navigate(Routes.Login.route) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -158,8 +146,8 @@ fun RegisterView(
                 )
             ) {
                 Text(
-                    text = "Iniciar sesión",
-                    fontSize = 16.sp
+                    text = stringResource(R.string.login),
+                    style = MaterialTheme.typography.bodyLarge
                 )
             }
         }

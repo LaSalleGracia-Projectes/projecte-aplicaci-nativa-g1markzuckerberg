@@ -3,12 +3,6 @@ package com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,7 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -38,88 +32,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.PlayerOption
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.view.StyledPlayerCard
-
-@Composable
-fun CreateLigaDialog(
-    onDismiss: () -> Unit,
-    onCreateLiga: (String) -> Unit
-) {
-    var leagueName by remember { mutableStateOf("") }
-    // Solo permite enviar si se ha escrito algo
-    val isSubmitEnabled = leagueName.isNotBlank()
-
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            elevation = CardDefaults.cardElevation(8.dp),
-            modifier = Modifier.fillMaxWidth(0.9f)
-        ) {
-            Column {
-                // Header con gradiente azul
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(60.dp)
-                        .background(
-                            Brush.horizontalGradient(
-                                colors = listOf(
-                                    MaterialTheme.colorScheme.primary,
-                                    MaterialTheme.colorScheme.secondary
-                                )
-                            )
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Crear Liga",
-                        color = Color.White,
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                }
-                // Contenido
-                Column(modifier = Modifier.padding(16.dp)) {
-                    OutlinedTextField(
-                        value = leagueName,
-                        onValueChange = { leagueName = it },
-                        label = { Text("Nombre de la liga") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        singleLine = true,
-                        maxLines = 1
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    // Botones: Cancelar y Crear
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        TextButton(onClick = onDismiss) {
-                            Text("Cancelar", color = MaterialTheme.colorScheme.error)
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        TextButton(
-                            onClick = {
-                                if (isSubmitEnabled) onCreateLiga(leagueName)
-                            }
-                        ) {
-                            Text(
-                                text = "Crear",
-                                color = if (isSubmitEnabled)
-                                    MaterialTheme.colorScheme.primary
-                                else
-                                    Color.Gray
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 
 @Composable
 fun JoinLigaDialog(
@@ -152,7 +65,7 @@ fun JoinLigaDialog(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Unirse a Liga",
+                        text = stringResource(R.string.join_league_title),
                         color = Color.White,
                         style = MaterialTheme.typography.titleMedium
                     )
@@ -165,7 +78,7 @@ fun JoinLigaDialog(
                             val filtered = it.replace(" ", "")
                             ligaCode = filtered.take(30)
                         },
-                        label = { Text("Código de la liga") },
+                        label = { Text(stringResource(R.string.join_league_code_label)) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         singleLine = true,
@@ -177,14 +90,14 @@ fun JoinLigaDialog(
                         horizontalArrangement = Arrangement.End
                     ) {
                         TextButton(onClick = onDismiss) {
-                            Text("Cancelar", color = MaterialTheme.colorScheme.error)
+                            Text(stringResource(R.string.DialogLcancel), color = MaterialTheme.colorScheme.error)
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         TextButton(
                             onClick = { if (isSubmitEnabled) onJoinLiga(ligaCode) }
                         ) {
                             Text(
-                                text = "Unirse",
+                                text = stringResource(R.string.join_league_action),
                                 color = if (isSubmitEnabled)
                                     MaterialTheme.colorScheme.primary
                                 else
@@ -231,7 +144,7 @@ fun ForgotPasswordDialog(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Restablecer contraseña",
+                        text = stringResource(R.string.reset_password_title),
                         color = Color.White,
                         style = MaterialTheme.typography.titleMedium
                     )
@@ -245,11 +158,11 @@ fun ForgotPasswordDialog(
                             val filtered = it.replace(" ", "")
                             email = filtered.take(30)
                         },
-                        label = { Text("Correo") },
+                        label = { Text(stringResource(R.string.email_label)) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Email,
-                                contentDescription = "Correo"
+                                contentDescription = stringResource(R.string.email_label)
                             )
                         },
                         modifier = Modifier.fillMaxWidth(),
@@ -259,7 +172,7 @@ fun ForgotPasswordDialog(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Ingrese su correo y recibirá un enlace para cambiar la contraseña.",
+                        text = stringResource(R.string.reset_password_description),
                         fontSize = 14.sp
                     )
                     Spacer(modifier = Modifier.height(16.dp))
@@ -268,14 +181,14 @@ fun ForgotPasswordDialog(
                         horizontalArrangement = Arrangement.End
                     ) {
                         TextButton(onClick = onDismiss) {
-                            Text("Cancelar", color = MaterialTheme.colorScheme.error)
+                            Text(stringResource(R.string.DialogLcancel), color = MaterialTheme.colorScheme.error)
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         TextButton(
                             onClick = { if (isSubmitEnabled) onSubmit(email) }
                         ) {
                             Text(
-                                text = "Enviar",
+                                text = stringResource(R.string.send),
                                 color = if (isSubmitEnabled)
                                     MaterialTheme.colorScheme.primary
                                 else
@@ -320,7 +233,7 @@ fun LeagueCodeDialog(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Código de la Liga",
+                        text = stringResource(R.string.league_code_title),
                         color = Color.White,
                         style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp)
                     )
@@ -350,7 +263,7 @@ fun LeagueCodeDialog(
                             onClick = { clipboardManager.setText(AnnotatedString(leagueCode)) }
                         ) {
                             Text(
-                                text = "Copiar",
+                                text = stringResource(R.string.copy),
                                 color = MaterialTheme.colorScheme.primary,
                                 style = MaterialTheme.typography.bodyMedium
                             )
@@ -358,7 +271,7 @@ fun LeagueCodeDialog(
                         Spacer(modifier = Modifier.width(8.dp))
                         TextButton(onClick = onDismiss) {
                             Text(
-                                text = "Cerrar",
+                                text = stringResource(R.string.DialogLclose),
                                 color = MaterialTheme.colorScheme.error,
                                 style = MaterialTheme.typography.bodyMedium
                             )
@@ -373,8 +286,8 @@ fun LeagueCodeDialog(
 fun CustomAlertDialog(
     title: String,
     message: String,
-    confirmButtonText: String = "Aceptar",
-    cancelButtonText: String = "Cancelar",
+    confirmButtonText: String = stringResource(R.string.DialogLaccept),
+    cancelButtonText: String = stringResource(R.string.DialogLcancel),
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {
@@ -464,7 +377,7 @@ private fun String.toAnnotatedStringWithBold(): AnnotatedString {
 fun CustomAlertDialogSingleButton(
     title: String,
     message: String,
-    confirmButtonText: String = "Aceptar",
+    confirmButtonText: String = stringResource(R.string.DialogLaccept),
     onAccept: () -> Unit,
 ) {
     Dialog(onDismissRequest = onAccept) {
@@ -521,17 +434,18 @@ fun CustomAlertDialogSingleButton(
         }
     }
 }
-@Composable
-fun EditLigaDialog(
-    ligaId: String,
-    currentName: String,
-    onDismiss: () -> Unit,
-    onSave: (String, Uri?) -> Unit
-) {
-    var leagueName by remember { mutableStateOf(currentName) }
-    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
-    val context = LocalContext.current
 
+@Composable
+fun LigaDialog(
+    title: String,
+    initialName: String = "",
+    onDismiss: () -> Unit,
+    onConfirm: (String, Uri?) -> Unit
+) {
+    var leagueName by remember { mutableStateOf(initialName) }
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+
+    // Launcher para elegir imagen
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         selectedImageUri = uri
     }
@@ -543,6 +457,7 @@ fun EditLigaDialog(
             modifier = Modifier.fillMaxWidth(0.9f)
         ) {
             Column {
+                // Encabezado con gradiente y título dinámico
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -558,35 +473,47 @@ fun EditLigaDialog(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Editar Liga",
+                        text = title,
                         color = Color.White,
                         style = MaterialTheme.typography.titleMedium
                     )
                 }
+
                 Column(modifier = Modifier.padding(16.dp)) {
+                    // Campo de nombre
                     OutlinedTextField(
                         value = leagueName,
                         onValueChange = { leagueName = it },
-                        label = { Text("Nombre de la liga") },
+                        label = { Text(stringResource(R.string.league_name_label)) },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = true
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // Botón para seleccionar/cambiar imagen
                     Button(
                         onClick = { launcher.launch("image/*") },
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(text = if (selectedImageUri == null) "Seleccionar imagen" else "Cambiar imagen")
+                        Text(
+                            text = if (selectedImageUri == null)
+                                stringResource(R.string.select_image)
+                            else
+                                stringResource(R.string.change_image)
+                        )
                     }
 
+                    // Indicador de imagen elegida
                     selectedImageUri?.let {
                         Text(
-                            text = "Imagen seleccionada ✅",
+                            text = stringResource(R.string.image_selected),
                             color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(top = 8.dp),
+                            modifier = Modifier
+                                .padding(top = 8.dp)
+                                .fillMaxWidth(),
                             textAlign = TextAlign.Center,
                             style = MaterialTheme.typography.bodyMedium
                         )
@@ -594,18 +521,26 @@ fun EditLigaDialog(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // Botones de acción
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.End
                     ) {
                         TextButton(onClick = onDismiss) {
-                            Text("Cancelar", color = MaterialTheme.colorScheme.error)
+                            Text(stringResource(R.string.DialogLcancel), color = MaterialTheme.colorScheme.error)
                         }
                         Spacer(modifier = Modifier.width(8.dp))
-                        TextButton(onClick = {
-                            onSave(leagueName, selectedImageUri)
-                        }) {
-                            Text("Guardar", color = MaterialTheme.colorScheme.primary)
+                        TextButton(
+                            onClick = { onConfirm(leagueName.trim(), selectedImageUri) },
+                            enabled = leagueName.isNotBlank()
+                        ) {
+                            Text(
+                                text = if (initialName.isEmpty()) stringResource(R.string.create) else stringResource(R.string.DialogLsave),
+                                color = if (leagueName.isNotBlank())
+                                    MaterialTheme.colorScheme.primary
+                                else
+                                    Color.Gray
+                            )
                         }
                     }
                 }
@@ -613,74 +548,99 @@ fun EditLigaDialog(
         }
     }
 }
-@Composable
-fun PlayerSelectionDialog(
-    players: List<PlayerOption?>,
-    onDismiss: () -> Unit,
-    onPlayerSelected: (PlayerOption) -> Unit
-) {
-    val validPlayers = players.filterNotNull()
-    val cardWidth = 150.dp
-    val cardHeight = 220.dp
 
-    val blueGradient = Brush.verticalGradient(
-        colors = listOf(Color(0xFF0D47A1), Color(0xFF1976D2))
-    )
+@Composable
+fun ContactFormDialog(
+    onDismiss: () -> Unit,
+    onSubmit: (String) -> Unit
+) {
+    var message by remember { mutableStateOf("") }
 
     Dialog(onDismissRequest = onDismiss) {
-        AnimatedVisibility(
-            visible = true,
-            enter = fadeIn(tween(300)) + scaleIn(tween(300)),
-            exit = fadeOut(tween(200)) + scaleOut(tween(200))
+        Card(
+            shape     = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(8.dp),
+            modifier  = Modifier
+                .fillMaxWidth(0.9f)    // solo anchura
+            // .wrapContentHeight() // opcional, por defecto el Card se adapta al contenido
         ) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth(0.95f)
-                    .wrapContentHeight(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-                elevation = CardDefaults.cardElevation(8.dp)
-            ) {
-                Column(
+            Column {
+                // ─── HEADER ───
+                Box(
                     modifier = Modifier
-                        .background(blueGradient)
-                        .padding(16.dp)
+                        .fillMaxWidth()
+                        .height(60.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(
+                                    MaterialTheme.colorScheme.primary,
+                                    MaterialTheme.colorScheme.secondary
+                                )
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Elige un jugador",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
+                        text  = stringResource(R.string.contact_title),
                         color = Color.White,
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                        style = MaterialTheme.typography.titleMedium
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
+                }
 
-                    val rows = validPlayers.chunked(2)
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        rows.forEach { row ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                row.forEach { player ->
-                                    StyledPlayerCard(
-                                        player = player,
-                                        onClick = { onPlayerSelected(player) },
-                                        cardWidth = cardWidth,
-                                        cardHeight = cardHeight
-                                    )
-                                }
-                                if (row.size == 1) {
-                                    Spacer(modifier = Modifier.width(cardWidth + 12.dp))
-                                }
-                            }
-                        }
+                // ─── DESCRIPCIÓN ───
+                Text(
+                    text = stringResource(R.string.contact_description),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    textAlign = TextAlign.Center
+                )
+
+                // ─── CAMPO DE TEXTO ───
+                OutlinedTextField(
+                    value         = message,
+                    onValueChange = { message = it },
+                    label         = { Text(stringResource(R.string.your_message)) },
+                    placeholder   = { Text(stringResource(R.string.message_placeholder)) },
+                    modifier      = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 100.dp)
+                        .padding(horizontal = 16.dp),
+                    shape      = RoundedCornerShape(12.dp),
+                    singleLine = false,
+                    maxLines   = 6
+                )
+
+                // ─── BOTONES ───
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text(stringResource(R.string.DialogLcancel), color = MaterialTheme.colorScheme.error)
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    TextButton(
+                        onClick = {
+                            onSubmit(message.trim())
+                            onDismiss()
+                        },
+                        enabled = message.isNotBlank()
+                    ) {
+                        Text(
+                            text  = stringResource(R.string.send),
+                            color = if (message.isNotBlank())
+                                MaterialTheme.colorScheme.primary
+                            else
+                                Color.Gray
+                        )
                     }
                 }
             }
         }
     }
 }
-
-
