@@ -1,6 +1,6 @@
 <resources>
     <!-- General -->
-    <string name="app_name">projecte-aplicaci-nativa-g1markzuckerberg</string>
+    <string name="app_name">FantasyDraft</string>
 
     <!-- Notificaciones -->
     <string name="notifications_title">Notificaciones</string>
@@ -152,11 +152,21 @@
     <string name="privacy_point3">3. Seguridad</string>
     <string name="privacy_point4">4. Derechos del usuario</string>
     <string name="privacy_point5">5. Cambios en esta política</string>
-    <string name="privacy_body1">Recopilamos los datos que nos proporcionas al registrarte (nombre de usuario, correo electrónico)...</string>
-    <string name="privacy_body2">• Procesamos tu información para gestionar tu cuenta y mostrarte tu historial...\n• No compartimos ni vendemos tus datos a terceros.</string>
-    <string name="privacy_body3">Tus datos se almacenan en servidores seguros con cifrado TLS...</string>
-    <string name="privacy_body4">Tienes derecho a acceder, rectificar o eliminar tus datos en cualquier momento...</string>
-    <string name="privacy_body5">Podemos actualizar esta política ocasionalmente...</string>
+    <string name="privacy_body1">
+        Recopilamos los datos que nos proporcionas al registrarte (nombre de usuario, correo electrónico) y la información de uso (alineaciones enviadas, puntuaciones obtenidas) para ofrecerte una experiencia personalizada.
+    </string>
+    <string name="privacy_body2">
+        • Procesamos tu información para gestionar tu cuenta y mostrarte tu historial de rendimiento.\n• No compartimos ni vendemos tus datos a terceros.
+    </string>
+    <string name="privacy_body3">
+        Tus datos se almacenan en servidores seguros con cifrado TLS. Solo personal autorizado tiene acceso a la base de datos.
+    </string>
+    <string name="privacy_body4">
+        Tienes derecho a acceder, rectificar o eliminar tus datos en cualquier momento. Para ello, ponte en contacto con nosotros a través del formulario de contacto.
+    </string>
+    <string name="privacy_body5">
+        Podemos actualizar esta política ocasionalmente. Te informaremos de cualquier cambio significativo antes de que entre en vigor.
+    </string>
 
     <!-- UserDraftView -->
     <string name="user_tab">Usuario</string>
@@ -243,4 +253,80 @@
     <string name="contact_description">¿Tienes dudas o sugerencias? Escríbenos y te responderemos lo antes posible.</string>
     <string name="your_message">Tu mensaje</string>
     <string name="message_placeholder">Escribe tu consulta aquí…</string>
+
+    <!-- UserDraftViewModel -->
+    <string name="user_kick_success">Usuario expulsado correctamente</string>
+    <string name="new_captain_assigned">Nuevo capitán asignado correctamente</string>
+    <string name="only_captain_error">Solo el capitán de la liga puede hacer esta acción</string>
+    <string name="error_generic">Error: %1$s</string>
+
+    <!-- RegisterEmailViewModel -->
+    <string name="passwords_mismatch">Las contraseñas no coinciden</string>
+    <string name="password_requirements">La contraseña no cumple con los requisitos (mínimo 6 caracteres, una mayúscula y números)</string>
+    <string name="account_registered_success">Cuenta registrada exitosamente.</string>
+    <string name="invalid_data">Datos inválidos. Revisa la información e intenta nuevamente.</string>
+    <string name="user_or_email_exists">El usuario o correo ya está registrado, por favor intenta con otro.</string>
+    <string name="account_creation_error_code">Error al crear la cuenta. Código: %1$d</string>
+    <string name="account_creation_error_generic">Error al crear la cuenta: %1$s</string>
+
+    <!-- LoginViewModel -->
+    <string name="email_sent_success">Correo enviado correctamente.</string>
+    <string name="forgot_password_error_code">Error: %1$d</string>
+    <string name="forgot_password_error_network">Error de red: %1$s</string>
+    <string name="login_error_generic">Error: %1$s</string>
+
+    <!-- HomeLoggedViewModel -->
+    <!-- joinLiga -->
+    <string name="error_league_not_found">Error: Liga no encontrada.</string>
+    <string name="error_already_in_league">Error: Ya estás en esta liga.</string>
+    <string name="error_invalid_league_code">Error: Código de liga inválido.</string>
+    <string name="error_no_permission_join">Error: No tienes permiso para unirte.</string>
+    <string name="error_server_try_later">Error: Error del servidor. Intenta más tarde.</string>
+    <string name="error_unknown_code">Error desconocido: %1$d</string>
+    <string name="error_network">Error de red: %1$s</string>
+
+    <!-- createLiga -->
+    <string name="error_cannot_create_league">Error: No se pudo crear la liga.</string>
+    <string name="error_league_exists">Error: Liga ya existe.</string>
+    <string name="error_invalid_data">Error: Datos inválidos.</string>
+    <string name="error_no_permission_create_league">Error: No tienes permiso para crear liga.</string>
+    <string name="error_server_create_league">Error: Error del servidor al crear la liga.</string>
+    <!-- reuse error_unknown_code -->
+    <string name="error_creating_league">Error creando liga: %1$s</string>
+
+    <!-- updateLigaWithImage -->
+    <string name="error_image_format_not_allowed">Error: Formato de imagen no permitido.</string>
+    <string name="error_upload_image_code">Error al subir imagen: %1$d</string>
+    <string name="error_upload_image_message">Error al subir imagen: %1$s</string>
+
+    <!-- fetchUserLeagues -->
+    <string name="error_loading_leagues_code">Error cargando ligas: %1$d</string>
+    <string name="error_loading_leagues_message">Error cargando ligas: %1$s</string>
+
+    <!-- leaveLiga -->
+    <string name="league_left">Liga abandonada</string>
+    <string name="error_cannot_leave_if_captain">No puedes abandonar si eres el capitán.</string>
+    <string name="error_leaving_league">Error abandonando liga: %1$s</string>
+
+    <!-- fetchUserInfo -->
+    <string name="error_loading_user_code">Error al cargar usuario: %1$d</string>
+    <string name="error_loading_user_message">Error cargando usuario: %1$s</string>
+
+    <!-- updateLigaName -->
+    <string name="error_updating_name_code">Error actualizando nombre: %1$d</string>
+    <string name="error_unexpected">Error inesperado: %1$s</string>
+
+    <!-- DraftViewModel -->
+    <string name="error_draft_already_created">Ya tienes un draft creado en esta jornada.</string>
+    <string name="error_fetch_draft_code">Error al recuperar draft: %1$d</string>
+    <string name="error_fetch_draft_network">Error de conexión al recuperar draft: %1$s</string>
+    <string name="error_draft_not_found">Draft no encontrado.</string>
+    <string name="error_connection">Error de conexión: %1$s</string>
+    <string name="error_update_draft">Error al actualizar el draft: %1$d %2$s</string>
+    <string name="error_no_player_selected">No se ha seleccionado un jugador para %1$s.</string>
+    <string name="error_invalid_group">Grupo de jugadores inválido para %1$s.</string>
+    <string name="error_corrupt_group_data">Los datos del grupo %1$s están corruptos.</string>
+    <string name="error_player_option_mismatch">El jugador seleccionado en %1$s no coincide con las opciones.</string>
+    <string name="error_save_draft">Error al guardar: %1$d %2$s</string>
+
 </resources>

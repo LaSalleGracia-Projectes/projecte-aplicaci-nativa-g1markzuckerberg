@@ -1,11 +1,13 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel
 
+import android.app.Application
 import android.content.Context
 import android.content.Intent
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.ForgotPasswordRequest
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.repository.AuthRepository
@@ -14,7 +16,10 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import kotlinx.coroutines.launch
 
-class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
+class LoginViewModel(
+    application: Application,
+    private val authRepository: AuthRepository
+) : AndroidViewModel(application) {
 
     private val _email = MutableLiveData("")
     val email: LiveData<String> get() = _email
@@ -39,6 +44,7 @@ class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
     fun togglePasswordVisibility() {
         _passwordVisible.value = _passwordVisible.value?.not() ?: false
     }
+
     private val _isLoading = MutableLiveData(false)
     val isLoading: LiveData<Boolean> get() = _isLoading
 
@@ -46,8 +52,8 @@ class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
     val errorMessage: LiveData<String?> get() = _errorMessage
 
     fun login(onSuccess: () -> Unit) {
-        val emailValue = _email.value ?: ""
-        val passwordValue = _password.value ?: ""
+        val emailValue = _email.value.orEmpty()
+        val passwordValue = _password.value.orEmpty()
 
         _isLoading.value = true
         viewModelScope.launch {
@@ -56,16 +62,19 @@ class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
             result.onSuccess {
                 onSuccess()
             }.onFailure { error ->
-                _errorMessage.value = error.message
+                val msg = getApplication<Application>()
+                    .getString(R.string.login_error_generic, error.message.orEmpty())
+                _errorMessage.value = msg
             }
         }
     }
+
     private lateinit var googleSignInClient: GoogleSignInClient
 
     fun initGoogle(context: Context) {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
-            .requestIdToken("884876575294-4t7eid7marm9u9s2u9mb7agv5i1k4lgu.apps.googleusercontent.com") // <- Este lo sacas de la consola de Google
+            .requestIdToken("884876575294-4t7eid7marm9u9s2u9mb7agv5i1k4lgu.apps.googleusercontent.com")
             .build()
         googleSignInClient = GoogleSignIn.getClient(context, gso)
     }
@@ -73,6 +82,7 @@ class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
     fun getGoogleSignInIntent(): Intent {
         return googleSignInClient.signInIntent
     }
+
     fun handleGoogleToken(idToken: String, onSuccess: () -> Unit) {
         _isLoading.value = true
         viewModelScope.launch {
@@ -80,8 +90,10 @@ class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
             _isLoading.value = false
             result.onSuccess {
                 onSuccess()
-            }.onFailure {
-                _errorMessage.value = it.message
+            }.onFailure { error ->
+                val msg = getApplication<Application>()
+                    .getString(R.string.login_error_generic, error.message.orEmpty())
+                _errorMessage.value = msg
             }
         }
     }
@@ -89,14 +101,19 @@ class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
     fun forgotPassword(email: String) {
         viewModelScope.launch {
             try {
-                val response = RetrofitClient.userService.forgotPassword(ForgotPasswordRequest(email))
+                val response = RetrofitClient.userService
+                    .forgotPassword(ForgotPasswordRequest(email))
                 if (response.isSuccessful) {
-                    _forgotPasswordMessage.value = response.body()?.message ?: "Correo enviado correctamente."
+                    _forgotPasswordMessage.value = response.body()?.message
+                        ?: getApplication<Application>()
+                            .getString(R.string.email_sent_success)
                 } else {
-                    _forgotPasswordMessage.value = "Error: ${response.code()}"
+                    _forgotPasswordMessage.value = getApplication<Application>()
+                        .getString(R.string.forgot_password_error_code, response.code())
                 }
             } catch (e: Exception) {
-                _forgotPasswordMessage.value = "Error de red: ${e.message}"
+                _forgotPasswordMessage.value = getApplication<Application>()
+                    .getString(R.string.forgot_password_error_network, e.message.orEmpty())
             }
         }
     }
@@ -104,7 +121,4 @@ class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
     fun clearError() {
         _errorMessage.value = null
     }
-
-
 }
-

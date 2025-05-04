@@ -8,17 +8,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
-import androidx.compose.runtime.remember
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -36,47 +27,38 @@ import androidx.navigation.NavController
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.Notifications
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.LocalAppDarkTheme
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.LoadingTransitionScreen
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.NotificationViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.NotificationsUiState
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
-import java.util.Locale
+import java.util.*
 
 private enum class Type { DRAFT_OPENING, CREATED, JOINED, EXPELLED, SELF_EXPELLED, UNKNOWN }
 private data class MsgParts(val type: Type, val user: String?, val leagueOrDate: String?)
 
-/** Interpreta siempre el mensaje en Español que envía el backend y extrae parámetros. */
 private fun parseSpanishMessage(raw: String): MsgParts {
     val lower = raw.lowercase(Locale.ROOT)
     return when {
-        // apertura drafts
         lower.startsWith("ya se abre el plazo") && raw.contains("hasta el") -> {
             val fecha = raw.substringAfter("hasta el").trim()
             MsgParts(Type.DRAFT_OPENING, null, fecha)
         }
-        // creación de liga
         lower.startsWith("has creado la liga ") && lower.contains(" correctamente") -> {
-            val liga = raw.substringAfter("Has creado la liga ")
-                .substringBefore(" correctamente")
-                .trim()
+            val liga = raw.substringAfter("Has creado la liga ").substringBefore(" correctamente").trim()
             MsgParts(Type.CREATED, null, liga)
         }
-        // unión a liga
         lower.startsWith("te has unido a la liga ") && lower.contains(" con éxito") -> {
-            val liga = raw.substringAfter("Te has unido a la liga ")
-                .substringBefore(" con éxito")
-                .trim()
+            val liga = raw.substringAfter("Te has unido a la liga ").substringBefore(" con éxito").trim()
             MsgParts(Type.JOINED, null, liga)
         }
-        // expulsión de otro
         lower.startsWith("has expulsado a ") && lower.contains(" de la liga ") -> {
             val afterA = raw.substringAfter("Has expulsado a ")
-            val user   = afterA.substringBefore(" de la liga ").trim()
-            val liga   = afterA.substringAfter(" de la liga ").trim()
+            val user = afterA.substringBefore(" de la liga ").trim()
+            val liga = afterA.substringAfter(" de la liga ").trim()
             MsgParts(Type.EXPELLED, user, liga)
         }
-        // auto-expulsión
         lower.startsWith("has sido expulsado de la liga ") -> {
             val liga = raw.substringAfter("Has sido expulsado de la liga ").trim()
             MsgParts(Type.SELF_EXPELLED, null, liga)
@@ -92,7 +74,6 @@ fun NotificationScreen(
 ) {
     BackHandler { /* no back */ }
 
-    // Esperamos token antes de cargar notis
     val token by produceState(initialValue = RetrofitClient.authRepository.getToken()) {
         while (value.isNullOrEmpty()) {
             delay(150)
@@ -102,17 +83,17 @@ fun NotificationScreen(
     LaunchedEffect(token) { viewModel.forceReloadIfTokenExists() }
 
     val uiState by viewModel.uiState.collectAsState()
+    val darkTheme = LocalAppDarkTheme.current
 
     Column(
         Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Header
         Box(
             Modifier
                 .fillMaxWidth()
-                .height(120.dp)
+                .height(110.dp)
                 .background(
                     Brush.horizontalGradient(
                         listOf(
@@ -129,12 +110,11 @@ fun NotificationScreen(
                     fontSize = 26.sp,
                     fontWeight = FontWeight.ExtraBold
                 ),
-                color = MaterialTheme.colorScheme.onPrimary,
+                color = if (darkTheme) Color.White else MaterialTheme.colorScheme.onPrimary,
                 textAlign = TextAlign.Center
             )
         }
 
-        // Contenido / Loader
         LoadingTransitionScreen(isLoading = uiState is NotificationsUiState.Loading) {
             when (uiState) {
                 is NotificationsUiState.Error -> {
@@ -172,37 +152,29 @@ fun NotificationScreen(
 
 @Composable
 private fun NotificationItem(notif: Notifications) {
-    // Fecha formateada
     val dateText = remember(notif.created_at) {
         runCatching {
-            val inp   = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
-            val out   = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+            val inp = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+            val out = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
             out.format(inp.parse(notif.created_at)!!)
         }.getOrNull() ?: notif.created_at
     }
 
-    // Colores estándar
     val colorDraft = Color(0xFFFFAA00)
     val colorExpel = Color(0xFFD32F2F)
-    val colorOk    = Color(0xFF388E3C)
-    val colorVar   = Color(0xFF42A5F5)
-    val colorDate  = MaterialTheme.colorScheme.onSurfaceVariant
+    val colorOk = Color(0xFF388E3C)
+    val colorVar = Color(0xFF42A5F5)
+    val colorDate = MaterialTheme.colorScheme.onSurfaceVariant
 
-    // Parseamos mensaje (siempre en Español)
     val parts = remember(notif.mensaje) { parseSpanishMessage(notif.mensaje) }
     val locale = Locale.getDefault().language
 
-    // Construimos AnnotatedString traducido + coloreado
     val styled = buildAnnotatedString {
         when (parts.type) {
             Type.DRAFT_OPENING -> {
                 val texto = stringResource(R.string.notification_draft_opening, parts.leagueOrDate ?: "")
                 append(texto)
-                addStyle(
-                    style = SpanStyle(color = colorDraft, fontWeight = FontWeight.Bold),
-                    start = 0,
-                    end = length
-                )
+                addStyle(SpanStyle(color = colorDraft, fontWeight = FontWeight.Bold), 0, length)
             }
             Type.CREATED -> when (locale) {
                 "es" -> {
@@ -303,9 +275,7 @@ private fun NotificationItem(notif: Notifications) {
     Card(
         shape = RoundedCornerShape(14.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = androidx.compose.material3.CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- General -->
-    <string name="app_name">projecte-aplicaci-nativa-g1markzuckerberg</string>
+    <string name="app_name">FantasyDraft</string>
 
     <!-- Notifications -->
     <string name="notifications_title">Notifications</string>
@@ -153,11 +153,21 @@
     <string name="privacy_point3">3. Security</string>
     <string name="privacy_point4">4. Your rights</string>
     <string name="privacy_point5">5. Changes to this policy</string>
-    <string name="privacy_body1">We collect data you provide when signing up (username, email)...</string>
-    <string name="privacy_body2">• We use your info to manage your account and show performance history...\n• We do not share or sell your data.</string>
-    <string name="privacy_body3">Your data is stored on secure servers with TLS encryption...</string>
-    <string name="privacy_body4">You can access, correct or delete your data at any time...</string>
-    <string name="privacy_body5">We may update this policy occasionally...</string>
+    <string name="privacy_body1">
+        We collect the data you provide when you register (username, email) and usage information (submitted lineups, scores obtained) to offer you a personalized experience.
+    </string>
+    <string name="privacy_body2">
+        • We process your information to manage your account and show you your performance history.\n• We do not share or sell your data to third parties.
+    </string>
+    <string name="privacy_body3">
+        Your data is stored on secure servers with TLS encryption. Only authorized personnel have access to the database.
+    </string>
+    <string name="privacy_body4">
+        You have the right to access, rectify or delete your data at any time. To do so, please contact us via the contact form.
+    </string>
+    <string name="privacy_body5">
+        We may update this policy occasionally. We will notify you of any significant changes before they take effect.
+    </string>
 
     <!-- UseDraftView -->
     <string name="user_tab">User</string>
@@ -244,5 +254,79 @@
     <string name="contact_description">Have questions or suggestions? Write to us and we’ll get back to you ASAP.</string>
     <string name="your_message">Your message</string>
     <string name="message_placeholder">Type your message here…</string>
+
+    <!-- UserDraftViewModel -->
+    <string name="user_kick_success">User kicked successfully</string>
+    <string name="new_captain_assigned">New captain assigned successfully</string>
+    <string name="only_captain_error">Only the league captain can perform this action</string>
+    <string name="error_generic">Error: %1$s</string>
+
+    <!-- RegisterEmailViewModel -->
+    <string name="passwords_mismatch">Passwords do not match</string>
+    <string name="password_requirements">Password does not meet requirements (minimum 6 characters, one uppercase letter and numbers)</string>
+    <string name="account_registered_success">Account registered successfully.</string>
+    <string name="invalid_data">Invalid data. Check the information and try again.</string>
+    <string name="user_or_email_exists">Username or email already registered, please try another.</string>
+    <string name="account_creation_error_code">Error creating account. Code: %1$d</string>
+    <string name="account_creation_error_generic">Error creating account: %1$s</string>
+
+    <!-- LoginViewModel -->
+    <string name="email_sent_success">Email sent successfully.</string>
+    <string name="forgot_password_error_code">Error: %1$d</string>
+    <string name="forgot_password_error_network">Network error: %1$s</string>
+    <string name="login_error_generic">Error: %1$s</string>
+
+    <!-- HomeLoggedViewModel -->
+    <!-- joinLiga -->
+    <string name="error_league_not_found">Error: League not found.</string>
+    <string name="error_already_in_league">Error: You are already in this league.</string>
+    <string name="error_invalid_league_code">Error: Invalid league code.</string>
+    <string name="error_no_permission_join">Error: You do not have permission to join.</string>
+    <string name="error_server_try_later">Error: Server error. Please try again later.</string>
+    <string name="error_unknown_code">Unknown error: %1$d</string>
+    <string name="error_network">Network error: %1$s</string>
+
+    <!-- createLiga -->
+    <string name="error_cannot_create_league">Error: Could not create league.</string>
+    <string name="error_league_exists">Error: League already exists.</string>
+    <string name="error_invalid_data">Error: Invalid data.</string>
+    <string name="error_no_permission_create_league">Error: You do not have permission to create a league.</string>
+    <string name="error_server_create_league">Error: Server error while creating league.</string>
+    <string name="error_creating_league">Error creating league: %1$s</string>
+
+    <!-- updateLigaWithImage -->
+    <string name="error_image_format_not_allowed">Error: Image format not allowed.</string>
+    <string name="error_upload_image_code">Error uploading image: %1$d</string>
+    <string name="error_upload_image_message">Error uploading image: %1$s</string>
+
+    <!-- fetchUserLeagues -->
+    <string name="error_loading_leagues_code">Error loading leagues: %1$d</string>
+    <string name="error_loading_leagues_message">Error loading leagues: %1$s</string>
+
+    <!-- leaveLiga -->
+    <string name="league_left">League left</string>
+    <string name="error_cannot_leave_if_captain">You cannot leave if you are the captain.</string>
+    <string name="error_leaving_league">Error leaving league: %1$s</string>
+
+    <!-- fetchUserInfo -->
+    <string name="error_loading_user_code">Error loading user: %1$d</string>
+    <string name="error_loading_user_message">Error loading user: %1$s</string>
+
+    <!-- updateLigaName -->
+    <string name="error_updating_name_code">Error updating name: %1$d</string>
+    <string name="error_unexpected">Unexpected error: %1$s</string>
+
+    <!-- DraftViewModel -->
+    <string name="error_draft_already_created">You already have a draft created for this round.</string>
+    <string name="error_fetch_draft_code">Error retrieving draft: %1$d</string>
+    <string name="error_fetch_draft_network">Connection error retrieving draft: %1$s</string>
+    <string name="error_draft_not_found">Draft not found.</string>
+    <string name="error_connection">Connection error: %1$s</string>
+    <string name="error_update_draft">Error updating draft: %1$d %2$s</string>
+    <string name="error_no_player_selected">No player selected for %1$s.</string>
+    <string name="error_invalid_group">Invalid group of players for %1$s.</string>
+    <string name="error_corrupt_group_data">Data for group %1$s is corrupt.</string>
+    <string name="error_player_option_mismatch">Selected player for %1$s does not match the options.</string>
+    <string name="error_save_draft">Error saving: %1$d %2$s</string>
 
 </resources>

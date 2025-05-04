@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
@@ -33,8 +34,8 @@ private val LightColorScheme = lightColorScheme(
 
 @Composable
 fun Projecteaplicacinativag1markzuckerbergTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    darkTheme: Boolean,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -46,9 +47,11 @@ fun Projecteaplicacinativag1markzuckerbergTheme(
         else -> LightColorScheme
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = AppTypography,
-        content = content
-    )
+    CompositionLocalProvider(LocalAppDarkTheme provides darkTheme) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography  = AppTypography,
+            content     = content
+        )
+    }
 }

@@ -4,8 +4,10 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.Over
 import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -15,6 +17,7 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
@@ -33,6 +36,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -56,9 +60,12 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.UserDraft
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import androidx.compose.ui.unit.Velocity
+import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
+import coil.request.ImageRequest
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.LocalAppDarkTheme
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.FancyLoadingAnimation
 
 @Composable
@@ -104,6 +111,7 @@ fun UserDraftView(
     }
 
     var selectedJornada by remember { mutableIntStateOf(currentJornada) }
+
 // cuando cambia la jornada seleccionada → descargar plantilla
     LaunchedEffect(selectedJornada) {
         userDraftViewModel.fetchUserDraft(leagueId, userId, selectedJornada)
@@ -152,22 +160,37 @@ fun UserDraftView(
                         Icon(
                             imageVector   = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.back),
-                            tint          = MaterialTheme.colorScheme.onPrimary
+                            tint          = MaterialTheme.colorScheme.onSecondary
                         )
                     }
                     Text(
                         text      = userName,
                         style     = MaterialTheme.typography.titleLarge,
-                        color     = MaterialTheme.colorScheme.onPrimary,
+                        color     = MaterialTheme.colorScheme.onSecondary,
                         modifier  = Modifier.weight(1f),
                         textAlign = TextAlign.Center
                     )
-                    UserImage(
-                        url      = decodedUserPhotoUrl,
+                    val ctx = LocalContext.current
+                    val token = RetrofitClient.authRepository.getToken().orEmpty()
+                    val avatarRequest = ImageRequest.Builder(ctx)
+                        .data(decodedUserPhotoUrl)
+                        .addHeader("Authorization", "Bearer $token")
+                        .placeholder(R.drawable.fantasydraft)
+                        .error(R.drawable.fantasydraft)
+                        .crossfade(true)
+                        .build()
+
+                    AsyncImage(
+                        model = avatarRequest,
+                        contentDescription = "User avatar",
                         modifier = Modifier
                             .size(45.dp)
                             .clip(CircleShape)
+                            .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                            .clickable { /* opcional: abrir detalle */ },
+                        contentScale = ContentScale.Crop
                     )
+
                 }
                 Row(
                     Modifier
@@ -188,6 +211,16 @@ fun UserDraftView(
                 .padding(top = 130.dp)
         ) { page ->
             if (page == 0) {
+                val isDarkApp = LocalAppDarkTheme.current
+
+                // 3) Calcula la URL base sin parámetros
+                val baseGrafanaUrl = remember(leagueId, userId) {
+                    grafanaUserUrl(leagueId, userId).substringBefore("?")
+                }
+                val grafanaUrl = remember(baseGrafanaUrl, isDarkApp) {
+                    "$baseGrafanaUrl?theme=${if (isDarkApp) "dark" else "light"}"
+                }
+
                 val imageScroll = rememberScrollState()
                 // === GRAFANA ===
                 val grafanaConn = remember(imageScroll) {
@@ -263,36 +296,51 @@ fun UserDraftView(
                     }
 
                     item {
-                        val graphUrl = remember(leagueId, userId) {
-                            grafanaUserUrl(leagueId, userId)
-                        }
-                        Row(
+                        Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 16.dp)
-                                .nestedScroll(grafanaConn)
-                                .horizontalScroll(imageScroll),
-                            horizontalArrangement = Arrangement.Start
+                                .padding(vertical = 16.dp),
+                            shape = RoundedCornerShape(16.dp)
                         ) {
-                            SubcomposeAsyncImage(
-                                model = graphUrl,
-                                contentDescription = stringResource(R.string.performance_chart_desc),
+                            Box(
                                 modifier = Modifier
+                                    .fillMaxWidth()
                                     .height(220.dp)
-                                    .clip(MaterialTheme.shapes.medium),
-                                contentScale = ContentScale.FillHeight
+                                    .horizontalScroll(imageScroll)
+                                    .nestedScroll(grafanaConn),
+                                contentAlignment = Alignment.Center
                             ) {
-                                when (painter.state) {
-                                    is AsyncImagePainter.State.Loading ->
-                                        Box(
-                                            modifier = Modifier.fillMaxSize(),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            FancyLoadingAnimation(Modifier.size(120.dp))
-                                        }
+                                // 1️⃣ estado de carga
+                                var loading by remember { mutableStateOf(true) }
 
-                                    else ->
-                                        SubcomposeAsyncImageContent()
+                                // 2️⃣ imagen de Grafana con SubcomposeAsyncImage
+                                SubcomposeAsyncImage(
+                                    model = grafanaUrl,
+                                    contentDescription = stringResource(R.string.performance_chart_desc),
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .clip(MaterialTheme.shapes.medium),
+                                    contentScale = ContentScale.FillHeight
+                                ) {
+                                    // 3️⃣ accede al painter y comprueba su estado
+                                    val painter = painter
+                                    when (painter.state) {
+                                        is AsyncImagePainter.State.Loading -> {
+                                            // 4️⃣ tu FancyLoadingAnimation centrado
+                                            FancyLoadingAnimation(modifier = Modifier.size(120.dp))
+                                        }
+                                        is AsyncImagePainter.State.Success -> {
+                                            loading = false
+                                            SubcomposeAsyncImageContent()
+                                        }
+                                        is AsyncImagePainter.State.Error -> {
+                                            loading = false
+                                            // opcional: un placeholder o mensaje de error
+                                        }
+                                        else -> {
+                                            SubcomposeAsyncImageContent()
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -338,7 +386,7 @@ fun UserDraftView(
                                                 text = "J$j",
                                                 fontSize = 14.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onPrimary
+                                                color = MaterialTheme.colorScheme.onSecondary
                                             )
                                             if (j == selectedJornada) {
                                                 Spacer(modifier = Modifier.height(4.dp))
@@ -346,7 +394,7 @@ fun UserDraftView(
                                                     text = jornadaPoints.toString(),
                                                     fontSize = 12.sp,
                                                     fontWeight = FontWeight.SemiBold,
-                                                    color = MaterialTheme.colorScheme.onPrimary
+                                                    color = MaterialTheme.colorScheme.onSecondary
                                                 )
                                             }
                                         }
@@ -568,9 +616,9 @@ fun UserDraftTabs(
                         Text(
                             text = title,
                             color = if (pagerState.currentPage == index)
-                                MaterialTheme.colorScheme.onPrimary
+                                MaterialTheme.colorScheme.onSecondary
                             else
-                                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f),
+                                MaterialTheme.colorScheme.onSecondary.copy(alpha = 0.6f),
                             style = MaterialTheme.typography.titleMedium
                         )
                     }
@@ -587,7 +635,7 @@ fun UserDraftTabs(
                         .offset { IntOffset(indicatorOffsetPx.roundToInt(), 0) }
                         .width(with(LocalDensity.current) { tabWidth.toDp() })
                         .fillMaxHeight()
-                        .background(MaterialTheme.colorScheme.onPrimary)
+                        .background(MaterialTheme.colorScheme.onSecondary)
                 )
             }
         }
