@@ -38,6 +38,7 @@ import coil.request.ImageRequest
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.LigaConPuntos
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.LocalAppDarkTheme
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.LoadingTransitionScreen
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.grafanaUserUrl
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.*
@@ -140,7 +141,7 @@ private fun Header() {
         Text(
             text = stringResource(R.string.profile_title),
             style = MaterialTheme.typography.titleLarge.copy(fontSize = 26.sp, fontWeight = FontWeight.ExtraBold),
-            color = MaterialTheme.colorScheme.onPrimary,
+            color = MaterialTheme.colorScheme.onSecondary,
             textAlign = TextAlign.Center
         )
     }
@@ -253,10 +254,20 @@ private fun LeagueSelector(st: UserSelfUiState.Ready, onClick: () -> Unit) {
 @Composable
 private fun PointsGraph(st: UserSelfUiState.Ready) {
     var loading by remember(st.selectedLeague.id) { mutableStateOf(true) }
+    val isDarkApp = LocalAppDarkTheme.current
+    val rawUrl   = grafanaUserUrl(st.selectedLeague.id.toString(), st.user.id.toString())
+        .substringBefore("?")
+    val grafanaUrl = if (isDarkApp) "$rawUrl?theme=dark" else rawUrl
+
     Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
         Box(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
+            val request = ImageRequest.Builder(LocalContext.current)
+                .data(grafanaUrl)
+                .crossfade(true)
+                .build()
+
             AsyncImage(
-                model = grafanaUserUrl(st.selectedLeague.id.toString(), st.user.id.toString()),
+                model = request,
                 contentDescription = null,
                 modifier = Modifier.height(260.dp).padding(16.dp),
                 contentScale = ContentScale.FillHeight,

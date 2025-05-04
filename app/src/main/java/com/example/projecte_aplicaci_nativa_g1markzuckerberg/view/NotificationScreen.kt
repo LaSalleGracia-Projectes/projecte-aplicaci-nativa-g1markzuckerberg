@@ -93,7 +93,7 @@ fun NotificationScreen(
         Box(
             Modifier
                 .fillMaxWidth()
-                .height(120.dp)
+                .height(110.dp)
                 .background(
                     Brush.horizontalGradient(
                         listOf(
