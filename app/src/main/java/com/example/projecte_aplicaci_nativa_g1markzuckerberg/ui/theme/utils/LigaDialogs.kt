@@ -111,14 +111,12 @@ fun JoinLigaDialog(
     }
 }
 
-
 @Composable
 fun ForgotPasswordDialog(
     onDismiss: () -> Unit,
     onSubmit: (String) -> Unit
 ) {
     var email by remember { mutableStateOf("") }
-    // Se habilita solo si se ha escrito algo
     val isSubmitEnabled = email.isNotBlank()
 
     Dialog(onDismissRequest = onDismiss) {
@@ -154,7 +152,6 @@ fun ForgotPasswordDialog(
                     OutlinedTextField(
                         value = email,
                         onValueChange = {
-                            // Para el correo se eliminan espacios y se limita a 30 caracteres
                             val filtered = it.replace(" ", "")
                             email = filtered.take(30)
                         },
@@ -202,7 +199,6 @@ fun ForgotPasswordDialog(
     }
 }
 
-
 @Composable
 fun LeagueCodeDialog(
     leagueCode: String,
@@ -238,9 +234,8 @@ fun LeagueCodeDialog(
                         style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp)
                     )
                 }
-                // Contenido del diálogo
+                // Contenido
                 Column(modifier = Modifier.padding(16.dp)) {
-                    // Texto del código de la liga con estilo mejorado
                     Text(
                         text = leagueCode,
                         style = MaterialTheme.typography.titleLarge.copy(
@@ -282,6 +277,7 @@ fun LeagueCodeDialog(
         }
     }
 }
+
 @Composable
 fun CustomAlertDialog(
     title: String,
@@ -289,96 +285,68 @@ fun CustomAlertDialog(
     confirmButtonText: String = stringResource(R.string.DialogLaccept),
     cancelButtonText: String = stringResource(R.string.DialogLcancel),
     onDismiss: () -> Unit,
-    onConfirm: () -> Unit,
-) {
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            elevation = CardDefaults.cardElevation(8.dp),
-            modifier = Modifier.fillMaxWidth(0.9f)
-        ) {
-            Column {
-                /* ---------- ENCABEZADO ---------- */
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(60.dp)
-                        .background(
-                            Brush.horizontalGradient(
-                                listOf(
-                                    MaterialTheme.colorScheme.primary,
-                                    MaterialTheme.colorScheme.secondary
-                                )
+    onConfirm: () -> Unit
+) {    Dialog(onDismissRequest = onDismiss) {
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(8.dp),
+        modifier = Modifier.fillMaxWidth(0.9f)
+    ) {
+        Column {
+            // Encabezado con gradiente
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(60.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.primary,
+                                MaterialTheme.colorScheme.secondary
                             )
-                        ),
-                    contentAlignment = Alignment.Center
+                        )
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = title,
+                    color = Color.White,
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
+            // Contenido
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = message.toAnnotatedStringWithBold(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
                 ) {
-                    Text(
-                        text  = title,
-                        color = Color.White,
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                }
-
-                /* ---------- CONTENIDO ---------- */
-                Column(modifier = Modifier.padding(16.dp)) {
-
-                    /* ← aquí convertimos **texto** en negrita */
-                    Text(
-                        text = message.toAnnotatedStringWithBold(),
-                        style = MaterialTheme.typography.bodyMedium,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Spacer(Modifier.height(16.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        TextButton(onClick = onDismiss) {
-                            Text(cancelButtonText, color = MaterialTheme.colorScheme.error)
-                        }
-                        Spacer(Modifier.width(8.dp))
-                        TextButton(onClick = onConfirm) {
-                            Text(confirmButtonText, color = MaterialTheme.colorScheme.primary)
-                        }
+                    TextButton(onClick = onDismiss) {
+                        Text(cancelButtonText, color = MaterialTheme.colorScheme.error)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    TextButton(onClick = onConfirm) {
+                        Text(confirmButtonText, color = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
         }
     }
 }
-
-/* ---------- helper ext. function ---------- */
-private fun String.toAnnotatedStringWithBold(): AnnotatedString {
-    val boldRegex = Regex("\\*\\*(.*?)\\*\\*")
-    return buildAnnotatedString {
-        var currentIndex = 0
-        boldRegex.findAll(this@toAnnotatedStringWithBold).forEach { match ->
-            // texto normal hasta la coincidencia
-            append(this@toAnnotatedStringWithBold.substring(currentIndex, match.range.first))
-            // texto en negrita
-            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                append(match.groupValues[1])
-            }
-            currentIndex = match.range.last + 1
-        }
-        // cola de texto normal
-        if (currentIndex < this@toAnnotatedStringWithBold.length) {
-            append(this@toAnnotatedStringWithBold.substring(currentIndex))
-        }
-    }
 }
-
 
 @Composable
 fun CustomAlertDialogSingleButton(
     title: String,
     message: String,
     confirmButtonText: String = stringResource(R.string.DialogLaccept),
-    onAccept: () -> Unit,
+    onAccept: () -> Unit
 ) {
     Dialog(onDismissRequest = onAccept) {
         Card(
@@ -387,7 +355,7 @@ fun CustomAlertDialogSingleButton(
             modifier = Modifier.fillMaxWidth(0.9f)
         ) {
             Column {
-                // Encabezado con gradiente, estilo similar a los otros diálogos
+                // Encabezado con gradiente
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -408,7 +376,6 @@ fun CustomAlertDialogSingleButton(
                         style = MaterialTheme.typography.titleMedium
                     )
                 }
-                // Contenido del diálogo
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = message,
@@ -417,16 +384,12 @@ fun CustomAlertDialogSingleButton(
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    // Se muestra sólo el botón Aceptar, centrado
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.Center
                     ) {
                         TextButton(onClick = onAccept) {
-                            Text(
-                                text = confirmButtonText,
-                                color = MaterialTheme.colorScheme.primary
-                            )
+                            Text(confirmButtonText, color = MaterialTheme.colorScheme.primary)
                         }
                     }
                 }
@@ -445,7 +408,6 @@ fun LigaDialog(
     var leagueName by remember { mutableStateOf(initialName) }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
 
-    // Launcher para elegir imagen
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         selectedImageUri = uri
     }
@@ -478,9 +440,7 @@ fun LigaDialog(
                         style = MaterialTheme.typography.titleMedium
                     )
                 }
-
                 Column(modifier = Modifier.padding(16.dp)) {
-                    // Campo de nombre
                     OutlinedTextField(
                         value = leagueName,
                         onValueChange = { leagueName = it },
@@ -489,10 +449,7 @@ fun LigaDialog(
                         shape = RoundedCornerShape(12.dp),
                         singleLine = true
                     )
-
                     Spacer(modifier = Modifier.height(16.dp))
-
-                    // Botón para seleccionar/cambiar imagen
                     Button(
                         onClick = { launcher.launch("image/*") },
                         shape = RoundedCornerShape(8.dp),
@@ -505,8 +462,6 @@ fun LigaDialog(
                                 stringResource(R.string.change_image)
                         )
                     }
-
-                    // Indicador de imagen elegida
                     selectedImageUri?.let {
                         Text(
                             text = stringResource(R.string.image_selected),
@@ -518,10 +473,7 @@ fun LigaDialog(
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
-
                     Spacer(modifier = Modifier.height(16.dp))
-
-                    // Botones de acción
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.End
@@ -536,10 +488,7 @@ fun LigaDialog(
                         ) {
                             Text(
                                 text = if (initialName.isEmpty()) stringResource(R.string.create) else stringResource(R.string.DialogLsave),
-                                color = if (leagueName.isNotBlank())
-                                    MaterialTheme.colorScheme.primary
-                                else
-                                    Color.Gray
+                                color = if (leagueName.isNotBlank()) MaterialTheme.colorScheme.primary else Color.Gray
                             )
                         }
                     }
@@ -558,21 +507,19 @@ fun ContactFormDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
-            shape     = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(16.dp),
             elevation = CardDefaults.cardElevation(8.dp),
-            modifier  = Modifier
-                .fillMaxWidth(0.9f)    // solo anchura
-            // .wrapContentHeight() // opcional, por defecto el Card se adapta al contenido
+            modifier = Modifier.fillMaxWidth(0.9f)
         ) {
             Column {
-                // ─── HEADER ───
+                // HEADER
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(60.dp)
                         .background(
                             Brush.horizontalGradient(
-                                listOf(
+                                colors = listOf(
                                     MaterialTheme.colorScheme.primary,
                                     MaterialTheme.colorScheme.secondary
                                 )
@@ -581,13 +528,12 @@ fun ContactFormDialog(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text  = stringResource(R.string.contact_title),
+                        text = stringResource(R.string.contact_title),
                         color = Color.White,
                         style = MaterialTheme.typography.titleMedium
                     )
                 }
-
-                // ─── DESCRIPCIÓN ───
+                // DESCRIPCIÓN
                 Text(
                     text = stringResource(R.string.contact_description),
                     style = MaterialTheme.typography.bodyMedium,
@@ -597,23 +543,21 @@ fun ContactFormDialog(
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     textAlign = TextAlign.Center
                 )
-
-                // ─── CAMPO DE TEXTO ───
+                // CAMPO DE TEXTO
                 OutlinedTextField(
-                    value         = message,
+                    value = message,
                     onValueChange = { message = it },
-                    label         = { Text(stringResource(R.string.your_message)) },
-                    placeholder   = { Text(stringResource(R.string.message_placeholder)) },
-                    modifier      = Modifier
+                    label = { Text(stringResource(R.string.your_message)) },
+                    placeholder = { Text(stringResource(R.string.message_placeholder)) },
+                    modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = 100.dp)
                         .padding(horizontal = 16.dp),
-                    shape      = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(12.dp),
                     singleLine = false,
-                    maxLines   = 6
+                    maxLines = 6
                 )
-
-                // ─── BOTONES ───
+                // BOTONES
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -623,7 +567,7 @@ fun ContactFormDialog(
                     TextButton(onClick = onDismiss) {
                         Text(stringResource(R.string.DialogLcancel), color = MaterialTheme.colorScheme.error)
                     }
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     TextButton(
                         onClick = {
                             onSubmit(message.trim())
@@ -632,11 +576,8 @@ fun ContactFormDialog(
                         enabled = message.isNotBlank()
                     ) {
                         Text(
-                            text  = stringResource(R.string.send),
-                            color = if (message.isNotBlank())
-                                MaterialTheme.colorScheme.primary
-                            else
-                                Color.Gray
+                            text = stringResource(R.string.send),
+                            color = if (message.isNotBlank()) MaterialTheme.colorScheme.primary else Color.Gray
                         )
                     }
                 }
@@ -644,3 +585,24 @@ fun ContactFormDialog(
         }
     }
 }
+
+private fun String.toAnnotatedStringWithBold(): AnnotatedString {
+    val boldRegex = Regex("\\*\\*(.*?)\\*\\*")
+    return buildAnnotatedString {
+        var currentIndex = 0
+        boldRegex.findAll(this@toAnnotatedStringWithBold).forEach { match ->
+            // texto normal hasta la coincidencia
+            append(this@toAnnotatedStringWithBold.substring(currentIndex, match.range.first))
+            // texto en negrita
+            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                append(match.groupValues[1])
+            }
+            currentIndex = match.range.last + 1
+        }
+        // cola de texto normal
+        if (currentIndex < this@toAnnotatedStringWithBold.length) {
+            append(this@toAnnotatedStringWithBold.substring(currentIndex))
+        }
+    }
+}
+

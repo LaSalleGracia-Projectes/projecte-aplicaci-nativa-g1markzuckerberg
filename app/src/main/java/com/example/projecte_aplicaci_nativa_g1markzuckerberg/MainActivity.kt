@@ -18,12 +18,14 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.Toke
 import android.app.Activity
 import androidx.activity.viewModels
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.data.ThemePreferences
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.repository.ContactRepository
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.SettingsViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.factory.SettingsViewModelFactory
@@ -33,7 +35,7 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.R)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        val themePrefs = ThemePreferences(this)
         FirebaseApp.initializeApp(this)
         
         // Inicializamos el TokenManager
@@ -53,7 +55,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             HideStatusBar()
-            val isDark by settingsVM.isDarkTheme.observeAsState(initial = false)
+            val isDark by themePrefs.isDarkModeFlow.collectAsState(initial = false)
 
             Projecteaplicacinativag1markzuckerbergTheme(
                 darkTheme = isDark,
@@ -61,7 +63,9 @@ class MainActivity : ComponentActivity() {
             ) {
                 val navController = rememberNavController()
                 EntryPoint(navigationController = navController,
-                    settingsVM = settingsVM,)
+                    settingsVM = settingsVM,
+                    themePrefs = themePrefs
+                )
             }
         }
     }

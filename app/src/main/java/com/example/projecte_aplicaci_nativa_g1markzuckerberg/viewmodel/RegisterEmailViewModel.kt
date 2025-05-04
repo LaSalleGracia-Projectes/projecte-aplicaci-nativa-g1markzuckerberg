@@ -1,14 +1,19 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel
 
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.repository.AuthRepository
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 
-class RegisterEmailViewModel(private val authRepository: AuthRepository) : ViewModel() {
+class RegisterEmailViewModel(
+    application: Application,
+    private val authRepository: AuthRepository
+) : AndroidViewModel(application) {
 
     private val _username = MutableLiveData("")
     val username: LiveData<String> = _username
@@ -22,7 +27,7 @@ class RegisterEmailViewModel(private val authRepository: AuthRepository) : ViewM
     private val _confirmPassword = MutableLiveData("")
     val confirmPassword: LiveData<String> = _confirmPassword
 
-    // Variables para validar la contraseña
+    // Validaciones de contraseña
     private val _isMinLength = MutableLiveData(false)
     val isMinLength: LiveData<Boolean> = _isMinLength
 
@@ -34,14 +39,15 @@ class RegisterEmailViewModel(private val authRepository: AuthRepository) : ViewM
 
     private val _isPasswordValid = MutableLiveData(false)
 
-    // Estados de carga, error y éxito
+    // Estados de UI
     private val _isLoading = MutableLiveData(false)
-    val isLoading: LiveData<Boolean> get() = _isLoading
+    val isLoading: LiveData<Boolean> = _isLoading
 
     private val _errorMessage = MutableLiveData<String?>()
-    val errorMessage: LiveData<String?> get() = _errorMessage
+    val errorMessage: LiveData<String?> = _errorMessage
 
     private val _successMessage = MutableLiveData<String?>()
+    val successMessage: LiveData<String?> = _successMessage
 
     fun clearError() {
         _errorMessage.value = null
@@ -72,20 +78,21 @@ class RegisterEmailViewModel(private val authRepository: AuthRepository) : ViewM
     }
 
     fun register(onSuccess: () -> Unit) {
-        val username = _username.value ?: ""
-        val email = _email.value ?: ""
-        val password = _password.value ?: ""
-        val confirmPassword = _confirmPassword.value ?: ""
+        val username = _username.value.orEmpty()
+        val email = _email.value.orEmpty()
+        val password = _password.value.orEmpty()
+        val confirmPassword = _confirmPassword.value.orEmpty()
 
-        // Validamos que las contraseñas coincidan
+        // Contraseñas coincidentes
         if (password != confirmPassword) {
-            _errorMessage.value = "Las contraseñas no coinciden"
+            _errorMessage.value = getApplication<Application>()
+                .getString(R.string.passwords_mismatch)
             return
         }
-        // Validamos los requisitos de la contraseña
+        // Requisitos de contraseña
         if (_isPasswordValid.value != true) {
-            _errorMessage.value =
-                "La contraseña no cumple con los requisitos (mínimo 6 caracteres, una mayúscula y números)"
+            _errorMessage.value = getApplication<Application>()
+                .getString(R.string.password_requirements)
             return
         }
 
@@ -93,21 +100,32 @@ class RegisterEmailViewModel(private val authRepository: AuthRepository) : ViewM
         viewModelScope.launch {
             val result = authRepository.register(username, email, password)
             _isLoading.value = false
+
             result.onSuccess {
-                _successMessage.value = "Cuenta registrada exitosamente."
+                _successMessage.value = getApplication<Application>()
+                    .getString(R.string.account_registered_success)
                 onSuccess()
             }.onFailure { error ->
-                // Verificamos si el error es de tipo HttpException para obtener el código
-                val message = if (error is HttpException) {
+                val msg = if (error is HttpException) {
                     when (error.code()) {
-                        400 -> "Datos inválidos. Revisa la información e intenta nuevamente."
-                        409 -> "El usuario o correo ya está registrado, por favor intenta con otro."
-                        else -> "Error al crear la cuenta. Código: ${error.code()}"
+                        400 -> getApplication<Application>()
+                            .getString(R.string.invalid_data)
+                        409 -> getApplication<Application>()
+                            .getString(R.string.user_or_email_exists)
+                        else -> getApplication<Application>()
+                            .getString(
+                                R.string.account_creation_error_code,
+                                error.code()
+                            )
                     }
                 } else {
-                    error.message ?: "Error al crear la cuenta."
+                    // utiliza placeholder genérico
+                    getApplication<Application>().getString(
+                        R.string.account_creation_error_generic,
+                        error.message.orEmpty()
+                    )
                 }
-                _errorMessage.value = message
+                _errorMessage.value = msg
             }
         }
     }

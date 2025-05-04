@@ -3,11 +3,18 @@ package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Divider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -19,9 +26,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.RegisterViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.LocalAppDarkTheme
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.GradientHeader
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.RegisterViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 
@@ -30,8 +38,19 @@ fun RegisterView(
     navController: NavController,
     viewModel: RegisterViewModel
 ) {
-    val context = LocalContext.current
+    val isDarkTheme = LocalAppDarkTheme.current
 
+    @DrawableRes
+    val emailIconRes = if (isDarkTheme) R.drawable.ic_email_dark else R.drawable.ic_email
+    val contentColor = if (isDarkTheme) Color.White else Color.Black
+    val containerColor = if (isDarkTheme) Color.DarkGray else Color.White
+
+    val buttonColors = ButtonDefaults.outlinedButtonColors(
+        containerColor = containerColor,
+        contentColor = contentColor
+    )
+
+    val context = LocalContext.current
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
         try {
@@ -54,7 +73,7 @@ fun RegisterView(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(if (isDarkTheme) Color.Black else Color.White)
     ) {
         GradientHeader(
             title = stringResource(R.string.register_title),
@@ -82,13 +101,10 @@ fun RegisterView(
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    containerColor = Color.White,
-                    contentColor = Color.Black
-                )
+                colors = buttonColors
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.ic_email),
+                    painter = painterResource(id = emailIconRes),
                     contentDescription = stringResource(R.string.email),
                     modifier = Modifier.size(24.dp)
                 )
@@ -107,10 +123,7 @@ fun RegisterView(
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    containerColor = Color.White,
-                    contentColor = Color.Black
-                )
+                colors = buttonColors
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.google),
@@ -129,7 +142,7 @@ fun RegisterView(
             Text(
                 text = stringResource(R.string.already_have_account),
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color.Black
+                color = contentColor
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -140,10 +153,7 @@ fun RegisterView(
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    containerColor = Color.White,
-                    contentColor = Color.Black
-                )
+                colors = buttonColors
             ) {
                 Text(
                     text = stringResource(R.string.login),

@@ -1,5 +1,7 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
+import android.app.Application
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -10,6 +12,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -19,17 +22,22 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.factory.RegisterEmailViewModelFactory
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.LocalAppDarkTheme
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialogSingleButton
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.GradientHeader
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.GradientOutlinedButton
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.RegisterEmailViewModel
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.factory.RegisterEmailViewModelFactory
 
 @Composable
 fun RegisterScreen(navController: NavController) {
+    val context = LocalContext.current.applicationContext as Application
     val registerViewModel: RegisterEmailViewModel = viewModel(
-        factory = RegisterEmailViewModelFactory(RetrofitClient.authRepository)
+        factory = RegisterEmailViewModelFactory(
+            context,
+            RetrofitClient.authRepository
+        )
     )
     RegisterEmailView(navController = navController, viewModel = registerViewModel)
 }
@@ -39,6 +47,14 @@ fun RegisterEmailView(
     navController: NavController,
     viewModel: RegisterEmailViewModel
 ) {
+    // Detectar modo claro/oscuro
+    val isDarkTheme = LocalAppDarkTheme.current
+    val backgroundColor = if (isDarkTheme) Color.Black else MaterialTheme.colorScheme.background
+    @DrawableRes
+    val profileIconRes = if (isDarkTheme) R.drawable.ic_profile else R.drawable.ic_profile_black
+    @DrawableRes
+    val emailIconRes = if (isDarkTheme) R.drawable.ic_email_dark else R.drawable.ic_email
+
     val username by viewModel.username.observeAsState("")
     val email by viewModel.email.observeAsState("")
     val password by viewModel.password.observeAsState("")
@@ -65,7 +81,7 @@ fun RegisterEmailView(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(backgroundColor)
     ) {
         GradientHeader(
             title = stringResource(R.string.registerMail_title),
@@ -88,12 +104,14 @@ fun RegisterEmailView(
                 label = { Text(stringResource(R.string.username), style = MaterialTheme.typography.bodySmall) },
                 leadingIcon = {
                     Image(
-                        painter = painterResource(id = R.drawable.ic_profile_black),
+                        painter = painterResource(id = profileIconRes),
                         contentDescription = null,
                         modifier = Modifier.size(24.dp)
                     )
                 },
-                modifier = Modifier.fillMaxWidth().height(59.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(59.dp),
                 shape = RoundedCornerShape(8.dp),
                 singleLine = true
             )
@@ -106,12 +124,14 @@ fun RegisterEmailView(
                 label = { Text(stringResource(R.string.Registeremail), style = MaterialTheme.typography.bodySmall) },
                 leadingIcon = {
                     Image(
-                        painter = painterResource(id = R.drawable.ic_email),
+                        painter = painterResource(id = emailIconRes),
                         contentDescription = null,
                         modifier = Modifier.size(24.dp)
                     )
                 },
-                modifier = Modifier.fillMaxWidth().height(59.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(59.dp),
                 shape = RoundedCornerShape(8.dp),
                 singleLine = true
             )
@@ -124,7 +144,7 @@ fun RegisterEmailView(
                 label = { Text(stringResource(R.string.Registerpassword), style = MaterialTheme.typography.bodySmall) },
                 leadingIcon = {
                     Image(
-                        painter = painterResource(id = R.drawable.password),
+                        painter = painterResource(id = if (isDarkTheme) R.drawable.password_dark else R.drawable.password),
                         contentDescription = null,
                         modifier = Modifier.size(24.dp)
                     )
@@ -132,7 +152,7 @@ fun RegisterEmailView(
                 trailingIcon = {
                     val iconRes = if (passwordVisible) R.drawable.visibility_on else R.drawable.visibility_off
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Image(
+                        Icon(
                             painter = painterResource(id = iconRes),
                             contentDescription = null,
                             modifier = Modifier.size(24.dp)
@@ -140,7 +160,9 @@ fun RegisterEmailView(
                     }
                 },
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth().height(59.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(59.dp),
                 shape = RoundedCornerShape(8.dp),
                 singleLine = true
             )
@@ -153,7 +175,7 @@ fun RegisterEmailView(
                 label = { Text(stringResource(R.string.confirm_password), style = MaterialTheme.typography.bodySmall) },
                 leadingIcon = {
                     Image(
-                        painter = painterResource(id = R.drawable.password),
+                        painter = painterResource(id = if (isDarkTheme) R.drawable.password_dark else R.drawable.password),
                         contentDescription = null,
                         modifier = Modifier.size(24.dp)
                     )
@@ -161,7 +183,7 @@ fun RegisterEmailView(
                 trailingIcon = {
                     val iconRes = if (confirmPasswordVisible) R.drawable.visibility_on else R.drawable.visibility_off
                     IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
-                        Image(
+                        Icon(
                             painter = painterResource(id = iconRes),
                             contentDescription = null,
                             modifier = Modifier.size(24.dp)
@@ -169,7 +191,9 @@ fun RegisterEmailView(
                     }
                 },
                 visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth().height(59.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(59.dp),
                 shape = RoundedCornerShape(8.dp),
                 singleLine = true
             )
@@ -199,7 +223,10 @@ fun RegisterEmailView(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(
                     checked = termsAccepted,
-                    onCheckedChange = { termsAccepted = it }
+                    onCheckedChange = { termsAccepted = it },
+                    colors = CheckboxDefaults.colors(
+                        checkmarkColor = if (isDarkTheme) Color.White else Color.Black
+                    )
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
@@ -219,16 +246,22 @@ fun RegisterEmailView(
                         }
                     }
                 },
-                modifier = Modifier.fillMaxWidth().height(56.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
             ) {
-                Text(stringResource(R.string.register_button), style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    text = stringResource(R.string.register_button),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (isDarkTheme) Color.White else Color.Black
+                )
             }
 
             Spacer(modifier = Modifier.height(32.dp))
         }
     }
 
-    if (errorMessage != null) {
+    errorMessage?.let {
         CustomAlertDialogSingleButton(
             title = stringResource(R.string.register_error_title),
             message = stringResource(R.string.register_error_message),

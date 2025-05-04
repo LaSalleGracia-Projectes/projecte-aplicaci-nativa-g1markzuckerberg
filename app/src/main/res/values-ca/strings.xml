@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- General -->
-    <string name="app_name">projecte-aplicaci-nativa-g1markzuckerberg</string>
+    <string name="app_name">FantasyDraft</string>
 
     <!-- Notificacions -->
     <string name="notifications_title">Notificacions</string>
@@ -153,11 +153,21 @@
     <string name="privacy_point3">3. Seguretat</string>
     <string name="privacy_point4">4. Drets de l’usuari</string>
     <string name="privacy_point5">5. Canvis en aquesta política</string>
-    <string name="privacy_body1">Recollim les dades que ens proporciones en registrar-te...</string>
-    <string name="privacy_body2">• Processem la teva informació per gestionar el teu compte...\n• No compartim ni venem les teves dades.</string>
-    <string name="privacy_body3">Les teves dades s’emmagatzemen en servidors segurs amb xifratge TLS...</string>
-    <string name="privacy_body4">Tens dret a accedir, rectificar o eliminar les teves dades en qualsevol moment...</string>
-    <string name="privacy_body5">Podem actualitzar aquesta política ocasionalment...</string>
+    <string name="privacy_body1">
+        Recopilem les dades que ens facilites en registrar-te (nom d’usuari, correu electrònic) i la informació d’ús (alineacions enviades, puntuacions obtingudes) per oferir-te una experiència personalitzada.
+    </string>
+    <string name="privacy_body2">
+        • Processem la teva informació per gestionar el teu compte i mostrar-te el teu historial de rendiment.\n• No compartim ni venem les teves dades a tercers.
+    </string>
+    <string name="privacy_body3">
+        Les teves dades s’emmagatzemen en servidors segurs amb xifrat TLS. Només personal autoritzat té accés a la base de dades.
+    </string>
+    <string name="privacy_body4">
+        Tens dret a accedir, rectificar o eliminar les teves dades en qualsevol moment. Per a això, posa’t en contacte amb nosaltres mitjançant el formulari de contacte.
+    </string>
+    <string name="privacy_body5">
+        Podem actualitzar aquesta política ocasionalment. T’informarem de qualsevol canvi significatiu abans que entri en vigor.
+    </string>
 
     <!-- UserDraftView -->
     <string name="user_tab">Usuari</string>
@@ -245,4 +255,77 @@
     <string name="your_message">El teu missatge</string>
     <string name="message_placeholder">Escriu la teva consulta aquí…</string>
 
+    <!-- UserDraftViewModel -->
+    <string name="user_kick_success">Usuari expulsat correctament</string>
+    <string name="new_captain_assigned">Nou cap assignat correctament</string>
+    <string name="only_captain_error">Només el cap de la lliga pot fer aquesta acció</string>
+    <string name="error_generic">Error: %1$s</string>
+
+    <!-- RegisterEmailViewModel -->
+    <string name="passwords_mismatch">Les contrasenyes no coincideixen</string>
+    <string name="password_requirements">La contrasenya no compleix els requisits (mínim 6 caràcters, una majúscula i números)</string>
+    <string name="account_registered_success">Compte registrat amb èxit.</string>
+    <string name="invalid_data">Dades invàlides. Revisa la informació i intenta-ho de nou.</string>
+    <string name="user_or_email_exists">L\'usuari o correu ja està registrat, si us plau prova amb un altre.</string>
+    <string name="account_creation_error_code">Error en crear el compte. Codi: %1$d</string>
+    <string name="account_creation_error_generic">Error en crear el compte: %1$s</string>
+
+    <!-- LoginViewModel -->
+    <string name="email_sent_success">Correu enviat correctament.</string>
+    <string name="forgot_password_error_code">Error: %1$d</string>
+    <string name="forgot_password_error_network">Error de xarxa: %1$s</string>
+    <string name="login_error_generic">Error: %1$s</string>
+
+    <!-- HomeLoggedViewModel -->
+    <!-- joinLiga -->
+    <string name="error_league_not_found">Error: Lliga no trobada.</string>
+    <string name="error_already_in_league">Error: Ja estàs en aquesta lliga.</string>
+    <string name="error_invalid_league_code">Error: Codi de lliga invàlid.</string>
+    <string name="error_no_permission_join">Error: No tens permís per unir-te.</string>
+    <string name="error_server_try_later">Error: Error del servidor. Torna-ho a provar més tard.</string>
+    <string name="error_unknown_code">Error desconegut: %1$d</string>
+    <string name="error_network">Error de xarxa: %1$s</string>
+
+    <!-- createLiga -->
+    <string name="error_cannot_create_league">Error: No s\'ha pogut crear la lliga.</string>
+    <string name="error_league_exists">Error: La lliga ja existeix.</string>
+    <string name="error_invalid_data">Error: Dades invàlides.</string>
+    <string name="error_no_permission_create_league">Error: No tens permís per crear lliga.</string>
+    <string name="error_server_create_league">Error: Error del servidor en crear la lliga.</string>
+    <string name="error_creating_league">Error creant lliga: %1$s</string>
+
+    <!-- updateLigaWithImage -->
+    <string name="error_image_format_not_allowed">Error: Format d\'imatge no permès.</string>
+    <string name="error_upload_image_code">Error pujant imatge: %1$d</string>
+    <string name="error_upload_image_message">Error pujant imatge: %1$s</string>
+
+    <!-- fetchUserLeagues -->
+    <string name="error_loading_leagues_code">Error carregant lligues: %1$d</string>
+    <string name="error_loading_leagues_message">Error carregant lligues: %1$s</string>
+
+    <!-- leaveLiga -->
+    <string name="league_left">Lliga abandonada</string>
+    <string name="error_cannot_leave_if_captain">No pots abandonar si ets el capità.</string>
+    <string name="error_leaving_league">Error abandonant lliga: %1$s</string>
+
+    <!-- fetchUserInfo -->
+    <string name="error_loading_user_code">Error carregant usuari: %1$d</string>
+    <string name="error_loading_user_message">Error carregant usuari: %1$s</string>
+
+    <!-- updateLigaName -->
+    <string name="error_updating_name_code">Error actualitzant nom: %1$d</string>
+    <string name="error_unexpected">Error inesperat: %1$s</string>
+
+    <!-- DraftViewModel -->
+    <string name="error_draft_already_created">Ja tens un draft creat en aquesta jornada.</string>
+    <string name="error_fetch_draft_code">Error en recuperar draft: %1$d</string>
+    <string name="error_fetch_draft_network">Error de connexió en recuperar draft: %1$s</string>
+    <string name="error_draft_not_found">Draft no trobat.</string>
+    <string name="error_connection">Error de connexió: %1$s</string>
+    <string name="error_update_draft">Error en actualitzar el draft: %1$d %2$s</string>
+    <string name="error_no_player_selected">No s\'ha seleccionat un jugador per a %1$s.</string>
+    <string name="error_invalid_group">Grup de jugadors invàlid per a %1$s.</string>
+    <string name="error_corrupt_group_data">Les dades del grup %1$s estan corruptes.</string>
+    <string name="error_player_option_mismatch">El jugador seleccionat en %1$s no coincideix amb les opcions.</string>
+    <string name="error_save_draft">Error en desar: %1$d %2$s</string>
 </resources>

@@ -1,6 +1,7 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
@@ -38,6 +39,8 @@ import coil.request.ImageRequest
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.LigaConPuntos
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.LocalAppDarkTheme
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.FancyLoadingAnimation
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.LoadingTransitionScreen
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.grafanaUserUrl
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.*
@@ -45,11 +48,13 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserSelfScreen(
     navController: NavHostController,
     vm: UserSelfViewModel = viewModel(factory = UserSelfViewModel.Factory())
 ) {
+    BackHandler(enabled = true) {}
     val ui by vm.state.collectAsState()
     val edit by vm.edit.collectAsState()
 
@@ -64,6 +69,7 @@ fun UserSelfScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ProfileContent(vm: UserSelfViewModel, st: UserSelfUiState.Ready) {
     val ctx = LocalContext.current
@@ -72,6 +78,7 @@ private fun ProfileContent(vm: UserSelfViewModel, st: UserSelfUiState.Ready) {
     var dlgPass by remember { mutableStateOf(false) }
     var popLiga by remember { mutableStateOf(false) }
     var dlgAvatar by remember { mutableStateOf(false) }
+    var pickerDateState by remember { mutableStateOf<Long?>(null) }
 
     val token = remember { RetrofitClient.authRepository.getToken().orEmpty() }
     val avatarUrl = remember(st.avatarStamp) {
@@ -106,22 +113,88 @@ private fun ProfileContent(vm: UserSelfViewModel, st: UserSelfUiState.Ready) {
 
             Spacer(Modifier.height(32.dp))
             EditRow(stringResource(R.string.edit_username), st.user.username) { dlgName = true }
-            EditRow(stringResource(R.string.edit_birthdate), st.user.birthDate?.prettyDate() ?: "--") { dlgBirth = true }
+            EditRow(
+                stringResource(R.string.edit_birthdate),
+                st.user.birthDate?.prettyDate() ?: "--"
+            ) {
+                // pre-load current birthdate into picker state
+                pickerDateState = st.user.birthDate?.onlyDate()?.let {
+                    SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(it)?.time
+                }
+                dlgBirth = true
+            }
             EditRow(stringResource(R.string.edit_password), "********") { dlgPass = true }
             Spacer(Modifier.height(28.dp))
             if (st.leagues.isNotEmpty()) {
                 LeagueSelector(st) { popLiga = true }
                 Spacer(Modifier.height(20.dp))
                 PointsGraph(st)
-            } else Text(stringResource(R.string.no_league_text), style = MaterialTheme.typography.bodyMedium)
+            } else {
+                Text(stringResource(R.string.no_league_text), style = MaterialTheme.typography.bodyMedium)
+            }
         }
     }
 
-    if (dlgName)  SimpleEditDialog(stringResource(R.string.new_name), st.user.username) { dlgName = false; it?.let(vm::updateUsername) }
-    if (dlgBirth) SimpleEditDialog(stringResource(R.string.new_birthdate), st.user.birthDate?.onlyDate() ?: "") { dlgBirth = false; it?.let(vm::updateBirth) }
-    if (dlgPass)  PassDialog { o, n, c -> dlgPass = false; if (n.isNotBlank()) vm.updatePassword(o, n, c) }
-    if (popLiga)  LeaguePopup(st.leagues, onSelect = { vm.selectLeague(it); popLiga = false }, onDismiss = { popLiga = false })
-    if (dlgAvatar) AvatarDialog(avatarUrl, onDismiss = { dlgAvatar = false }, onSave = { uri -> vm.uploadImage(ctx.uriToTmpFile(uri)) })
+    // Nombre
+    if (dlgName) {
+        SimpleEditDialog(stringResource(R.string.new_name), st.user.username) {
+            dlgName = false
+            it?.let(vm::updateUsername)
+        }
+    }
+
+    // Fecha de nacimiento con Material3 DatePickerDialog
+    if (dlgBirth) {
+        val dateState = rememberDatePickerState(initialSelectedDateMillis = pickerDateState)
+        DatePickerDialog(
+            onDismissRequest = { dlgBirth = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    dateState.selectedDateMillis?.let { millis ->
+                        val iso = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(millis))
+                        vm.updateBirth(iso)
+                    }
+                    dlgBirth = false
+                }) {
+                    Text(stringResource(R.string.ModalUsersave))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { dlgBirth = false }) {
+                    Text(stringResource(R.string.ModalUsercancel))
+                }
+            }
+        ) {
+            DatePicker(state = dateState)
+        }
+    }
+
+    // Contraseña
+    if (dlgPass) {
+        PassDialog { old, nw, conf ->
+            dlgPass = false
+            if (nw.isNotBlank()) vm.updatePassword(old, nw, conf)
+        }
+    }
+
+    // Selector de liga
+    if (popLiga) {
+        LeaguePopup(st.leagues,
+            onSelect = {
+                vm.selectLeague(it)
+                popLiga = false
+            },
+            onDismiss = { popLiga = false }
+        )
+    }
+
+    // Avatar
+    if (dlgAvatar) {
+        AvatarDialog(avatarUrl,
+            onDismiss = { dlgAvatar = false },
+            onSave = { uri -> vm.uploadImage(ctx.uriToTmpFile(uri)) }
+        )
+    }
 }
 
 @Composable
@@ -140,7 +213,7 @@ private fun Header() {
         Text(
             text = stringResource(R.string.profile_title),
             style = MaterialTheme.typography.titleLarge.copy(fontSize = 26.sp, fontWeight = FontWeight.ExtraBold),
-            color = MaterialTheme.colorScheme.onPrimary,
+            color = MaterialTheme.colorScheme.onSecondary,
             textAlign = TextAlign.Center
         )
     }
@@ -246,33 +319,55 @@ private fun LeagueSelector(st: UserSelfUiState.Ready, onClick: () -> Unit) {
         )
         Spacer(Modifier.width(6.dp))
         Text(st.selectedLeague.name, fontWeight = FontWeight.SemiBold)
-        Icon(Icons.Default.KeyboardArrowDown, null)
+        Icon(Icons.Filled.KeyboardArrowDown, null)
     }
 }
 
 @Composable
 private fun PointsGraph(st: UserSelfUiState.Ready) {
     var loading by remember(st.selectedLeague.id) { mutableStateOf(true) }
+    val isDarkApp = LocalAppDarkTheme.current
+    val rawUrl   = grafanaUserUrl(st.selectedLeague.id.toString(), st.user.id.toString())
+        .substringBefore("?")
+    val grafanaUrl = if (isDarkApp) "$rawUrl?theme=dark" else rawUrl
+
     Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
         Box(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
+            val request = ImageRequest.Builder(LocalContext.current)
+                .data(grafanaUrl)
+                .crossfade(true)
+                .build()
+
             AsyncImage(
-                model = grafanaUserUrl(st.selectedLeague.id.toString(), st.user.id.toString()),
+                model = request,
                 contentDescription = null,
-                modifier = Modifier.height(260.dp).padding(16.dp),
+                modifier = Modifier
+                    .height(260.dp)
+                    .padding(16.dp),
                 contentScale = ContentScale.FillHeight,
                 onSuccess = { loading = false },
                 onError = { loading = false }
             )
-            if (loading) Box(Modifier.matchParentSize(), Alignment.Center) { CircularProgressIndicator() }
+            if (loading) Box(Modifier.matchParentSize(), Alignment.Center) {
+                FancyLoadingAnimation(modifier = Modifier.size(100.dp))
+            }
         }
     }
 }
 
 @Composable
 private fun LeaguePopup(leagues: List<LigaConPuntos>, onSelect: (LigaConPuntos) -> Unit, onDismiss: () -> Unit) {
-    Box(Modifier.fillMaxSize().background(Color.Black.copy(0.4f)).clickable { onDismiss() }) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(0.4f))
+            .clickable { onDismiss() }
+    ) {
         Card(
-            Modifier.align(Alignment.Center).fillMaxWidth(0.85f).fillMaxHeight(0.6f),
+            Modifier
+                .align(Alignment.Center)
+                .fillMaxWidth(0.85f)
+                .fillMaxHeight(0.6f),
             shape = RoundedCornerShape(16.dp)
         ) {
             Box {
@@ -339,10 +434,7 @@ private fun PassDialog(onSave: (String, String, String) -> Unit) {
                     trailingIcon = {
                         val icon = if (showOld) R.drawable.visibility_on else R.drawable.visibility_off
                         IconButton(onClick = { showOld = !showOld }) {
-                            Icon(
-                                painter = painterResource(id = icon),
-                                contentDescription = null
-                            )
+                            Icon(painter = painterResource(id = icon), contentDescription = null)
                         }
                     }
                 )
@@ -355,10 +447,7 @@ private fun PassDialog(onSave: (String, String, String) -> Unit) {
                     trailingIcon = {
                         val icon = if (showNew) R.drawable.visibility_on else R.drawable.visibility_off
                         IconButton(onClick = { showNew = !showNew }) {
-                            Icon(
-                                painter = painterResource(id = icon),
-                                contentDescription = null
-                            )
+                            Icon(painter = painterResource(id = icon), contentDescription = null)
                         }
                     }
                 )
@@ -371,10 +460,7 @@ private fun PassDialog(onSave: (String, String, String) -> Unit) {
                     trailingIcon = {
                         val icon = if (showConfirm) R.drawable.visibility_on else R.drawable.visibility_off
                         IconButton(onClick = { showConfirm = !showConfirm }) {
-                            Icon(
-                                painter = painterResource(id = icon),
-                                contentDescription = null
-                            )
+                            Icon(painter = painterResource(id = icon), contentDescription = null)
                         }
                     }
                 )
@@ -387,8 +473,7 @@ private fun PassDialog(onSave: (String, String, String) -> Unit) {
         },
         dismissButton = {
             TextButton(onClick = { onSave("", "", "") }) {
-                Text(stringResource(R.string.ModalUsercancel))
-            }
+                Text(stringResource(R.string.ModalUsercancel)) }
         }
     )
 }

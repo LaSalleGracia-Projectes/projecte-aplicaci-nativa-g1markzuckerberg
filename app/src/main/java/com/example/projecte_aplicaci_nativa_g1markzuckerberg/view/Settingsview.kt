@@ -1,5 +1,6 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -26,52 +27,52 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.data.ThemePreferences
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.ContactFormDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.GradientHeader
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.SettingsViewModel
+import kotlinx.coroutines.launch
 
-/* ---------- ENTRY (llamada desde NavHost) ---------- */
 @Composable
 fun SettingsScreen(
     navController: NavController,
-    viewModel:    SettingsViewModel
+    viewModel: SettingsViewModel,
+    themePrefs: ThemePreferences
 ) {
-    SettingsView(navController, viewModel)
+    SettingsView(navController, viewModel, themePrefs)
 }
 
-
-/* ---------- UI PRINCIPAL ---------- */
 @Composable
 fun SettingsView(
     navController: NavController,
-    viewModel: SettingsViewModel
+    viewModel: SettingsViewModel,
+    themePrefs: ThemePreferences
+
 ) {
-    val isDark by viewModel.isDarkTheme.observeAsState(false)
+    // recogemos el estado actual del switch desde DataStore
+    val isDark by themePrefs.isDarkModeFlow.collectAsState(initial = false)
+    val scope = rememberCoroutineScope()
+
     val isLoading by viewModel.isLoading.observeAsState(false)
     val errorMessage by viewModel.errorMessage.observeAsState()
     var showContactDialog by remember { mutableStateOf(false) }
     var showPrivacyDialog by remember { mutableStateOf(false) }
 
-    /* diálogo lorem… */
     val dialogTitle by remember { mutableStateOf<String?>(null) }
-    dialogTitle?.let {  }
+    dialogTitle?.let { }
 
-    /** Altura del header para usarla como padding top */
     val headerHeight = 110.dp
+    BackHandler(enabled = true) {}
 
     Box(Modifier.fillMaxSize()) {
-
-/* 1️⃣  LISTA DESPLAZABLE -------------------------------- */
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(top = headerHeight)
         ) {
-            /* separación inicial */
             item { Spacer(Modifier.height(16.dp)) }
 
-            /* ─── tus tarjetas ─── */
             item {
                 ExpandableSettingsCard(
                     title = stringResource(R.string.creators_title),
@@ -83,7 +84,14 @@ fun SettingsView(
                     showContactDialog = true
                 }
             }
-            item { DarkModeCard(isDark) { viewModel.toggleTheme() } }
+            item {
+                DarkModeCard(isDark) {
+                    // 2) Cuando el usuario toca el switch, persiste el cambio
+                    scope.launch {
+                        themePrefs.setDarkMode(!isDark)
+                    }
+                }
+            }
             item {
                 SettingsCard(stringResource(R.string.privacy_title)) {
                     showPrivacyDialog = true
@@ -96,10 +104,8 @@ fun SettingsView(
                 )
             }
 
-            /* hueco antes del botón */
             item { Spacer(Modifier.height(24.dp)) }
 
-            /* Botón Cerrar sesión */
             item {
                 Button(
                     onClick = {
@@ -115,12 +121,13 @@ fun SettingsView(
                         .padding(horizontal = 16.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor   = MaterialTheme.colorScheme.onPrimary
+                        contentColor = if (isDark) Color.White else MaterialTheme.colorScheme.onPrimary
                     )
-                ) { Text(stringResource(R.string.logout)) }
+                ) {
+                    Text(stringResource(R.string.logout))
+                }
             }
 
-            /* Loading */
             if (isLoading) {
                 item {
                     Box(
@@ -128,11 +135,12 @@ fun SettingsView(
                             .fillMaxWidth()
                             .padding(vertical = 8.dp),
                         contentAlignment = Alignment.Center
-                    ) { CircularProgressIndicator() }
+                    ) {
+                        CircularProgressIndicator()
+                    }
                 }
             }
 
-            /* Error */
             errorMessage?.let { msg ->
                 item {
                     Box(
@@ -140,21 +148,21 @@ fun SettingsView(
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp),
                         contentAlignment = Alignment.Center
-                    ) { Text(msg, color = MaterialTheme.colorScheme.error) }
+                    ) {
+                        Text(msg, color = MaterialTheme.colorScheme.error)
+                    }
                 }
             }
+
             if (showPrivacyDialog) {
                 item {
                     PrivacyPolicyDialog(onDismiss = { showPrivacyDialog = false })
                 }
             }
 
-            /* margen inferior */
             item { Spacer(Modifier.height(24.dp)) }
         }
 
-
-        /* 2️⃣  HEADER FIJO -------------------------------------- */
         Box(
             modifier = Modifier
                 .height(headerHeight)
@@ -164,35 +172,25 @@ fun SettingsView(
             GradientHeader(title = stringResource(R.string.settings_title))
         }
     }
+
     if (showContactDialog) {
         ContactFormDialog(
             onDismiss = { showContactDialog = false },
-            onSubmit  = {
-                // viewModel.sendContactForm(mensaje)
-            }
-        )
-    }
-    if (showContactDialog) {
-        ContactFormDialog(
-            onDismiss = { showContactDialog = false },
-            onSubmit  = { msg ->
+            onSubmit = { msg ->
                 viewModel.sendContactForm(msg)
                 showContactDialog = false
             }
         )
     }
 
-    /* observar resultado */
     val contactResult by viewModel.contactResult.observeAsState()
     LaunchedEffect(contactResult) {
         contactResult?.let {
             viewModel.clearContactResult()
         }
     }
-
 }
 
-/* ---------- COMPONENTES REUTILIZABLES ---------- */
 @Composable
 fun SettingsCard(
     title: String,
@@ -269,7 +267,7 @@ fun ExpandableSettingsCard(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text  = title,
+                    text = title,
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -285,7 +283,7 @@ fun ExpandableSettingsCard(
             if (expanded) {
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    text  = body,
+                    text = body,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -307,7 +305,6 @@ fun PrivacyPolicyDialog(onDismiss: () -> Unit) {
                 .fillMaxHeight(0.5f)
         ) {
             Column {
-                // Header de gradiente
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -329,13 +326,11 @@ fun PrivacyPolicyDialog(onDismiss: () -> Unit) {
                     )
                 }
 
-                // Contenido scrolleable
                 Column(
                     modifier = Modifier
                         .padding(16.dp)
                         .verticalScroll(scrollState)
                 ) {
-                    // -------- 1. Información que recopilamos --------
                     Text(
                         text = stringResource(R.string.privacy_point1),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -351,7 +346,6 @@ fun PrivacyPolicyDialog(onDismiss: () -> Unit) {
                     )
                     Spacer(Modifier.height(16.dp))
 
-                    // -------- 2. Cómo usamos tus datos --------
                     Text(
                         text = stringResource(R.string.privacy_point2),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -367,7 +361,6 @@ fun PrivacyPolicyDialog(onDismiss: () -> Unit) {
                     )
                     Spacer(Modifier.height(16.dp))
 
-                    // -------- 3. Seguridad --------
                     Text(
                         text = stringResource(R.string.privacy_point3),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -383,7 +376,6 @@ fun PrivacyPolicyDialog(onDismiss: () -> Unit) {
                     )
                     Spacer(Modifier.height(16.dp))
 
-                    // -------- 4. Derechos del usuario --------
                     Text(
                         text = stringResource(R.string.privacy_point4),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -399,7 +391,6 @@ fun PrivacyPolicyDialog(onDismiss: () -> Unit) {
                     )
                     Spacer(Modifier.height(16.dp))
 
-                    // -------- 5. Cambios en esta política --------
                     Text(
                         text = stringResource(R.string.privacy_point5),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -415,7 +406,6 @@ fun PrivacyPolicyDialog(onDismiss: () -> Unit) {
                     )
                     Spacer(Modifier.height(24.dp))
 
-                    // Botón Cerrar
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.Center

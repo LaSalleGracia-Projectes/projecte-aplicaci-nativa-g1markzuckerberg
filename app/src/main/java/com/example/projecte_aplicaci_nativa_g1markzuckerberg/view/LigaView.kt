@@ -23,6 +23,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -34,7 +35,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
+import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
@@ -43,7 +46,6 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.repository.AuthRepo
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialogSingleButton
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.LeagueCodeDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.TokenManager
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.UserImage
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.DraftViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.LigaViewModel
 
@@ -127,7 +129,8 @@ fun LigaView(
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                     contentDescription = stringResource(R.string.Ligaback),
-                                    tint = MaterialTheme.colorScheme.onPrimary
+                                    tint = MaterialTheme.colorScheme.onSecondary
+
                                 )
                             }
                             Text(
@@ -137,23 +140,29 @@ fun LigaView(
                                     fontWeight = FontWeight.ExtraBold,
                                     letterSpacing = 0.3.sp
                                 ),
-                                color = MaterialTheme.colorScheme.onPrimary,
+                                color = MaterialTheme.colorScheme.onSecondary,
                                 maxLines = 1,
                                 modifier = Modifier.weight(1f),
                                 textAlign = TextAlign.Center
                             )
-                            Image(
-                                painter = rememberAsyncImagePainter(
-                                    model = ImageRequest.Builder(LocalContext.current)
-                                        .data(imageUrl)
-                                        .placeholder(R.drawable.fantasydraft)
-                                        .error(R.drawable.fantasydraft)
-                                        .build()
-                                ),
-                                contentDescription = "Icono de la liga",
-                                modifier = Modifier
+                            val ctx   = LocalContext.current
+                            val token = authRepository.getToken().orEmpty()
+                            val leagueIconRequest = ImageRequest.Builder(ctx)
+                                .data(imageUrl)
+                                .addHeader("Authorization", "Bearer $token")
+                                .placeholder(R.drawable.fantasydraft)
+                                .error(R.drawable.fantasydraft)
+                                .crossfade(true)
+                                .build()
+
+                            AsyncImage(
+                                model             = leagueIconRequest,
+                                contentDescription= "Icono de la liga",
+                                modifier          = Modifier
                                     .size(45.dp)
                                     .clip(CircleShape)
+                                    .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
+                                contentScale      = ContentScale.Crop
                             )
                         }
                     }
@@ -178,7 +187,7 @@ fun LigaView(
                                     onSelected = { jornada ->
                                         ligaViewModel.setSelectedJornada(jornada)
                                     },
-                                    textColor = MaterialTheme.colorScheme.onPrimary
+                                    textColor = Color.White
                                 )
                             }
                             Spacer(modifier = Modifier.width(12.dp))
@@ -227,7 +236,22 @@ fun LigaView(
                                     2 -> "🥉"
                                     else -> "${index + 1}"
                                 }
-                                val fullUserImageUrl = RetrofitClient.BASE_URL.trimEnd('/') + "/" + user.imageUrl.trimStart('/')
+                                val fullUserImageUrl =
+                                    RetrofitClient.BASE_URL.trimEnd('/') + "/" + user.imageUrl.trimStart('/')
+
+                                val token = authRepository.getToken().orEmpty()
+                                val ctx   = LocalContext.current
+
+                                val avatarRequest = ImageRequest.Builder(ctx)
+                                    .data(fullUserImageUrl)
+                                    .addHeader("Authorization", "Bearer $token")
+                                    .diskCachePolicy(CachePolicy.DISABLED)
+                                    .memoryCachePolicy(CachePolicy.DISABLED)
+                                    .placeholder(R.drawable.fantasydraft)
+                                    .error(R.drawable.fantasydraft)
+                                    .crossfade(true)
+                                    .build()
+
                                 val backgroundBrush = if (isPodio) metallicBrushForRanking(index) else SolidColor(Color.White)
 
                                 val cardModifier = Modifier
@@ -289,24 +313,35 @@ fun LigaView(
                                                             text = rankingText,
                                                             style = MaterialTheme.typography.bodyLarge.copy(
                                                                 fontWeight = FontWeight.Bold,
-                                                                fontSize = 20.sp
+                                                                fontSize = 20.sp,
+                                                                color = Color.Black
                                                             ),
                                                             modifier = Modifier.width(30.dp)
                                                         )
                                                         Spacer(modifier = Modifier.width(8.dp))
-                                                        UserImage(url = fullUserImageUrl)
+                                                        AsyncImage(
+                                                            model = avatarRequest,
+                                                            contentDescription = "User Avatar",
+                                                            modifier = Modifier
+                                                                .size(45.dp)
+                                                                .clip(CircleShape)
+                                                                .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
+                                                            contentScale = ContentScale.Crop
+                                                        )
                                                         Spacer(modifier = Modifier.width(12.dp))
                                                         Text(
                                                             text = user.username,
                                                             style = MaterialTheme.typography.bodyLarge,
-                                                            modifier = Modifier.weight(1f)
+                                                            modifier = Modifier.weight(1f),
+                                                            color = Color.Black
                                                         )
                                                         Spacer(modifier = Modifier.width(8.dp))
                                                         val puntos = if (selectedJornada == 0) user.puntos_acumulados else user.puntos_jornada
                                                         Text(
                                                             text = "$puntos pts",
                                                             style = MaterialTheme.typography.bodyMedium,
-                                                            modifier = Modifier.padding(end = 8.dp)
+                                                            modifier = Modifier.padding(end = 8.dp),
+                                                            color = Color.Black
                                                         )
                                                     }
                                                 }
@@ -320,22 +355,33 @@ fun LigaView(
                                                     Text(
                                                         text = rankingText,
                                                         style = MaterialTheme.typography.bodyLarge,
-                                                        modifier = Modifier.width(30.dp)
+                                                        modifier = Modifier.width(30.dp),
+                                                        color = Color.Black
                                                     )
                                                     Spacer(modifier = Modifier.width(8.dp))
-                                                    UserImage(url = fullUserImageUrl)
+                                                    AsyncImage(
+                                                        model = avatarRequest,
+                                                        contentDescription = "User Avatar",
+                                                        modifier = Modifier
+                                                            .size(45.dp)
+                                                            .clip(CircleShape)
+                                                            .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
+                                                        contentScale = ContentScale.Crop
+                                                    )
                                                     Spacer(modifier = Modifier.width(12.dp))
                                                     Text(
                                                         text = user.username,
                                                         style = MaterialTheme.typography.bodyLarge,
-                                                        modifier = Modifier.weight(1f)
+                                                        modifier = Modifier.weight(1f),
+                                                        color = Color.Black
                                                     )
                                                     Spacer(modifier = Modifier.width(8.dp))
                                                     val puntos = if (selectedJornada == 0) user.puntos_acumulados else user.puntos_jornada
                                                     Text(
                                                         text = "$puntos pts",
                                                         style = MaterialTheme.typography.bodyMedium,
-                                                        modifier = Modifier.padding(end = 8.dp)
+                                                        modifier = Modifier.padding(end = 8.dp),
+                                                        color = Color.Black
                                                     )
                                                 }
                                             }
@@ -367,24 +413,35 @@ fun LigaView(
                                                         text = rankingText,
                                                         style = MaterialTheme.typography.bodyLarge.copy(
                                                             fontWeight = FontWeight.Bold,
-                                                            fontSize = 20.sp
+                                                            fontSize = 20.sp,
+                                                            color = Color.Black
                                                         ),
                                                         modifier = Modifier.width(30.dp)
                                                     )
                                                     Spacer(modifier = Modifier.width(8.dp))
-                                                    UserImage(url = fullUserImageUrl)
+                                                    AsyncImage(
+                                                        model = avatarRequest,
+                                                        contentDescription = "User Avatar",
+                                                        modifier = Modifier
+                                                            .size(45.dp)
+                                                            .clip(CircleShape)
+                                                            .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
+                                                        contentScale = ContentScale.Crop
+                                                    )
                                                     Spacer(modifier = Modifier.width(12.dp))
                                                     Text(
                                                         text = user.username,
                                                         style = MaterialTheme.typography.bodyLarge,
-                                                        modifier = Modifier.weight(1f)
+                                                        modifier = Modifier.weight(1f),
+                                                        color = Color.Black
                                                     )
                                                     Spacer(modifier = Modifier.width(8.dp))
                                                     val puntos = if (selectedJornada == 0) user.puntos_acumulados else user.puntos_jornada
                                                     Text(
                                                         text = "$puntos pts",
                                                         style = MaterialTheme.typography.bodyMedium,
-                                                        modifier = Modifier.padding(end = 8.dp)
+                                                        modifier = Modifier.padding(end = 8.dp),
+                                                        color = Color.Black
                                                     )
                                                 }
                                             }
@@ -398,22 +455,33 @@ fun LigaView(
                                                 Text(
                                                     text = rankingText,
                                                     style = MaterialTheme.typography.bodyLarge,
-                                                    modifier = Modifier.width(30.dp)
+                                                    modifier = Modifier.width(30.dp),
+                                                    color = Color.Black
                                                 )
                                                 Spacer(modifier = Modifier.width(8.dp))
-                                                UserImage(url = fullUserImageUrl)
+                                                AsyncImage(
+                                                    model = avatarRequest,
+                                                    contentDescription = "User Avatar",
+                                                    modifier = Modifier
+                                                        .size(45.dp)
+                                                        .clip(CircleShape)
+                                                        .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
+                                                    contentScale = ContentScale.Crop
+                                                )
                                                 Spacer(modifier = Modifier.width(12.dp))
                                                 Text(
                                                     text = user.username,
                                                     style = MaterialTheme.typography.bodyLarge,
-                                                    modifier = Modifier.weight(1f)
+                                                    modifier = Modifier.weight(1f),
+                                                    color = Color.Black
                                                 )
                                                 Spacer(modifier = Modifier.width(8.dp))
                                                 val puntos = if (selectedJornada == 0) user.puntos_acumulados else user.puntos_jornada
                                                 Text(
                                                     text = "$puntos pts",
                                                     style = MaterialTheme.typography.bodyMedium,
-                                                    modifier = Modifier.padding(end = 8.dp)
+                                                    modifier = Modifier.padding(end = 8.dp),
+                                                    color = Color.Black
                                                 )
                                             }
                                         }

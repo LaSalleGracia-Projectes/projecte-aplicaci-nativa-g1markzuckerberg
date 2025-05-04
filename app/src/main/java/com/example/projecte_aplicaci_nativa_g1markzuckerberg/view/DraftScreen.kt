@@ -242,18 +242,17 @@ fun DraftScreen(
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.back),
-                            tint = MaterialTheme.colorScheme.onPrimary
+                            tint = MaterialTheme.colorScheme.onSecondary
                         )
                     }
 
                     Text(
                         stringResource(R.string.draft_title),
                         style = MaterialTheme.typography.titleLarge.copy(
-                            fontSize      = 20.sp,
-                            fontWeight    = FontWeight.ExtraBold,
-                            letterSpacing = 0.3.sp
+                            fontSize = 26.sp,
+                            fontWeight = FontWeight.ExtraBold
                         ),
-                        color     = MaterialTheme.colorScheme.onPrimary,
+                        color     = MaterialTheme.colorScheme.onSecondary,
                         textAlign = TextAlign.Center,
                         modifier  = Modifier.align(Alignment.Center)
                     )
@@ -823,7 +822,8 @@ fun CompactPlayerCard(
                     fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    color = Color.Black
                 )
                 Text(
                     text = "${player.puntos_totales} pts",

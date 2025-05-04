@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -34,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.LigaConPuntos
@@ -176,7 +178,7 @@ fun HomeLogedView(
                             fontWeight = FontWeight.ExtraBold,
                             letterSpacing = 0.5.sp
                         ),
-                        color = MaterialTheme.colorScheme.onPrimary,
+                        color = Color.White,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center,
@@ -454,6 +456,16 @@ fun LeagueRow(
     ) {
         Box {
             Row(modifier = Modifier.background(MaterialTheme.colorScheme.surfaceVariant)) {
+                val ctx   = LocalContext.current
+                val token = RetrofitClient.authRepository.getToken().orEmpty()
+                val leagueImageRequest = ImageRequest.Builder(ctx)
+                    .data("${RetrofitClient.BASE_URL}api/v1/liga/image/$leagueId?ts=$lastImageUpdateTs")
+                    .addHeader("Authorization", "Bearer $token")
+                    .placeholder(R.drawable.fantasydraft)
+                    .error(R.drawable.fantasydraft)
+                    .crossfade(true)
+                    .build()
+
                 Box(
                     modifier = Modifier
                         .padding(vertical = 8.dp, horizontal = 12.dp)
@@ -470,15 +482,14 @@ fun LeagueRow(
                     contentAlignment = Alignment.Center
                 ) {
                     AsyncImage(
-                        model = "${RetrofitClient.BASE_URL}api/v1/liga/image/$leagueId?ts=$lastImageUpdateTs",
-                        contentDescription = "Imagen Liga",
-                        modifier = Modifier
+                        model             = leagueImageRequest,
+                        contentDescription= "Icono de la liga $name",
+                        modifier          = Modifier
                             .size(48.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.surfaceVariant)
                             .padding(2.dp),
-                        placeholder = painterResource(id = R.drawable.fantasydraft),
-                        error = painterResource(id = R.drawable.fantasydraft)
+                        contentScale      = ContentScale.Crop
                     )
                 }
 
