@@ -37,6 +37,7 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.PlayerModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.LocalAppDarkTheme
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.LoadingTransitionScreen
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.*
 
@@ -47,7 +48,7 @@ fun PlayersView(navController: NavController) {
 
     val state = vm.uiState
     val listState = rememberLazyListState()
-    val onPrimary = MaterialTheme.colorScheme.onPrimary
+    val darkTheme = LocalAppDarkTheme.current
 
     var showTeamPopup by remember { mutableStateOf(false) }
     var targetScroll by remember { mutableStateOf<Pair<Int, Int>?>(null) }
@@ -61,7 +62,6 @@ fun PlayersView(navController: NavController) {
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
-
             // Header
             Box(
                 Modifier
@@ -80,7 +80,7 @@ fun PlayersView(navController: NavController) {
                 Text(
                     text = stringResource(R.string.players_title),
                     style = MaterialTheme.typography.titleLarge.copy(fontSize = 26.sp, fontWeight = FontWeight.ExtraBold),
-                    color = onPrimary,
+                    color = if (darkTheme) Color.White else MaterialTheme.colorScheme.onPrimary,
                     textAlign = TextAlign.Center
                 )
             }
@@ -277,16 +277,20 @@ private fun PlayerCard(p: PlayerModel, onClick: () -> Unit) {
                 Column(Modifier.weight(1f)) {
                     Text(
                         p.displayName,
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
                     )
                     Text(
                         p.teamName ?: "--",
+                        color = Color.Black,
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
                 Text(
                     "${p.puntosTotales} pts",
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
+                    color = Color.Black,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
         }

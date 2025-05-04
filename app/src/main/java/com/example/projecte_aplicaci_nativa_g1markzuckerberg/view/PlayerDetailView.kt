@@ -1,3 +1,5 @@
+// Archivo PlayerDetailView.kt fusionado con soporte para modo oscuro y traducciones
+
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
 import android.util.Log
@@ -30,6 +32,7 @@ import coil.request.ImageRequest
 import coil.transform.CircleCropTransformation
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.LocalAppDarkTheme
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.grafanaPlayerUrl
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.PlayerDetailViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.PlayerDetailViewModelFactory
@@ -43,7 +46,8 @@ fun PlayerDetailView(navController: NavController, playerId: String) {
     val player = vm.player
     val isLoading = vm.isLoading
     val error = vm.errorMessage
-    val onPrimary = MaterialTheme.colorScheme.onPrimary
+    val darkTheme = LocalAppDarkTheme.current
+    val onPrimary = if (darkTheme) Color.White else MaterialTheme.colorScheme.onPrimary
 
     Column(Modifier.fillMaxSize()) {
         Box(
@@ -197,6 +201,10 @@ fun PlayerDetailView(navController: NavController, playerId: String) {
                         shape = RoundedCornerShape(16.dp)
                     ) {
                         var chartLoading by remember { mutableStateOf(true) }
+                        val rawUrl = grafanaPlayerUrl(player.id)
+                        val cleanUrl = rawUrl.substringBefore("?")
+                        val grafanaUrl = "$cleanUrl?theme=${if (darkTheme) "dark" else "light"}"
+
                         Box(
                             Modifier
                                 .fillMaxWidth()
@@ -204,7 +212,7 @@ fun PlayerDetailView(navController: NavController, playerId: String) {
                         ) {
                             AsyncImage(
                                 model = ImageRequest.Builder(LocalContext.current)
-                                    .data(grafanaPlayerUrl(player.id))
+                                    .data(grafanaUrl)
                                     .crossfade(true)
                                     .listener(
                                         onSuccess = { _, _ -> chartLoading = false },
@@ -251,4 +259,4 @@ private fun mapPosition(positionId: Int): Int = when (positionId) {
     25 -> R.string.Detailpos_defender
     24 -> R.string.Detailpos_goalkeeper
     else -> R.string.unknown_position
-}
+} 

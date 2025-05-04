@@ -16,23 +16,30 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
-import androidx.navigation.NavController
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.LocalAppDarkTheme
 
+// Colores secundarios y on-colors dinámicos
 private val GraySecondary @Composable get() = MaterialTheme.colorScheme.surfaceVariant
 private val OnBluePrimary @Composable get() = MaterialTheme.colorScheme.onPrimary
 private val OnGraySecondary @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 
 @Composable
 fun HomeView(navController: NavController) {
+    // Se ignora back
     BackHandler {}
+    // Detectar tema
+    val isDarkTheme = LocalAppDarkTheme.current
+    val backgroundColor = if (isDarkTheme) Color.Black else MaterialTheme.colorScheme.background
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(backgroundColor)
     ) {
-        // CABECERA
+        // CABECERA: gradiente
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -49,7 +56,7 @@ fun HomeView(navController: NavController) {
         ) {
             Text(
                 text = stringResource(R.string.home_title),
-                color = OnBluePrimary,
+                color = if (isDarkTheme) Color.White else OnBluePrimary,
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.titleLarge
             )
@@ -80,6 +87,7 @@ fun HomeView(navController: NavController) {
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Crear cuenta
             GradientButton(
                 text = stringResource(R.string.create_account),
                 onClick = { navController.navigate(Routes.Register.route) },
@@ -87,6 +95,7 @@ fun HomeView(navController: NavController) {
                     .fillMaxWidth()
                     .height(56.dp)
             )
+            // Iniciar sesión
             Button(
                 onClick = { navController.navigate(Routes.Login.route) },
                 modifier = Modifier
@@ -115,8 +124,9 @@ fun GradientButton(
             MaterialTheme.colorScheme.secondary
         )
     ),
-    textColor: Color = MaterialTheme.colorScheme.onPrimary
+    textColor: Color = OnBluePrimary
 ) {
+    val isDarkTheme = LocalAppDarkTheme.current
     Button(
         onClick = onClick,
         modifier = modifier,
@@ -131,7 +141,7 @@ fun GradientButton(
         ) {
             Text(
                 text = text,
-                color = textColor,
+                color = if (isDarkTheme) Color.White else textColor,
                 style = MaterialTheme.typography.bodyLarge
             )
         }
