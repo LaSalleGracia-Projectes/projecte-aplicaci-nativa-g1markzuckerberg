@@ -64,4 +64,185 @@
     <string name="fantasy_logo_desc">Fantasy Draft Logo</string>
     <string name="create_account">CREATE ACCOUNT</string>
     <string name="login">LOG IN</string>
+
+    <!-- LoginView -->
+    <string name="loginTitle">Log In</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="toggle_password_visibility">Show/Hide password</string>
+    <string name="forgot_password">Forgot my password</string>
+    <string name="login_with_google">Sign in with Google</string>
+    <string name="google_logo">Google logo</string>
+    <string name="auth_error">Authentication error</string>
+    <string name="invalid_credentials">Invalid username or password.</string>
+
+    <!-- RegisterView -->
+    <string name="register_title">Create an Account</string>
+    <string name="register_with_email">Sign up with your email</string>
+    <string name="continue_with_google">Continue with Google</string>
+    <string name="already_have_account">Already have an account?</string>
+
+    <!-- PlayerDetailView -->
+    <string name="Detailback">Back</string>
+    <string name="player_default">Player</string>
+    <string name="team_logo">Team logo</string>
+    <string name="player_photo">Player photo</string>
+    <string name="position_label">Position</string>
+    <string name="chart_desc">Points trend chart</string>
+    <string name="Detailpos_forward">Forward</string>
+    <string name="Detailpos_midfielder">Midfielder</string>
+    <string name="Detailpos_defender">Defender</string>
+    <string name="Detailpos_goalkeeper">Goalkeeper</string>
+    <string name="unknown_position">Unknown position</string>
+
+    <!-- PlayersView -->
+    <string name="players_title">Players</string>
+    <string name="team">Team</string>
+    <string name="search_placeholder">Search…</string>
+    <string name="sort_points">Sort by points</string>
+    <string name="select_team">Select team</string>
+    <string name="all_teams">All</string>
+    <string name="no_filter">No filter</string>
+
+    <!-- RegisterEmailView -->
+    <string name="registerMail_title">Create an account</string>
+    <string name="register_subtitle">Fill in the details to create your account</string>
+    <string name="username">Username</string>
+    <string name="Registeremail">Email</string>
+    <string name="Registerpassword">Password</string>
+    <string name="confirm_password">Repeat Password</string>
+    <string name="password_rule_length">• Password must be at least 6 characters</string>
+    <string name="password_rule_uppercase">• Must include an uppercase letter</string>
+    <string name="password_rule_digit">• Must include numbers</string>
+    <string name="terms">I have read and accept the legal terms and privacy policy of Fantasy Draft</string>
+    <string name="register_button">Create account</string>
+    <string name="register_error_title">Account creation error</string>
+    <string name="register_error_message">This username or email already exists. Please try another.</string>
+
+    <!-- UserSelf -->
+    <string name="profile_title">My profile</string>
+    <string name="edit_username">Username</string>
+    <string name="edit_birthdate">Birthdate</string>
+    <string name="edit_password">Change password</string>
+    <string name="no_league_text">You don\'t belong to any league yet.</string>
+    <string name="profile_photo">Profile photo</string>
+    <string name="choose_gallery">Choose from gallery</string>
+    <string name="ModalUsersave">Save</string>
+    <string name="ModalUsercancel">Cancel</string>
+    <string name="change_password">Change password</string>
+    <string name="password_current">Current</string>
+    <string name="password_new">New</string>
+    <string name="password_confirm">Confirm</string>
+    <string name="new_name">New name</string>
+    <string name="new_birthdate">Date (YYYY-MM-DD)</string>
+
+    <!-- SettingsView -->
+    <string name="settings_title">Settings</string>
+    <string name="creators_title">Project creators</string>
+    <string name="creators_body">This project was developed by:\n• Albert Garrido\n• Joan Linares</string>
+    <string name="contact">Contact</string>
+    <string name="dark_mode">Dark mode</string>
+    <string name="privacy_policy">Privacy policy</string>
+    <string name="api_title">About our API</string>
+    <string name="api_body">• All match, player and stat data is retrieved from the SportMonks API.\n• Thanks to SportMonks for providing updated real-time data.\n• Their API is the foundation of our scoring system.</string>
+    <string name="logout">Log out</string>
+    <string name="Settingsclose">Close</string>
+    <string name="privacy_title">Privacy Policy</string>
+    <string name="privacy_point1">1. Information we collect</string>
+    <string name="privacy_point2">2. How we use your data</string>
+    <string name="privacy_point3">3. Security</string>
+    <string name="privacy_point4">4. Your rights</string>
+    <string name="privacy_point5">5. Changes to this policy</string>
+    <string name="privacy_body1">We collect data you provide when signing up (username, email)...</string>
+    <string name="privacy_body2">• We use your info to manage your account and show performance history...\n• We do not share or sell your data.</string>
+    <string name="privacy_body3">Your data is stored on secure servers with TLS encryption...</string>
+    <string name="privacy_body4">You can access, correct or delete your data at any time...</string>
+    <string name="privacy_body5">We may update this policy occasionally...</string>
+
+    <!-- UseDraftView -->
+    <string name="user_tab">User</string>
+    <string name="draft_tab">Draft</string>
+    <string name="user_section">USER</string>
+    <string name="historic_section">POINT HISTORY</string>
+    <string name="loading_data">Loading data…</string>
+    <string name="no_draft">User \"%1$s\" did not submit a lineup.</string>
+    <string name="confirm_expel_title">Confirm expulsion</string>
+    <string name="confirm_expel_msg">Are you sure you want to expel this user?</string>
+    <string name="confirm_captain_title">Confirm captain</string>
+    <string name="confirm_captain_msg">Are you sure you want to make this user captain?</string>
+    <string name="success">Success</string>
+    <string name="error">Error</string>
+    <string name="performance_chart_desc">Performance chart</string>
+
+    <!-- LigaView -->
+    <string name="Ligaback">Back</string>
+    <string name="Ligacancel">Cancel</string>
+    <string name="create_draft">Create Draft</string>
+    <string name="jornada_total">Total</string>
+    <string name="crear_draft_dialog_title">Create Draft</string>
+    <string name="crear_draft_dialog_msg">You are about to create the draft, please select the formation before continuing.</string>
+    <string name="accept">Accept</string>
+    <string name="draft_error_title">Error</string>
+    <string name="show_options">Show options</string>
+    <string name="select_formation">Select formation</string>
+    <string name="user_total_points">pts</string>
+
+    <!-- HomeLogged -->
+    <string name="create_league">Create</string>
+    <string name="join_league">Join</string>
+    <string name="edit_league">Edit League</string>
+    <string name="leave_league">Leave League</string>
+    <string name="confirm_leave_league">Are you sure you want to leave the league?</string>
+    <string name="only_captain_can_edit">Only the captain can edit the league</string>
+    <string name="share_league">Share league</string>
+    <string name="no_leagues">You are not in any league yet</string>
+    <string name="my_leagues">MY LEAGUES</string>
+    <string name="matchday_prefix">MATCHES – MATCHDAY</string>
+    <string name="create_league_title">Create League</string>
+    <string name="edit_league_title">Edit League</string>
+    <string name="joined_league_title">Join League</string>
+    <string name="joined_league_message">You have successfully joined the league.</string>
+    <string name="error_title">Error</string>
+    <string name="HomeLcancel">Cancel</string>
+    <string name="HomeLaccept">Accept</string>
+    <string name="create_subtitle">Create a league with your friends!</string>
+    <string name="users_icon_description">Users</string>
+    <string name="points_suffix">pts</string>
+    <string name="options_menu">Options</string>
+    <string name="matchday_prefix_param">MATCHES – MATCHDAY %1$s</string>
+
+    <!-- TrainerCard -->
+    <string name="no_birthdate">No birth date</string>
+    <string name="captain_label">Captain</string>
+    <string name="more_info">More info</string>
+    <string name="expel">Expel</string>
+    <string name="make_captain">Make Captain</string>
+    <string name="points_prefix">PTS: %1$s</string>
+
+    <!-- LigaDialogs -->
+    <string name="join_league_title">Join League</string>
+    <string name="join_league_code_label">League Code</string>
+    <string name="join_league_action">Join</string>
+    <string name="DialogLcancel">Cancel</string>
+    <string name="reset_password_title">Reset Password</string>
+    <string name="reset_password_description">Enter your email and you’ll receive a link to change your password.</string>
+    <string name="email_label">Email</string>
+    <string name="send">Send</string>
+    <string name="league_code_title">League Code</string>
+    <string name="copy">Copy</string>
+    <string name="DialogLclose">Close</string>
+    <string name="DialogLaccept">Accept</string>
+    <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_send">Send</string>
+    <string name="create">Create</string>
+    <string name="DialogLsave">Save</string>
+    <string name="select_image">Select Image</string>
+    <string name="change_image">Change Image</string>
+    <string name="image_selected">Image selected ✅</string>
+    <string name="league_name_label">League Name</string>
+    <string name="contact_title">Contact</string>
+    <string name="contact_description">Have questions or suggestions? Write to us and we’ll get back to you ASAP.</string>
+    <string name="your_message">Your message</string>
+    <string name="message_placeholder">Type your message here…</string>
+
 </resources>

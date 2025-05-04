@@ -19,11 +19,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.ContactFormDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.GradientHeader
@@ -72,33 +74,25 @@ fun SettingsView(
             /* ─── tus tarjetas ─── */
             item {
                 ExpandableSettingsCard(
-                    title = "Creadores del proyecto",
-                    body = """
-            Este proyecto ha sido desarrollado por:
-            • Albert Garrido
-            • Joan Linares
-        """.trimIndent()
+                    title = stringResource(R.string.creators_title),
+                    body = stringResource(R.string.creators_body)
                 )
             }
             item {
-                SettingsCard("Contacto") {
+                SettingsCard(stringResource(R.string.contact)) {
                     showContactDialog = true
                 }
             }
             item { DarkModeCard(isDark) { viewModel.toggleTheme() } }
             item {
-                SettingsCard("Política de privacidad") {
+                SettingsCard(stringResource(R.string.privacy_title)) {
                     showPrivacyDialog = true
                 }
             }
             item {
                 ExpandableSettingsCard(
-                    title = "Conoce nuestra API",
-                    body = """
-            • Toda la información de partidos, jugadores y estadísticas la obtenemos a través de la API de SportMonks.  
-            • Gracias a SportMonks por permitirnos usar su servicio y facilitarnos datos actualizados en tiempo real.  
-            • Su API es la base de nuestro sistema de puntuaciones, alineaciones y clasificación.
-        """.trimIndent()
+                    title = stringResource(R.string.api_title),
+                    body = stringResource(R.string.api_body)
                 )
             }
 
@@ -123,7 +117,7 @@ fun SettingsView(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor   = MaterialTheme.colorScheme.onPrimary
                     )
-                ) { Text("Cerrar sesión") }
+                ) { Text(stringResource(R.string.logout)) }
             }
 
             /* Loading */
@@ -167,7 +161,7 @@ fun SettingsView(
                 .fillMaxWidth()
                 .align(Alignment.TopCenter)
         ) {
-            GradientHeader(title = "Ajustes")
+            GradientHeader(title = stringResource(R.string.settings_title))
         }
     }
     if (showContactDialog) {
@@ -198,28 +192,28 @@ fun SettingsView(
 
 }
 
-        /* ---------- COMPONENTES REUTILIZABLES ---------- */
-        @Composable
-        fun SettingsCard(
-            title: String,
-            onClick: (String) -> Unit
-        ) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 6.dp)
-                    .clickable { onClick(title) },
-                shape = RoundedCornerShape(18.dp),
-                tonalElevation = 2.dp,
-                color = MaterialTheme.colorScheme.surfaceVariant
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(20.dp)
-                )
-            }
-        }
+/* ---------- COMPONENTES REUTILIZABLES ---------- */
+@Composable
+fun SettingsCard(
+    title: String,
+    onClick: (String) -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .clickable { onClick(title) },
+        shape = RoundedCornerShape(18.dp),
+        tonalElevation = 2.dp,
+        color = MaterialTheme.colorScheme.surfaceVariant
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.padding(20.dp)
+        )
+    }
+}
 
 @Composable
 fun DarkModeCard(
@@ -241,7 +235,7 @@ fun DarkModeCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Modo oscuro", style = MaterialTheme.typography.bodyLarge)
+            Text(stringResource(R.string.dark_mode), style = MaterialTheme.typography.bodyLarge)
             Switch(checked = isDark, onCheckedChange = { onToggle() })
         }
     }
@@ -329,7 +323,7 @@ fun PrivacyPolicyDialog(onDismiss: () -> Unit) {
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Política de privacidad",
+                        text = stringResource(R.string.privacy_title),
                         color = Color.White,
                         style = MaterialTheme.typography.titleMedium
                     )
@@ -343,14 +337,14 @@ fun PrivacyPolicyDialog(onDismiss: () -> Unit) {
                 ) {
                     // -------- 1. Información que recopilamos --------
                     Text(
-                        text = "1. Información que recopilamos",
+                        text = stringResource(R.string.privacy_point1),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Start
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        text = "Recopilamos los datos que nos proporcionas al registrarte (nombre de usuario, correo electrónico) y la información de uso (alineaciones enviadas, puntuaciones obtenidas) para ofrecerte una experiencia personalizada.",
+                        text = stringResource(R.string.privacy_body1),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Start
@@ -359,15 +353,14 @@ fun PrivacyPolicyDialog(onDismiss: () -> Unit) {
 
                     // -------- 2. Cómo usamos tus datos --------
                     Text(
-                        text = "2. Cómo usamos tus datos",
+                        text = stringResource(R.string.privacy_point2),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Start
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        text = "• Procesamos tu información para gestionar tu cuenta y mostrarte tu historial de rendimiento.\n" +
-                                "• No compartimos ni vendemos tus datos a terceros.",
+                        text = stringResource(R.string.privacy_body2),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Start
@@ -376,14 +369,14 @@ fun PrivacyPolicyDialog(onDismiss: () -> Unit) {
 
                     // -------- 3. Seguridad --------
                     Text(
-                        text = "3. Seguridad",
+                        text = stringResource(R.string.privacy_point3),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Start
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        text = "Tus datos se almacenan en servidores seguros con cifrado TLS. Solo personal autorizado tiene acceso a la base de datos.",
+                        text = stringResource(R.string.privacy_body3),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Start
@@ -392,14 +385,14 @@ fun PrivacyPolicyDialog(onDismiss: () -> Unit) {
 
                     // -------- 4. Derechos del usuario --------
                     Text(
-                        text = "4. Derechos del usuario",
+                        text = stringResource(R.string.privacy_point4),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Start
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        text = "Tienes derecho a acceder, rectificar o eliminar tus datos en cualquier momento. Para ello, ponte en contacto con nosotros a través del formulario de contacto.",
+                        text = stringResource(R.string.privacy_body4),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Start
@@ -408,14 +401,14 @@ fun PrivacyPolicyDialog(onDismiss: () -> Unit) {
 
                     // -------- 5. Cambios en esta política --------
                     Text(
-                        text = "5. Cambios en esta política",
+                        text = stringResource(R.string.privacy_point5),
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Start
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        text = "Podemos actualizar esta política ocasionalmente. Te informaremos de cualquier cambio significativo antes de que entre en vigor.",
+                        text = stringResource(R.string.privacy_body5),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Start
@@ -429,7 +422,7 @@ fun PrivacyPolicyDialog(onDismiss: () -> Unit) {
                     ) {
                         TextButton(onClick = onDismiss) {
                             Text(
-                                text = "Cerrar",
+                                text = stringResource(R.string.Settingsclose),
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }

@@ -5,10 +5,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,22 +14,18 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
+import androidx.navigation.NavController
 
 private val GraySecondary @Composable get() = MaterialTheme.colorScheme.surfaceVariant
 private val OnBluePrimary @Composable get() = MaterialTheme.colorScheme.onPrimary
 private val OnGraySecondary @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 
 @Composable
-fun HomeView(
-    navController: NavController,
-) {
+fun HomeView(navController: NavController) {
     BackHandler {}
     Column(
         modifier = Modifier
@@ -56,12 +49,9 @@ fun HomeView(
         ) {
             Text(
                 text = stringResource(R.string.home_title),
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Bold,
                 color = OnBluePrimary,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.align(Alignment.Center),
-                style = MaterialTheme.typography.headlineMedium
+                style = MaterialTheme.typography.titleLarge
             )
         }
 
@@ -92,9 +82,7 @@ fun HomeView(
         ) {
             GradientButton(
                 text = stringResource(R.string.create_account),
-                onClick = {
-                    navController.navigate(Routes.Register.route)
-                },
+                onClick = { navController.navigate(Routes.Register.route) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
@@ -109,8 +97,7 @@ fun HomeView(
                 Text(
                     text = stringResource(R.string.login),
                     color = OnGraySecondary,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold
+                    style = MaterialTheme.typography.bodyLarge
                 )
             }
         }
@@ -145,8 +132,7 @@ fun GradientButton(
             Text(
                 text = text,
                 color = textColor,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold
+                style = MaterialTheme.typography.bodyLarge
             )
         }
     }

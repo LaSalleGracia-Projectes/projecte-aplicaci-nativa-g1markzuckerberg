@@ -63,4 +63,184 @@
     <string name="fantasy_logo_desc">Logo de Fantasy Draft</string>
     <string name="create_account">CREAR CUENTA</string>
     <string name="login">INICIAR SESIÓN</string>
+
+    <!-- LoginView -->
+    <string name="loginTitle">Iniciar sesión</string>
+    <string name="email">Correo</string>
+    <string name="password">Contraseña</string>
+    <string name="toggle_password_visibility">Mostrar/Ocultar contraseña</string>
+    <string name="forgot_password">Olvidé mi contraseña</string>
+    <string name="login_with_google">Iniciar sesión con Google</string>
+    <string name="google_logo">Logo de Google</string>
+    <string name="auth_error">Error de autenticación</string>
+    <string name="invalid_credentials">Usuario o contraseña incorrectos.</string>
+
+    <!-- RegisterView -->
+    <string name="register_title">Crear una cuenta</string>
+    <string name="register_with_email">Crear cuenta con tu email</string>
+    <string name="continue_with_google">Continuar con Google</string>
+    <string name="already_have_account">¿Ya tienes cuenta?</string>
+
+    <!-- PlayerDetailView -->
+    <string name="Detailback">Volver</string>
+    <string name="player_default">Jugador</string>
+    <string name="team_logo">Logo del equipo</string>
+    <string name="player_photo">Foto del jugador</string>
+    <string name="position_label">Posición</string>
+    <string name="chart_desc">Gráfico de evolución de puntos</string>
+    <string name="Detailpos_forward">Delantero</string>
+    <string name="Detailpos_midfielder">Mediocentro</string>
+    <string name="Detailpos_defender">Defensa</string>
+    <string name="Detailpos_goalkeeper">Portero</string>
+    <string name="unknown_position">Posición desconocida</string>
+
+    <!-- PlayersView -->
+    <string name="players_title">Jugadores</string>
+    <string name="team">Equipo</string>
+    <string name="search_placeholder">Buscar…</string>
+    <string name="sort_points">Ordenar por puntos</string>
+    <string name="select_team">Seleccionar equipo</string>
+    <string name="all_teams">Todos</string>
+    <string name="no_filter">Sin filtro</string>
+
+    <!-- RegisterEmailView -->
+    <string name="registerMail_title">Crear una cuenta</string>
+    <string name="register_subtitle">Rellena los datos para crear tu cuenta</string>
+    <string name="username">Nombre de usuario</string>
+    <string name="Registeremail">Correo</string>
+    <string name="Registerpassword">Contraseña</string>
+    <string name="confirm_password">Repetir Contraseña</string>
+    <string name="password_rule_length">• La contraseña debe ser de al menos 6 caracteres</string>
+    <string name="password_rule_uppercase">• Debe incluir una mayúscula</string>
+    <string name="password_rule_digit">• Debe incluir números</string>
+    <string name="terms">He leído y acepto las condiciones legales y la política de privacidad de Fantasy Draft</string>
+    <string name="register_button">Crear cuenta</string>
+    <string name="register_error_title">Error al crear cuenta</string>
+    <string name="register_error_message">Este username o correo ya existen, por favor intenta con otros.</string>
+
+    <!-- UserSelf -->
+    <string name="profile_title">Mi perfil</string>
+    <string name="edit_username">Nombre de usuario</string>
+    <string name="edit_birthdate">Fecha nacimiento</string>
+    <string name="edit_password">Cambiar contraseña</string>
+    <string name="no_league_text">Aún no perteneces a ninguna liga.</string>
+    <string name="profile_photo">Foto de perfil</string>
+    <string name="choose_gallery">Elegir de galería</string>
+    <string name="ModalUsersave">Guardar</string>
+    <string name="ModalUsercancel">Cancelar</string>
+    <string name="change_password">Cambiar contraseña</string>
+    <string name="password_current">Actual</string>
+    <string name="password_new">Nueva</string>
+    <string name="password_confirm">Confirmar</string>
+    <string name="new_name">Nuevo nombre</string>
+    <string name="new_birthdate">Fecha (YYYY-MM-DD)</string>
+
+    <!-- SettingsView -->
+    <string name="settings_title">Ajustes</string>
+    <string name="creators_title">Creadores del proyecto</string>
+    <string name="creators_body">Este proyecto ha sido desarrollado por:\n• Albert Garrido\n• Joan Linares</string>
+    <string name="contact">Contacto</string>
+    <string name="dark_mode">Modo oscuro</string>
+    <string name="privacy_policy">Política de privacidad</string>
+    <string name="api_title">Conoce nuestra API</string>
+    <string name="api_body">• Toda la información de partidos, jugadores y estadísticas la obtenemos a través de la API de SportMonks.\n• Gracias a SportMonks por permitirnos usar su servicio y facilitarnos datos actualizados en tiempo real.\n• Su API es la base de nuestro sistema de puntuaciones, alineaciones y clasificación.</string>
+    <string name="logout">Cerrar sesión</string>
+    <string name="Settingsclose">Cerrar</string>
+    <string name="privacy_title">Política de privacidad</string>
+    <string name="privacy_point1">1. Información que recopilamos</string>
+    <string name="privacy_point2">2. Cómo usamos tus datos</string>
+    <string name="privacy_point3">3. Seguridad</string>
+    <string name="privacy_point4">4. Derechos del usuario</string>
+    <string name="privacy_point5">5. Cambios en esta política</string>
+    <string name="privacy_body1">Recopilamos los datos que nos proporcionas al registrarte (nombre de usuario, correo electrónico)...</string>
+    <string name="privacy_body2">• Procesamos tu información para gestionar tu cuenta y mostrarte tu historial...\n• No compartimos ni vendemos tus datos a terceros.</string>
+    <string name="privacy_body3">Tus datos se almacenan en servidores seguros con cifrado TLS...</string>
+    <string name="privacy_body4">Tienes derecho a acceder, rectificar o eliminar tus datos en cualquier momento...</string>
+    <string name="privacy_body5">Podemos actualizar esta política ocasionalmente...</string>
+
+    <!-- UserDraftView -->
+    <string name="user_tab">Usuario</string>
+    <string name="draft_tab">Draft</string>
+    <string name="user_section">USUARIO</string>
+    <string name="historic_section">HISTÓRICO DE PUNTOS</string>
+    <string name="loading_data">Cargando datos…</string>
+    <string name="no_draft">El usuario \"%1$s\" no envió la convocatoria.</string>
+    <string name="confirm_expel_title">Confirmar expulsión</string>
+    <string name="confirm_expel_msg">¿Seguro que deseas expulsar a este usuario?</string>
+    <string name="confirm_captain_title">Confirmar capitán</string>
+    <string name="confirm_captain_msg">¿Seguro que deseas hacer capitán a este usuario?</string>
+    <string name="success">Éxito</string>
+    <string name="error">Error</string>
+    <string name="performance_chart_desc">Gráfico de rendimiento</string>
+
+    <!-- LigaView -->ç
+    <string name="Ligaback">Volver</string>
+    <string name="Ligacancel">Cancelar</string>
+    <string name="create_draft">Crear Draft</string>
+    <string name="jornada_total">Total</string>
+    <string name="crear_draft_dialog_title">Crear Draft</string>
+    <string name="crear_draft_dialog_msg">Vas a proceder a la creación del draft, por favor elige la alineación antes de continuar.</string>
+    <string name="accept">Aceptar</string>
+    <string name="draft_error_title">Error</string>
+    <string name="show_options">Mostrar opciones</string>
+    <string name="select_formation">Seleccionar alineación</string>
+    <string name="user_total_points">pts</string>
+
+    <!-- HomeLogged -->
+    <string name="create_league">Crear</string>
+    <string name="join_league">Unirse</string>
+    <string name="edit_league">Editar Liga</string>
+    <string name="leave_league">Abandonar Liga</string>
+    <string name="confirm_leave_league">¿Estás seguro que deseas abandonar la liga?</string>
+    <string name="only_captain_can_edit">Solo el capitán puede editar la liga</string>
+    <string name="share_league">Compartir liga</string>
+    <string name="no_leagues">No estás en ninguna liga aún</string>
+    <string name="my_leagues">MIS LIGAS</string>
+    <string name="matchday_prefix">PARTIDOS – JORNADA</string>
+    <string name="create_league_title">Crear Liga</string>
+    <string name="edit_league_title">Editar Liga</string>
+    <string name="joined_league_title">Unirse a Liga</string>
+    <string name="joined_league_message">Te has unido correctamente a la liga.</string>
+    <string name="error_title">Error</string>
+    <string name="HomeLcancel">Cancelar</string>
+    <string name="HomeLaccept">Aceptar</string>
+    <string name="create_subtitle">¡Crea una liga con tus amigos!</string>
+    <string name="users_icon_description">Usuarios</string>
+    <string name="points_suffix">pts</string>
+    <string name="options_menu">Opciones</string>
+    <string name="matchday_prefix_param">PARTIDOS – JORNADA %1$s</string>
+
+    <!-- TrainerCard -->
+    <string name="no_birthdate">Sin fecha de nacimiento</string>
+    <string name="captain_label">Capitán</string>
+    <string name="more_info">Información adicional</string>
+    <string name="expel">Expulsar</string>
+    <string name="make_captain">Hacer Capitán</string>
+    <string name="points_prefix">PTS: %1$s</string>
+
+    <!-- LigaDialogs -->
+    <string name="join_league_title">Unirse a Liga</string>
+    <string name="join_league_code_label">Código de la liga</string>
+    <string name="join_league_action">Unirse</string>
+    <string name="DialogLcancel">Cancelar</string>
+    <string name="reset_password_title">Restablecer contraseña</string>
+    <string name="reset_password_description">Ingrese su correo y recibirá un enlace para cambiar la contraseña.</string>
+    <string name="email_label">Correo</string>
+    <string name="send">Enviar</string>
+    <string name="league_code_title">Código de la Liga</string>
+    <string name="copy">Copiar</string>
+    <string name="DialogLclose">Cerrar</string>
+    <string name="DialogLaccept">Aceptar</string>
+    <string name="dialog_cancel">Cancelar</string>
+    <string name="dialog_send">Enviar</string>
+    <string name="create">Crear</string>
+    <string name="DialogLsave">Guardar</string>
+    <string name="select_image">Seleccionar imagen</string>
+    <string name="change_image">Cambiar imagen</string>
+    <string name="image_selected">Imagen seleccionada ✅</string>
+    <string name="league_name_label">Nombre de la liga</string>
+    <string name="contact_title">Contacto</string>
+    <string name="contact_description">¿Tienes dudas o sugerencias? Escríbenos y te responderemos lo antes posible.</string>
+    <string name="your_message">Tu mensaje</string>
+    <string name="message_placeholder">Escribe tu consulta aquí…</string>
 </resources>

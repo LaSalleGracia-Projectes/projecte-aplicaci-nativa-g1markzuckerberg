@@ -62,6 +62,187 @@
     <!-- HomeView -->
     <string name="home_title">Crea la teva lliga amb els teus amics!</string>
     <string name="fantasy_logo_desc">Logotip de Fantasy Draft</string>
-    <string name="create_account">CREA COMPTE</string>
+    <string name="create_account">CREA UN COMPTE</string>
     <string name="login">INICIA SESSIÓ</string>
+
+    <!-- LoginView -->
+    <string name="loginTitle">Inicia sessió</string>
+    <string name="email">Correu electrònic</string>
+    <string name="password">Contrasenya</string>
+    <string name="toggle_password_visibility">Mostrar/Ocultar contrasenya</string>
+    <string name="forgot_password">He oblidat la contrasenya</string>
+    <string name="login_with_google">Inicia sessió amb Google</string>
+    <string name="google_logo">Logotip de Google</string>
+    <string name="auth_error">Error d\'autenticació</string>
+    <string name="invalid_credentials">Usuari o contrasenya incorrectes.</string>
+
+    <!-- RegisterView -->
+    <string name="register_title">Crea un compte</string>
+    <string name="register_with_email">Registra\'t amb el teu correu</string>
+    <string name="continue_with_google">Continuar amb Google</string>
+    <string name="already_have_account">Ja tens un compte?</string>
+
+    <!-- PlayerDetailView -->
+    <string name="Detailback">Tornar</string>
+    <string name="player_default">Jugador</string>
+    <string name="team_logo">Logotip de l\'equip</string>
+    <string name="player_photo">Foto del jugador</string>
+    <string name="position_label">Posició</string>
+    <string name="chart_desc">Gràfic d\'evolució de punts</string>
+    <string name="Detailpos_forward">Davanter</string>
+    <string name="Detailpos_midfielder">Migcampista</string>
+    <string name="Detailpos_defender">Defensa</string>
+    <string name="Detailpos_goalkeeper">Porter</string>
+    <string name="unknown_position">Posició desconeguda</string>
+
+    <!-- PlayersView -->
+    <string name="players_title">Jugadors</string>
+    <string name="team">Equip</string>
+    <string name="search_placeholder">Cercar…</string>
+    <string name="sort_points">Ordenar per punts</string>
+    <string name="select_team">Selecciona equip</string>
+    <string name="all_teams">Tots</string>
+    <string name="no_filter">Sense filtre</string>
+
+    <!-- RegisterEmailView -->
+    <string name="registerMail_title">Crea un compte</string>
+    <string name="register_subtitle">Omple les dades per crear el teu compte</string>
+    <string name="username">Nom d\'usuari</string>
+    <string name="Registeremail">Correu electrònic</string>
+    <string name="Registerpassword">Contrasenya</string>
+    <string name="confirm_password">Repetir contrasenya</string>
+    <string name="password_rule_length">• La contrasenya ha de tenir almenys 6 caràcters</string>
+    <string name="password_rule_uppercase">• Ha d’incloure una majúscula</string>
+    <string name="password_rule_digit">• Ha d’incloure números</string>
+    <string name="terms">He llegit i accepto les condicions legals i la política de privacitat de Fantasy Draft</string>
+    <string name="register_button">Crear compte</string>
+    <string name="register_error_title">Error en crear el compte</string>
+    <string name="register_error_message">Aquest nom d’usuari o correu ja existeixen. Intenta-ho amb un altre.</string>
+
+    <!-- UserSelf -->
+    <string name="profile_title">El meu perfil</string>
+    <string name="edit_username">Nom d\'usuari</string>
+    <string name="edit_birthdate">Data de naixement</string>
+    <string name="edit_password">Canviar contrasenya</string>
+    <string name="no_league_text">Encara no pertanys a cap lliga.</string>
+    <string name="profile_photo">Foto de perfil</string>
+    <string name="choose_gallery">Triar de la galeria</string>
+    <string name="ModalUsersave">Desar</string>
+    <string name="ModalUsercancel">Cancel·lar</string>
+    <string name="change_password">Canviar contrasenya</string>
+    <string name="password_current">Actual</string>
+    <string name="password_new">Nova</string>
+    <string name="password_confirm">Confirmar</string>
+    <string name="new_name">Nom nou</string>
+    <string name="new_birthdate">Data (AAAA-MM-DD)</string>
+
+    <!-- SettingsView -->
+    <string name="settings_title">Ajustaments</string>
+    <string name="creators_title">Creadors del projecte</string>
+    <string name="creators_body">Aquest projecte ha estat desenvolupat per:\n• Albert Garrido\n• Joan Linares</string>
+    <string name="contact">Contacte</string>
+    <string name="dark_mode">Mode fosc</string>
+    <string name="privacy_policy">Política de privacitat</string>
+    <string name="api_title">Coneix la nostra API</string>
+    <string name="api_body">• Tota la informació de partits, jugadors i estadístiques l’obtenim a través de l’API de SportMonks.\n• Gràcies a SportMonks per permetre’ns usar el seu servei...\n• La seva API és la base del nostre sistema de puntuació i classificació.</string>
+    <string name="logout">Tancar sessió</string>
+    <string name="Settingsclose">Tancar</string>
+    <string name="privacy_title">Política de privacitat</string>
+    <string name="privacy_point1">1. Informació que recopilem</string>
+    <string name="privacy_point2">2. Com utilitzem les teves dades</string>
+    <string name="privacy_point3">3. Seguretat</string>
+    <string name="privacy_point4">4. Drets de l’usuari</string>
+    <string name="privacy_point5">5. Canvis en aquesta política</string>
+    <string name="privacy_body1">Recollim les dades que ens proporciones en registrar-te...</string>
+    <string name="privacy_body2">• Processem la teva informació per gestionar el teu compte...\n• No compartim ni venem les teves dades.</string>
+    <string name="privacy_body3">Les teves dades s’emmagatzemen en servidors segurs amb xifratge TLS...</string>
+    <string name="privacy_body4">Tens dret a accedir, rectificar o eliminar les teves dades en qualsevol moment...</string>
+    <string name="privacy_body5">Podem actualitzar aquesta política ocasionalment...</string>
+
+    <!-- UserDraftView -->
+    <string name="user_tab">Usuari</string>
+    <string name="draft_tab">Draft</string>
+    <string name="user_section">USUARI</string>
+    <string name="historic_section">HISTÒRIC DE PUNTS</string>
+    <string name="loading_data">Carregant dades…</string>
+    <string name="no_draft">L\'usuari \"%1$s\" no ha enviat la convocatòria.</string>
+    <string name="confirm_expel_title">Confirmar expulsió</string>
+    <string name="confirm_expel_msg">Segur que vols expulsar aquest usuari?</string>
+    <string name="confirm_captain_title">Confirmar capità</string>
+    <string name="confirm_captain_msg">Segur que vols fer capità aquest usuari?</string>
+    <string name="success">Èxit</string>
+    <string name="error">Error</string>
+    <string name="performance_chart_desc">Gràfic de rendiment</string>
+
+    <!-- LigaView -->
+    <string name="Ligaback">Tornar</string>
+    <string name="Ligacancel">Cancel·lar</string>
+    <string name="create_draft">Crear Draft</string>
+    <string name="jornada_total">Total</string>
+    <string name="crear_draft_dialog_title">Crear Draft</string>
+    <string name="crear_draft_dialog_msg">Vas a procedir a la creació del draft, si us plau, tria l\'alineació abans de continuar.</string>
+    <string name="accept">Acceptar</string>
+    <string name="draft_error_title">Error</string>
+    <string name="show_options">Mostrar opcions</string>
+    <string name="select_formation">Seleccionar alineació</string>
+    <string name="user_total_points">pts</string>
+
+    <!-- HomeLogged -->
+    <string name="create_league">Crear</string>
+    <string name="join_league">Unir-se</string>
+    <string name="edit_league">Editar Lliga</string>
+    <string name="leave_league">Abandonar Lliga</string>
+    <string name="confirm_leave_league">Estàs segur que vols abandonar la lliga?</string>
+    <string name="only_captain_can_edit">Només el capità pot editar la lliga</string>
+    <string name="share_league">Compartir lliga</string>
+    <string name="no_leagues">Encara no estàs en cap lliga</string>
+    <string name="my_leagues">LES MEVES LLIGUES</string>
+    <string name="matchday_prefix">PARTITS – JORNADA</string>
+    <string name="create_league_title">Crear Lliga</string>
+    <string name="edit_league_title">Editar Lliga</string>
+    <string name="joined_league_title">Unir-se a la Lliga</string>
+    <string name="joined_league_message">T\'has unit correctament a la lliga.</string>
+    <string name="error_title">Error</string>
+    <string name="HomeLcancel">Cancel·lar</string>
+    <string name="HomeLaccept">Acceptar</string>
+    <string name="create_subtitle">Crea una lliga amb els teus amics!</string>
+    <string name="users_icon_description">Usuaris</string>
+    <string name="points_suffix">pts</string>
+    <string name="options_menu">Opcions</string>
+    <string name="matchday_prefix_param">PARTITS – JORNADA %1$s</string>
+
+    <!-- TrainerCard -->
+    <string name="no_birthdate">Sense data de naixement</string>
+    <string name="captain_label">Capità</string>
+    <string name="more_info">Informació addicional</string>
+    <string name="expel">Expulsar</string>
+    <string name="make_captain">Fer Capità</string>
+    <string name="points_prefix">PUNTS: %1$s</string>
+
+    <!-- LigaDialogs -->
+    <string name="join_league_title">Unir-se a la Lliga</string>
+    <string name="join_league_code_label">Codi de la lliga</string>
+    <string name="join_league_action">Unir-se</string>
+    <string name="DialogLcancel">Cancel·lar</string>
+    <string name="reset_password_title">Restablir contrasenya</string>
+    <string name="reset_password_description">Introdueix el teu correu i rebràs un enllaç per canviar la contrasenya.</string>
+    <string name="email_label">Correu electrònic</string>
+    <string name="send">Enviar</string>
+    <string name="league_code_title">Codi de la Lliga</string>
+    <string name="copy">Copiar</string>
+    <string name="DialogLclose">Tancar</string>
+    <string name="DialogLaccept">Acceptar</string>
+    <string name="dialog_cancel">Cancel·lar</string>
+    <string name="dialog_send">Enviar</string>
+    <string name="create">Crear</string>
+    <string name="DialogLsave">Desar</string>
+    <string name="select_image">Seleccionar imatge</string>
+    <string name="change_image">Canviar imatge</string>
+    <string name="image_selected">Imatge seleccionada ✅</string>
+    <string name="league_name_label">Nom de la lliga</string>
+    <string name="contact_title">Contacte</string>
+    <string name="contact_description">Tens dubtes o suggeriments? Escriu-nos i et respondrem al més aviat possible.</string>
+    <string name="your_message">El teu missatge</string>
+    <string name="message_placeholder">Escriu la teva consulta aquí…</string>
+
 </resources>

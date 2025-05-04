@@ -35,6 +35,7 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
@@ -150,17 +151,17 @@ fun UserDraftView(
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
                             imageVector   = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver",
+                            contentDescription = stringResource(R.string.back),
                             tint          = MaterialTheme.colorScheme.onPrimary
                         )
                     }
                     Text(
-                    text      = userName,
-                    style     = MaterialTheme.typography.titleLarge,
-                    color     = MaterialTheme.colorScheme.onPrimary,
-                    modifier  = Modifier.weight(1f),
-                    textAlign = TextAlign.Center
-                        )
+                        text      = userName,
+                        style     = MaterialTheme.typography.titleLarge,
+                        color     = MaterialTheme.colorScheme.onPrimary,
+                        modifier  = Modifier.weight(1f),
+                        textAlign = TextAlign.Center
+                    )
                     UserImage(
                         url      = decodedUserPhotoUrl,
                         modifier = Modifier
@@ -173,11 +174,11 @@ fun UserDraftView(
                         .fillMaxWidth()
                         .padding(vertical = 8.dp)
                 ) {
-                UserDraftTabs(pagerState) { page ->
-                    scope.launch { pagerState.animateScrollToPage(page) }
+                    UserDraftTabs(pagerState) { page ->
+                        scope.launch { pagerState.animateScrollToPage(page) }
+                    }
                 }
-            }
-        }}
+            }}
 
         // ─── PAGER ──────────────────────────────────────────
         HorizontalPager(
@@ -222,7 +223,7 @@ fun UserDraftView(
                 ) {
                     item {
                         Spacer(modifier = Modifier.height(18.dp))
-                        SectionHeader(title = "USUARIO")
+                        SectionHeader(title = stringResource(R.string.user_section))
                         HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
                     }
                     item {
@@ -251,12 +252,12 @@ fun UserDraftView(
                                     }
                                 )
                             }
-                        } ?: Text("Cargando datos…")
+                        } ?: Text(stringResource(R.string.loading_data))
 
                     }
                     item {
                         Spacer(modifier = Modifier.height(18.dp))
-                        SectionHeader(title = "HISTÓRICO DE PUNTOS")
+                        SectionHeader(title = stringResource(R.string.historic_section))
                         HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
 
                     }
@@ -275,7 +276,7 @@ fun UserDraftView(
                         ) {
                             SubcomposeAsyncImage(
                                 model = graphUrl,
-                                contentDescription = "Gráfico de rendimiento",
+                                contentDescription = stringResource(R.string.performance_chart_desc),
                                 modifier = Modifier
                                     .height(220.dp)
                                     .clip(MaterialTheme.shapes.medium),
@@ -303,7 +304,7 @@ fun UserDraftView(
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(modifier = Modifier.fillMaxSize()) {
 
-                        val jornadaPoints =
+                            val jornadaPoints =
                                 draftPlayers.sumOf { it.puntos_jornada.toDouble().roundToInt() }
 
 
@@ -377,7 +378,7 @@ fun UserDraftView(
                                             .padding(horizontal = 24.dp)
                                     ) {
                                         Text(
-                                            text      = "El usuario \"$userName\" no envió la convocatoria.",
+                                            text      = stringResource(R.string.no_draft, userName),
                                             style     = MaterialTheme.typography.bodyLarge,
                                             color     = MaterialTheme.colorScheme.onSurface,
                                             textAlign = TextAlign.Center,
@@ -396,32 +397,47 @@ fun UserDraftView(
                         }
                     }
                 }
-        }
+            }
         }
 
-            // ─── DROPDOWN / DIÁLOGOS ───────────────────────────
+        // ─── DROPDOWN / DIÁLOGOS ───────────────────────────
 
         if (showConfirmationDialog) {
-            val title = if (confirmationAction == "expulsar") "Confirmar expulsión" else "Confirmar capitán"
-            val msg   = if (confirmationAction == "expulsar")
-                "¿Seguro que deseas expulsar a este usuario?"
+            val titleText = if (confirmationAction == "expulsar")
+                stringResource(R.string.confirm_expel_title)
             else
-                "¿Seguro que deseas hacer capitán a este usuario?"
+                stringResource(R.string.confirm_captain_title)
+
+            val msgText = if (confirmationAction == "expulsar")
+                stringResource(R.string.confirm_expel_msg)
+            else
+                stringResource(R.string.confirm_captain_msg)
+
+            // Traducciones anticipadas para evitar error de context
+            val successText = stringResource(R.string.success)
+            val errorText   = stringResource(R.string.error)
 
             CustomAlertDialog(
-                title   = title,
-                message = msg,
+                title = titleText,
+                message = msgText,
                 onDismiss = { showConfirmationDialog = false },
                 onConfirm = {
                     showConfirmationDialog = false
-                    if (confirmationAction == "expulsar")
+                    if (confirmationAction == "expulsar") {
                         userDraftViewModel.kickUser(leagueId, userId) { ok, m ->
-                            resultDialogData = ResultDialogData(if (ok) "Éxito" else "Error", m)
+                            resultDialogData = ResultDialogData(
+                                title = if (ok) successText else errorText,
+                                message = m
+                            )
                         }
-                    else
+                    } else {
                         userDraftViewModel.makeCaptain(leagueId, userId) { ok, m ->
-                            resultDialogData = ResultDialogData(if (ok) "Éxito" else "Error", m)
+                            resultDialogData = ResultDialogData(
+                                title = if (ok) successText else errorText,
+                                message = m
+                            )
                         }
+                    }
                 }
             )
         }
@@ -528,7 +544,7 @@ fun UserDraftTabs(
     pagerState: PagerState,
     onTabSelected: (page: Int) -> Unit
 ) {
-    val tabTitles = listOf("Usuario", "Draft")
+    val tabTitles = listOf(stringResource(R.string.user_tab), stringResource(R.string.draft_tab))
 
     BoxWithConstraints {
         val fullWidth = constraints.maxWidth.toFloat()

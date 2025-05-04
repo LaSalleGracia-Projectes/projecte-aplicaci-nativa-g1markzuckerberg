@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -31,6 +32,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 
 @Composable
 fun JoinLigaDialog(
@@ -63,7 +65,7 @@ fun JoinLigaDialog(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Unirse a Liga",
+                        text = stringResource(R.string.join_league_title),
                         color = Color.White,
                         style = MaterialTheme.typography.titleMedium
                     )
@@ -76,7 +78,7 @@ fun JoinLigaDialog(
                             val filtered = it.replace(" ", "")
                             ligaCode = filtered.take(30)
                         },
-                        label = { Text("Código de la liga") },
+                        label = { Text(stringResource(R.string.join_league_code_label)) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         singleLine = true,
@@ -88,14 +90,14 @@ fun JoinLigaDialog(
                         horizontalArrangement = Arrangement.End
                     ) {
                         TextButton(onClick = onDismiss) {
-                            Text("Cancelar", color = MaterialTheme.colorScheme.error)
+                            Text(stringResource(R.string.DialogLcancel), color = MaterialTheme.colorScheme.error)
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         TextButton(
                             onClick = { if (isSubmitEnabled) onJoinLiga(ligaCode) }
                         ) {
                             Text(
-                                text = "Unirse",
+                                text = stringResource(R.string.join_league_action),
                                 color = if (isSubmitEnabled)
                                     MaterialTheme.colorScheme.primary
                                 else
@@ -142,7 +144,7 @@ fun ForgotPasswordDialog(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Restablecer contraseña",
+                        text = stringResource(R.string.reset_password_title),
                         color = Color.White,
                         style = MaterialTheme.typography.titleMedium
                     )
@@ -156,11 +158,11 @@ fun ForgotPasswordDialog(
                             val filtered = it.replace(" ", "")
                             email = filtered.take(30)
                         },
-                        label = { Text("Correo") },
+                        label = { Text(stringResource(R.string.email_label)) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Email,
-                                contentDescription = "Correo"
+                                contentDescription = stringResource(R.string.email_label)
                             )
                         },
                         modifier = Modifier.fillMaxWidth(),
@@ -170,7 +172,7 @@ fun ForgotPasswordDialog(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Ingrese su correo y recibirá un enlace para cambiar la contraseña.",
+                        text = stringResource(R.string.reset_password_description),
                         fontSize = 14.sp
                     )
                     Spacer(modifier = Modifier.height(16.dp))
@@ -179,14 +181,14 @@ fun ForgotPasswordDialog(
                         horizontalArrangement = Arrangement.End
                     ) {
                         TextButton(onClick = onDismiss) {
-                            Text("Cancelar", color = MaterialTheme.colorScheme.error)
+                            Text(stringResource(R.string.DialogLcancel), color = MaterialTheme.colorScheme.error)
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         TextButton(
                             onClick = { if (isSubmitEnabled) onSubmit(email) }
                         ) {
                             Text(
-                                text = "Enviar",
+                                text = stringResource(R.string.send),
                                 color = if (isSubmitEnabled)
                                     MaterialTheme.colorScheme.primary
                                 else
@@ -231,7 +233,7 @@ fun LeagueCodeDialog(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Código de la Liga",
+                        text = stringResource(R.string.league_code_title),
                         color = Color.White,
                         style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp)
                     )
@@ -261,7 +263,7 @@ fun LeagueCodeDialog(
                             onClick = { clipboardManager.setText(AnnotatedString(leagueCode)) }
                         ) {
                             Text(
-                                text = "Copiar",
+                                text = stringResource(R.string.copy),
                                 color = MaterialTheme.colorScheme.primary,
                                 style = MaterialTheme.typography.bodyMedium
                             )
@@ -269,7 +271,7 @@ fun LeagueCodeDialog(
                         Spacer(modifier = Modifier.width(8.dp))
                         TextButton(onClick = onDismiss) {
                             Text(
-                                text = "Cerrar",
+                                text = stringResource(R.string.DialogLclose),
                                 color = MaterialTheme.colorScheme.error,
                                 style = MaterialTheme.typography.bodyMedium
                             )
@@ -284,8 +286,8 @@ fun LeagueCodeDialog(
 fun CustomAlertDialog(
     title: String,
     message: String,
-    confirmButtonText: String = "Aceptar",
-    cancelButtonText: String = "Cancelar",
+    confirmButtonText: String = stringResource(R.string.DialogLaccept),
+    cancelButtonText: String = stringResource(R.string.DialogLcancel),
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {
@@ -375,7 +377,7 @@ private fun String.toAnnotatedStringWithBold(): AnnotatedString {
 fun CustomAlertDialogSingleButton(
     title: String,
     message: String,
-    confirmButtonText: String = "Aceptar",
+    confirmButtonText: String = stringResource(R.string.DialogLaccept),
     onAccept: () -> Unit,
 ) {
     Dialog(onDismissRequest = onAccept) {
@@ -482,7 +484,7 @@ fun LigaDialog(
                     OutlinedTextField(
                         value = leagueName,
                         onValueChange = { leagueName = it },
-                        label = { Text("Nombre de la liga") },
+                        label = { Text(stringResource(R.string.league_name_label)) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         singleLine = true
@@ -498,16 +500,16 @@ fun LigaDialog(
                     ) {
                         Text(
                             text = if (selectedImageUri == null)
-                                "Seleccionar imagen"
+                                stringResource(R.string.select_image)
                             else
-                                "Cambiar imagen"
+                                stringResource(R.string.change_image)
                         )
                     }
 
                     // Indicador de imagen elegida
                     selectedImageUri?.let {
                         Text(
-                            text = "Imagen seleccionada ✅",
+                            text = stringResource(R.string.image_selected),
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier
                                 .padding(top = 8.dp)
@@ -525,7 +527,7 @@ fun LigaDialog(
                         horizontalArrangement = Arrangement.End
                     ) {
                         TextButton(onClick = onDismiss) {
-                            Text("Cancelar", color = MaterialTheme.colorScheme.error)
+                            Text(stringResource(R.string.DialogLcancel), color = MaterialTheme.colorScheme.error)
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         TextButton(
@@ -533,7 +535,7 @@ fun LigaDialog(
                             enabled = leagueName.isNotBlank()
                         ) {
                             Text(
-                                text = if (initialName.isEmpty()) "Crear" else "Guardar",
+                                text = if (initialName.isEmpty()) stringResource(R.string.create) else stringResource(R.string.DialogLsave),
                                 color = if (leagueName.isNotBlank())
                                     MaterialTheme.colorScheme.primary
                                 else
@@ -579,7 +581,7 @@ fun ContactFormDialog(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text  = "Contacto",
+                        text  = stringResource(R.string.contact_title),
                         color = Color.White,
                         style = MaterialTheme.typography.titleMedium
                     )
@@ -587,7 +589,7 @@ fun ContactFormDialog(
 
                 // ─── DESCRIPCIÓN ───
                 Text(
-                    text = "¿Tienes dudas o sugerencias? Escríbenos y te responderemos lo antes posible.",
+                    text = stringResource(R.string.contact_description),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
@@ -600,8 +602,8 @@ fun ContactFormDialog(
                 OutlinedTextField(
                     value         = message,
                     onValueChange = { message = it },
-                    label         = { Text("Tu mensaje") },
-                    placeholder   = { Text("Escribe tu consulta aquí…") },
+                    label         = { Text(stringResource(R.string.your_message)) },
+                    placeholder   = { Text(stringResource(R.string.message_placeholder)) },
                     modifier      = Modifier
                         .fillMaxWidth()
                         .heightIn(min = 100.dp)
@@ -619,7 +621,7 @@ fun ContactFormDialog(
                     horizontalArrangement = Arrangement.End
                 ) {
                     TextButton(onClick = onDismiss) {
-                        Text("Cancelar", color = MaterialTheme.colorScheme.error)
+                        Text(stringResource(R.string.DialogLcancel), color = MaterialTheme.colorScheme.error)
                     }
                     Spacer(Modifier.width(8.dp))
                     TextButton(
@@ -630,7 +632,7 @@ fun ContactFormDialog(
                         enabled = message.isNotBlank()
                     ) {
                         Text(
-                            text  = "Enviar",
+                            text  = stringResource(R.string.send),
                             color = if (message.isNotBlank())
                                 MaterialTheme.colorScheme.primary
                             else

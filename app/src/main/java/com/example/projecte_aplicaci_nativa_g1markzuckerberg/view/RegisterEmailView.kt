@@ -11,10 +11,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
@@ -52,7 +52,6 @@ fun RegisterEmailView(
     var confirmPasswordVisible by remember { mutableStateOf(false) }
     var termsAccepted by remember { mutableStateOf(false) }
 
-    // Se habilita el botón solo si se cumplen todas las condiciones
     val isButtonEnabled = username.isNotBlank() &&
             email.isNotBlank() &&
             password.isNotBlank() &&
@@ -61,190 +60,157 @@ fun RegisterEmailView(
             (password == confirmPassword) &&
             isMinLength && hasUppercase && hasDigit
 
-    // Observar el mensaje de error
     val errorMessage by viewModel.errorMessage.observeAsState()
 
-    // El resto del contenido
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         GradientHeader(
-            title = "Crear una cuenta",
+            title = stringResource(R.string.registerMail_title),
             onBack = { navController.popBackStack() },
             height = 140.dp
         )
         Spacer(modifier = Modifier.height(24.dp))
         Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-            Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Rellena los datos para crear tu cuenta",
-                fontSize = 14.sp,
-                color = Color.Gray
+                text = stringResource(R.string.register_subtitle),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+
             Spacer(modifier = Modifier.height(24.dp))
-            // Campo de username
+
             OutlinedTextField(
                 value = username,
-                onValueChange = { viewModel.onUsernameChange(it) },
-                label = {
-                    Text(
-                        text = "Nombre de usuario",
-                        modifier = Modifier.padding(bottom = 4.dp),
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                },
+                onValueChange = viewModel::onUsernameChange,
+                label = { Text(stringResource(R.string.username), style = MaterialTheme.typography.bodySmall) },
                 leadingIcon = {
                     Image(
                         painter = painterResource(id = R.drawable.ic_profile_black),
-                        contentDescription = "Icono de usuario",
+                        contentDescription = null,
                         modifier = Modifier.size(24.dp)
                     )
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(59.dp),
+                modifier = Modifier.fillMaxWidth().height(59.dp),
                 shape = RoundedCornerShape(8.dp),
                 singleLine = true
             )
+
             Spacer(modifier = Modifier.height(16.dp))
-            // Campo de correo
+
             OutlinedTextField(
                 value = email,
-                onValueChange = { viewModel.onEmailChange(it) },
-                label = {
-                    Text(
-                        text = "Correo",
-                        modifier = Modifier.padding(bottom = 4.dp),
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                },
+                onValueChange = viewModel::onEmailChange,
+                label = { Text(stringResource(R.string.Registeremail), style = MaterialTheme.typography.bodySmall) },
                 leadingIcon = {
                     Image(
                         painter = painterResource(id = R.drawable.ic_email),
-                        contentDescription = "Icono de correo",
+                        contentDescription = null,
                         modifier = Modifier.size(24.dp)
                     )
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(59.dp),
+                modifier = Modifier.fillMaxWidth().height(59.dp),
                 shape = RoundedCornerShape(8.dp),
                 singleLine = true
             )
+
             Spacer(modifier = Modifier.height(16.dp))
-            // Campo para contraseña
+
             OutlinedTextField(
                 value = password,
-                onValueChange = { viewModel.onPasswordChange(it) },
-                label = {
-                    Text(
-                        text = "Contraseña",
-                        modifier = Modifier.padding(bottom = 4.dp),
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                },
+                onValueChange = viewModel::onPasswordChange,
+                label = { Text(stringResource(R.string.Registerpassword), style = MaterialTheme.typography.bodySmall) },
                 leadingIcon = {
                     Image(
                         painter = painterResource(id = R.drawable.password),
-                        contentDescription = "Icono de contraseña",
+                        contentDescription = null,
                         modifier = Modifier.size(24.dp)
                     )
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(59.dp),
-                shape = RoundedCornerShape(8.dp),
-                singleLine = true,
-                visualTransformation = if (passwordVisible)
-                    VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
-                    val iconRes =
-                        if (passwordVisible) R.drawable.visibility_on else R.drawable.visibility_off
+                    val iconRes = if (passwordVisible) R.drawable.visibility_on else R.drawable.visibility_off
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Image(
                             painter = painterResource(id = iconRes),
-                            contentDescription = "Mostrar/Ocultar contraseña",
+                            contentDescription = null,
                             modifier = Modifier.size(24.dp)
                         )
                     }
-                }
+                },
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth().height(59.dp),
+                shape = RoundedCornerShape(8.dp),
+                singleLine = true
             )
+
             Spacer(modifier = Modifier.height(16.dp))
-            // Campo para repetir contraseña
+
             OutlinedTextField(
                 value = confirmPassword,
-                onValueChange = { viewModel.onConfirmPasswordChange(it) },
-                label = {
-                    Text(
-                        text = "Repetir Contraseña",
-                        modifier = Modifier.padding(bottom = 4.dp),
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                },
+                onValueChange = viewModel::onConfirmPasswordChange,
+                label = { Text(stringResource(R.string.confirm_password), style = MaterialTheme.typography.bodySmall) },
                 leadingIcon = {
                     Image(
                         painter = painterResource(id = R.drawable.password),
-                        contentDescription = "Icono de repetir contraseña",
+                        contentDescription = null,
                         modifier = Modifier.size(24.dp)
                     )
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(59.dp),
-                shape = RoundedCornerShape(8.dp),
-                singleLine = true,
-                visualTransformation = if (confirmPasswordVisible)
-                    VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
-                    val iconRes =
-                        if (confirmPasswordVisible) R.drawable.visibility_on else R.drawable.visibility_off
+                    val iconRes = if (confirmPasswordVisible) R.drawable.visibility_on else R.drawable.visibility_off
                     IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
                         Image(
                             painter = painterResource(id = iconRes),
-                            contentDescription = "Mostrar/Ocultar contraseña",
+                            contentDescription = null,
                             modifier = Modifier.size(24.dp)
                         )
                     }
-                }
+                },
+                visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth().height(59.dp),
+                shape = RoundedCornerShape(8.dp),
+                singleLine = true
             )
+
             Spacer(modifier = Modifier.height(16.dp))
-            // Requisitos de la contraseña
+
             Column(modifier = Modifier.padding(bottom = 8.dp)) {
                 Text(
-                    text = "• La contraseña debe ser de al menos 6 caracteres",
-                    fontSize = 12.sp,
+                    text = stringResource(R.string.password_rule_length),
+                    style = MaterialTheme.typography.bodySmall,
                     color = if (isMinLength) Color.Green else Color.Gray
                 )
                 Text(
-                    text = "• Debe incluir una mayúscula",
-                    fontSize = 12.sp,
+                    text = stringResource(R.string.password_rule_uppercase),
+                    style = MaterialTheme.typography.bodySmall,
                     color = if (hasUppercase) Color.Green else Color.Gray
                 )
                 Text(
-                    text = "• Debe incluir números",
-                    fontSize = 12.sp,
+                    text = stringResource(R.string.password_rule_digit),
+                    style = MaterialTheme.typography.bodySmall,
                     color = if (hasDigit) Color.Green else Color.Gray
                 )
             }
+
             Spacer(modifier = Modifier.height(8.dp))
-            // Checkbox para términos
+
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(
                     checked = termsAccepted,
-                    onCheckedChange = { termsAccepted = it },
-                    modifier = Modifier.size(24.dp)
+                    onCheckedChange = { termsAccepted = it }
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "He leído y acepto las condiciones legales y la política de privacidad de Fantasy Draft",
-                    fontSize = 12.sp,
-                    color = Color.Gray
+                    text = stringResource(R.string.terms),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+
             Spacer(modifier = Modifier.height(24.dp))
-            // Botón "Crear cuenta"
+
             GradientOutlinedButton(
                 onClick = {
                     if (isButtonEnabled) {
@@ -253,24 +219,19 @@ fun RegisterEmailView(
                         }
                     }
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
+                modifier = Modifier.fillMaxWidth().height(56.dp)
             ) {
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "Crear cuenta",
-                    fontSize = 16.sp
-                )
+                Text(stringResource(R.string.register_button), style = MaterialTheme.typography.bodyLarge)
             }
+
             Spacer(modifier = Modifier.height(32.dp))
         }
     }
 
     if (errorMessage != null) {
         CustomAlertDialogSingleButton(
-            title = "Error al crear cuenta",
-            message = "Este username o correo ya existen, por favor intenta con otros.",
+            title = stringResource(R.string.register_error_title),
+            message = stringResource(R.string.register_error_message),
             onAccept = { viewModel.clearError() }
         )
     }
