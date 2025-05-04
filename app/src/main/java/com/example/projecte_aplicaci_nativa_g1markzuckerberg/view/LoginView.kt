@@ -17,10 +17,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
@@ -35,8 +35,6 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.factory.L
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 
-// Color primario (ajustar según la guía de estilos)
-private val BluePrimary @Composable get() = MaterialTheme.colorScheme.primary
 @Composable
 fun LoginScreen(navController: NavController) {
     val loginViewModel: LoginViewModel = viewModel(
@@ -53,28 +51,26 @@ fun LoginView(
     val email by viewModel.email.observeAsState("")
     val password by viewModel.password.observeAsState("")
     val passwordVisible by viewModel.passwordVisible.observeAsState(false)
-
-    var showForgotPasswordDialog by remember { mutableStateOf(false) }
+    val errorMessage by viewModel.errorMessage.observeAsState()
     val forgotPasswordMessage by viewModel.forgotPasswordMessage.observeAsState()
     val context = LocalContext.current
-    val errorMessage by viewModel.errorMessage.observeAsState()
+
+    var showForgotPasswordDialog by remember { mutableStateOf(false) }
     var showErrorDialog by remember { mutableStateOf(false) }
 
-    val launcher =
-        rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-            try {
-                val account = task.getResult(ApiException::class.java)
-                val idToken = account.idToken
-                if (idToken != null) {
-                    viewModel.handleGoogleToken(idToken) {
-                        navController.navigate(Routes.HomeLoged.route)
-                    }
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        try {
+            val account = task.getResult(ApiException::class.java)
+            account.idToken?.let {
+                viewModel.handleGoogleToken(it) {
+                    navController.navigate(Routes.HomeLoged.route)
                 }
-            } catch (e: ApiException) {
-                Log.e("GoogleSignIn", "Error: ${e.message}")
             }
+        } catch (e: ApiException) {
+            Log.e("GoogleSignIn", "Error: ${e.message}")
         }
+    }
 
     LaunchedEffect(forgotPasswordMessage) {
         forgotPasswordMessage?.let {
@@ -83,33 +79,26 @@ fun LoginView(
         }
     }
 
-    LaunchedEffect(Unit) {
-        viewModel.initGoogle(context)
-    }
-    LaunchedEffect(errorMessage) {
-        showErrorDialog = errorMessage != null
-    }
+    LaunchedEffect(Unit) { viewModel.initGoogle(context) }
+    LaunchedEffect(errorMessage) { showErrorDialog = errorMessage != null }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
     ) {
-        // Barra superior: Usando GradientHeader
         GradientHeader(
-            title = "Iniciar sesión",
+            title = stringResource(R.string.login),
             onBack = { navController.popBackStack() },
             height = 140.dp
         )
 
-        // Línea divisoria gris bajo la barra
         Divider(
             modifier = Modifier.fillMaxWidth(),
             thickness = 1.dp,
             color = Color.Gray
         )
 
-        // Contenido principal
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -118,15 +107,14 @@ fun LoginView(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Campo de texto para Correo
             OutlinedTextField(
                 value = email,
                 onValueChange = viewModel::onEmailChanged,
-                label = { Text("Correo") },
+                label = { Text(stringResource(R.string.email), style = MaterialTheme.typography.bodyMedium) },
                 leadingIcon = {
                     Image(
                         painter = painterResource(id = R.drawable.ic_email),
-                        contentDescription = "Correo",
+                        contentDescription = stringResource(R.string.email),
                         modifier = Modifier.size(24.dp)
                     )
                 },
@@ -137,15 +125,14 @@ fun LoginView(
                 singleLine = true
             )
 
-            // Campo de texto para Contraseña
             OutlinedTextField(
                 value = password,
                 onValueChange = viewModel::onPasswordChanged,
-                label = { Text("Contraseña") },
+                label = { Text(stringResource(R.string.password), style = MaterialTheme.typography.bodyMedium) },
                 leadingIcon = {
                     Image(
                         painter = painterResource(id = R.drawable.password),
-                        contentDescription = "Contraseña",
+                        contentDescription = stringResource(R.string.password),
                         modifier = Modifier.size(24.dp)
                     )
                 },
@@ -154,23 +141,21 @@ fun LoginView(
                 singleLine = true,
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
-                    val iconRes =
-                        if (passwordVisible) R.drawable.visibility_on else R.drawable.visibility_off
+                    val iconRes = if (passwordVisible) R.drawable.visibility_on else R.drawable.visibility_off
                     IconButton(onClick = { viewModel.togglePasswordVisibility() }) {
                         Image(
                             painter = painterResource(id = iconRes),
-                            contentDescription = "Mostrar/Ocultar contraseña",
+                            contentDescription = stringResource(R.string.toggle_password_visibility),
                             modifier = Modifier.size(24.dp)
                         )
                     }
                 }
             )
 
-            // Texto "Olvidé mi contraseña"
             Text(
-                text = "Olvidé mi contraseña",
-                fontSize = 14.sp,
-                color = BluePrimary,
+                text = stringResource(R.string.forgot_password),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
                     .align(Alignment.End)
                     .padding(top = 8.dp)
@@ -179,12 +164,10 @@ fun LoginView(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Indicador de carga
             if (viewModel.isLoading.value == true) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
             }
 
-            // Botón "Iniciar sesión"
             GradientOutlinedButton(
                 onClick = { viewModel.login { navController.navigate(Routes.HomeLoged.route) } },
                 modifier = Modifier
@@ -193,14 +176,13 @@ fun LoginView(
             ) {
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = "Iniciar sesión",
-                    fontSize = 16.sp
+                    text = stringResource(R.string.login),
+                    style = MaterialTheme.typography.bodyLarge
                 )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Botón "Iniciar sesión con Google"
             OutlinedButton(
                 onClick = { launcher.launch(viewModel.getGoogleSignInIntent()) },
                 modifier = Modifier
@@ -214,13 +196,13 @@ fun LoginView(
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.google),
-                    contentDescription = "Google logo",
+                    contentDescription = stringResource(R.string.google_logo),
                     modifier = Modifier.size(24.dp)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = "Iniciar sesión con Google",
-                    fontSize = 16.sp
+                    text = stringResource(R.string.login_with_google),
+                    style = MaterialTheme.typography.bodyLarge
                 )
             }
         }
@@ -235,8 +217,8 @@ fun LoginView(
 
     if (showErrorDialog && errorMessage != null) {
         CustomAlertDialogSingleButton(
-            title = "Error de autenticación",
-            message = "Usuario o contraseña incorrectos.",
+            title = stringResource(R.string.auth_error),
+            message = stringResource(R.string.invalid_credentials),
             onAccept = {
                 showErrorDialog = false
                 viewModel.clearError()

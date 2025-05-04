@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -27,6 +28,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import coil.transform.CircleCropTransformation
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.grafanaPlayerUrl
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.PlayerDetailViewModel
@@ -66,12 +68,12 @@ fun PlayerDetailView(navController: NavController, playerId: String) {
                 IconButton(onClick = { navController.popBackStack() }) {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Volver",
+                        contentDescription = stringResource(R.string.Detailback),
                         tint = onPrimary
                     )
                 }
                 Text(
-                    player?.displayName ?: "Jugador",
+                    text = player?.displayName ?: stringResource(R.string.player_default),
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontSize = 26.sp,
                         fontWeight = FontWeight.ExtraBold
@@ -102,6 +104,7 @@ fun PlayerDetailView(navController: NavController, playerId: String) {
                     verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
                     Spacer(Modifier.height(6.dp))
+
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -111,14 +114,15 @@ fun PlayerDetailView(navController: NavController, playerId: String) {
                                 .data(player.teamImage)
                                 .crossfade(true)
                                 .build(),
-                            contentDescription = "Logo equipo",
+                            contentDescription = stringResource(R.string.team_logo),
                             modifier = Modifier.size(56.dp),
                             contentScale = ContentScale.Fit
                         )
                         Text(
                             text = player.teamName ?: "--",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.SemiBold
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                fontWeight = FontWeight.SemiBold
+                            )
                         )
                     }
 
@@ -144,7 +148,7 @@ fun PlayerDetailView(navController: NavController, playerId: String) {
                                 .crossfade(true)
                                 .transformations(CircleCropTransformation())
                                 .build(),
-                            contentDescription = "Jugador",
+                            contentDescription = stringResource(R.string.player_photo),
                             modifier = Modifier.size(116.dp),
                             contentScale = ContentScale.Crop
                         )
@@ -165,9 +169,8 @@ fun PlayerDetailView(navController: NavController, playerId: String) {
                     }
 
                     Text(
-                        "${player.puntosTotales} pts",
-                        fontSize = 34.sp,
-                        fontWeight = FontWeight.ExtraBold,
+                        text = "${player.puntosTotales} pts",
+                        style = MaterialTheme.typography.titleLarge.copy(fontSize = 34.sp),
                         modifier = Modifier.align(Alignment.CenterHorizontally)
                     )
 
@@ -182,7 +185,10 @@ fun PlayerDetailView(navController: NavController, playerId: String) {
                                 .padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            DetailLine("Posición", mapPosition(player.positionId))
+                            DetailLine(
+                                label = stringResource(R.string.position_label),
+                                value = stringResource(id = mapPosition(player.positionId))
+                            )
                         }
                     }
 
@@ -205,7 +211,7 @@ fun PlayerDetailView(navController: NavController, playerId: String) {
                                         onError = { _, _ -> chartLoading = false }
                                     )
                                     .build(),
-                                contentDescription = "Gráfico de evolución de puntos",
+                                contentDescription = stringResource(R.string.chart_desc),
                                 modifier = Modifier
                                     .height(260.dp)
                                     .padding(16.dp),
@@ -213,8 +219,7 @@ fun PlayerDetailView(navController: NavController, playerId: String) {
                             )
                             if (chartLoading) {
                                 Box(
-                                    Modifier
-                                        .matchParentSize(),
+                                    Modifier.matchParentSize(),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     CircularProgressIndicator()
@@ -234,15 +239,16 @@ private fun DetailLine(label: String, value: String) {
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(label, fontWeight = FontWeight.Medium, fontSize = 16.sp)
-        Text(value, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+        Text(label, style = MaterialTheme.typography.bodyLarge)
+        Text(value, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold))
     }
 }
 
-private fun mapPosition(positionId: Int): String = when (positionId) {
-    27 -> "Delantero"
-    26 -> "Mediocentro"
-    25 -> "Defensa"
-    24 -> "Portero"
-    else -> "Posición $positionId"
+@Composable
+private fun mapPosition(positionId: Int): Int = when (positionId) {
+    27 -> R.string.Detailpos_forward
+    26 -> R.string.Detailpos_midfielder
+    25 -> R.string.Detailpos_defender
+    24 -> R.string.Detailpos_goalkeeper
+    else -> R.string.unknown_position
 }
