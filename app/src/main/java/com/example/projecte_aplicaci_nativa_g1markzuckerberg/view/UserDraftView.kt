@@ -16,6 +16,7 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
@@ -276,33 +277,51 @@ fun UserDraftView(
                     }
 
                     item {
-                        Row(
+                        Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 16.dp)
-                                .nestedScroll(grafanaConn)
-                                .horizontalScroll(imageScroll),
-                            horizontalArrangement = Arrangement.Start
+                                .padding(vertical = 16.dp),
+                            shape = RoundedCornerShape(16.dp)
                         ) {
-                            SubcomposeAsyncImage(
-                                model = grafanaUrl,
-                                contentDescription = stringResource(R.string.performance_chart_desc),
+                            Box(
                                 modifier = Modifier
+                                    .fillMaxWidth()
                                     .height(220.dp)
-                                    .clip(MaterialTheme.shapes.medium),
-                                contentScale = ContentScale.FillHeight
+                                    .horizontalScroll(imageScroll)
+                                    .nestedScroll(grafanaConn),
+                                contentAlignment = Alignment.Center
                             ) {
-                                when (painter.state) {
-                                    is AsyncImagePainter.State.Loading ->
-                                        Box(
-                                            modifier = Modifier.fillMaxSize(),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            FancyLoadingAnimation(Modifier.size(120.dp))
-                                        }
+                                // 1️⃣ estado de carga
+                                var loading by remember { mutableStateOf(true) }
 
-                                    else ->
-                                        SubcomposeAsyncImageContent()
+                                // 2️⃣ imagen de Grafana con SubcomposeAsyncImage
+                                SubcomposeAsyncImage(
+                                    model = grafanaUrl,
+                                    contentDescription = stringResource(R.string.performance_chart_desc),
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .clip(MaterialTheme.shapes.medium),
+                                    contentScale = ContentScale.FillHeight
+                                ) {
+                                    // 3️⃣ accede al painter y comprueba su estado
+                                    val painter = painter
+                                    when (painter.state) {
+                                        is AsyncImagePainter.State.Loading -> {
+                                            // 4️⃣ tu FancyLoadingAnimation centrado
+                                            FancyLoadingAnimation(modifier = Modifier.size(120.dp))
+                                        }
+                                        is AsyncImagePainter.State.Success -> {
+                                            loading = false
+                                            SubcomposeAsyncImageContent()
+                                        }
+                                        is AsyncImagePainter.State.Error -> {
+                                            loading = false
+                                            // opcional: un placeholder o mensaje de error
+                                        }
+                                        else -> {
+                                            SubcomposeAsyncImageContent()
+                                        }
+                                    }
                                 }
                             }
                         }

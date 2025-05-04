@@ -33,6 +33,7 @@ import coil.transform.CircleCropTransformation
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.LocalAppDarkTheme
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.FancyLoadingAnimation
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.grafanaPlayerUrl
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.PlayerDetailViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.PlayerDetailViewModelFactory
@@ -93,7 +94,7 @@ fun PlayerDetailView(navController: NavController, playerId: String) {
         Box(Modifier.fillMaxSize()) {
             when {
                 isLoading -> Box(Modifier.fillMaxSize(), Alignment.Center) {
-                    CircularProgressIndicator()
+                    FancyLoadingAnimation(modifier = Modifier.size(100.dp))
                 }
                 error != null -> Text(
                     text = error,
@@ -230,8 +231,7 @@ fun PlayerDetailView(navController: NavController, playerId: String) {
                                     Modifier.matchParentSize(),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    CircularProgressIndicator()
-                                }
+                                    FancyLoadingAnimation(modifier = Modifier.size(100.dp))                                }
                             }
                         }
                     }

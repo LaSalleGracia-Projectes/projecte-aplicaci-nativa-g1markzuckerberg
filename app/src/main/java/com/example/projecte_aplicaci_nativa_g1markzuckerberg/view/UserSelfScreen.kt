@@ -40,6 +40,7 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.LigaConPuntos
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.LocalAppDarkTheme
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.FancyLoadingAnimation
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.LoadingTransitionScreen
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.grafanaUserUrl
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.*
@@ -276,7 +277,8 @@ private fun PointsGraph(st: UserSelfUiState.Ready) {
                 onSuccess = { loading = false },
                 onError = { loading = false }
             )
-            if (loading) Box(Modifier.matchParentSize(), Alignment.Center) { CircularProgressIndicator() }
+            if (loading) Box(Modifier.matchParentSize(), Alignment.Center) { FancyLoadingAnimation(modifier = Modifier.size(100.dp))
+            }
         }
     }
 }

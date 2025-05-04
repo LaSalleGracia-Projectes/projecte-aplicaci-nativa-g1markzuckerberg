@@ -23,6 +23,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -34,7 +35,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
+import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
@@ -43,7 +46,6 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.repository.AuthRepo
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialogSingleButton
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.LeagueCodeDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.TokenManager
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.UserImage
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.DraftViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.LigaViewModel
 
@@ -228,7 +230,22 @@ fun LigaView(
                                     2 -> "🥉"
                                     else -> "${index + 1}"
                                 }
-                                val fullUserImageUrl = RetrofitClient.BASE_URL.trimEnd('/') + "/" + user.imageUrl.trimStart('/')
+                                val fullUserImageUrl =
+                                    RetrofitClient.BASE_URL.trimEnd('/') + "/" + user.imageUrl.trimStart('/')
+
+                                val token = authRepository.getToken().orEmpty()
+                                val ctx   = LocalContext.current
+
+                                val avatarRequest = ImageRequest.Builder(ctx)
+                                    .data(fullUserImageUrl)
+                                    .addHeader("Authorization", "Bearer $token")
+                                    .diskCachePolicy(CachePolicy.DISABLED)
+                                    .memoryCachePolicy(CachePolicy.DISABLED)
+                                    .placeholder(R.drawable.fantasydraft)
+                                    .error(R.drawable.fantasydraft)
+                                    .crossfade(true)
+                                    .build()
+
                                 val backgroundBrush = if (isPodio) metallicBrushForRanking(index) else SolidColor(Color.White)
 
                                 val cardModifier = Modifier
@@ -296,7 +313,15 @@ fun LigaView(
                                                             modifier = Modifier.width(30.dp)
                                                         )
                                                         Spacer(modifier = Modifier.width(8.dp))
-                                                        UserImage(url = fullUserImageUrl)
+                                                        AsyncImage(
+                                                            model = avatarRequest,
+                                                            contentDescription = "User Avatar",
+                                                            modifier = Modifier
+                                                                .size(45.dp)
+                                                                .clip(CircleShape)
+                                                                .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
+                                                            contentScale = ContentScale.Crop
+                                                        )
                                                         Spacer(modifier = Modifier.width(12.dp))
                                                         Text(
                                                             text = user.username,
@@ -328,7 +353,15 @@ fun LigaView(
                                                         color = Color.Black
                                                     )
                                                     Spacer(modifier = Modifier.width(8.dp))
-                                                    UserImage(url = fullUserImageUrl)
+                                                    AsyncImage(
+                                                        model = avatarRequest,
+                                                        contentDescription = "User Avatar",
+                                                        modifier = Modifier
+                                                            .size(45.dp)
+                                                            .clip(CircleShape)
+                                                            .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
+                                                        contentScale = ContentScale.Crop
+                                                    )
                                                     Spacer(modifier = Modifier.width(12.dp))
                                                     Text(
                                                         text = user.username,
@@ -380,7 +413,15 @@ fun LigaView(
                                                         modifier = Modifier.width(30.dp)
                                                     )
                                                     Spacer(modifier = Modifier.width(8.dp))
-                                                    UserImage(url = fullUserImageUrl)
+                                                    AsyncImage(
+                                                        model = avatarRequest,
+                                                        contentDescription = "User Avatar",
+                                                        modifier = Modifier
+                                                            .size(45.dp)
+                                                            .clip(CircleShape)
+                                                            .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
+                                                        contentScale = ContentScale.Crop
+                                                    )
                                                     Spacer(modifier = Modifier.width(12.dp))
                                                     Text(
                                                         text = user.username,
@@ -412,7 +453,15 @@ fun LigaView(
                                                     color = Color.Black
                                                 )
                                                 Spacer(modifier = Modifier.width(8.dp))
-                                                UserImage(url = fullUserImageUrl)
+                                                AsyncImage(
+                                                    model = avatarRequest,
+                                                    contentDescription = "User Avatar",
+                                                    modifier = Modifier
+                                                        .size(45.dp)
+                                                        .clip(CircleShape)
+                                                        .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
+                                                    contentScale = ContentScale.Crop
+                                                )
                                                 Spacer(modifier = Modifier.width(12.dp))
                                                 Text(
                                                     text = user.username,
