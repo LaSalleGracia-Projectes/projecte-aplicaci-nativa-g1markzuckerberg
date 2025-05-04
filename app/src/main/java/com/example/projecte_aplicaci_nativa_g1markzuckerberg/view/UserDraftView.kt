@@ -65,6 +65,7 @@ import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 import coil.request.ImageRequest
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.LocalAppDarkTheme
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.FancyLoadingAnimation
 
@@ -437,6 +438,7 @@ fun UserDraftView(
                                 // Solo si hay jugadores, dibujamos su plantilla
                                 if (draftPlayers.isNotEmpty()) {
                                     ReadonlyDraftLayout(
+                                        navController = navController,
                                         formation = draftFormation,
                                         players   = draftPlayers
                                     )
@@ -527,7 +529,9 @@ private fun RowScope.TabButton(text: String, isSelected: Boolean, onClick: () ->
 private fun ReadonlyDraftLayout(
     formation: String,
     players  : List<Player>,
-) {
+    navController: NavController,
+
+    ) {
     val byPos = remember(players) {
         players.groupBy { it.positionId }
     }
@@ -567,7 +571,11 @@ private fun ReadonlyDraftLayout(
                                 player = p.toPlayerOption(),
                                 width  = cardW,
                                 height = cardH,
-                                onClick = {}
+                                onClick = {
+                                    navController.navigate(
+                                        Routes.PlayerDetail.createRoute(p.id.toString())
+                                    )
+                                }
                             )
                         }
                     }
