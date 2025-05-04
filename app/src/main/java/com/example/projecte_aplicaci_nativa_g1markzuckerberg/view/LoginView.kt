@@ -1,5 +1,6 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
+import android.app.Application
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.DrawableRes
@@ -34,23 +35,28 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.factory.LoginViewModelFactory
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.LocalAppDarkTheme
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialogSingleButton
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.ForgotPasswordDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.GradientHeader
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.LoginViewModel
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.factory.LoginViewModelFactory
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 
 @Composable
 fun LoginScreen(navController: NavController) {
+    val context = LocalContext.current.applicationContext as Application
     val loginViewModel: LoginViewModel = viewModel(
-        factory = LoginViewModelFactory(RetrofitClient.authRepository)
+        factory = LoginViewModelFactory(
+            context,
+            RetrofitClient.authRepository
+        )
     )
     LoginView(navController = navController, viewModel = loginViewModel)
 }
+
 
 @Composable
 fun LoginView(

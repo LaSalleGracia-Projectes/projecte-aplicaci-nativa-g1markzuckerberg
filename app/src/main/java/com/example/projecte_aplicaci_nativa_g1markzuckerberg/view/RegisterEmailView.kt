@@ -1,5 +1,6 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
+import android.app.Application
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -11,6 +12,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -20,18 +22,22 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.factory.RegisterEmailViewModelFactory
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.LocalAppDarkTheme
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialogSingleButton
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.GradientHeader
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.GradientOutlinedButton
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.RegisterEmailViewModel
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.factory.RegisterEmailViewModelFactory
 
 @Composable
 fun RegisterScreen(navController: NavController) {
+    val context = LocalContext.current.applicationContext as Application
     val registerViewModel: RegisterEmailViewModel = viewModel(
-        factory = RegisterEmailViewModelFactory(RetrofitClient.authRepository)
+        factory = RegisterEmailViewModelFactory(
+            context,
+            RetrofitClient.authRepository
+        )
     )
     RegisterEmailView(navController = navController, viewModel = registerViewModel)
 }

@@ -1,14 +1,16 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel
 
+import android.app.Application
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.*
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.Event
@@ -17,7 +19,7 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
 
-class HomeLogedViewModel : ViewModel() {
+class HomeLogedViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _jornadaData = mutableStateOf<JornadaResponse?>(null)
     val jornadaData: State<JornadaResponse?> = _jornadaData
@@ -62,8 +64,7 @@ class HomeLogedViewModel : ViewModel() {
             try {
                 val response = RetrofitClient.service.getJornadaActual()
                 if (response.isSuccessful) {
-                    val jornada = response.body()?.jornadaActual
-                    jornada?.let { fetchJornada(it.name) }
+                    response.body()?.jornadaActual?.let { fetchJornada(it.name) }
                 } else {
                     Log.e("API_CALL", "Error en getJornadaActual: ${response.code()}")
                 }
@@ -79,9 +80,9 @@ class HomeLogedViewModel : ViewModel() {
                 val response = RetrofitClient.service.getJornada(jornada)
                 if (response.isSuccessful) {
                     response.body()?.let { data ->
-                        val sortedFixtures = data.fixtures.sortedBy { it.starting_at_timestamp }
-                        _fixturesState.value = sortedFixtures
-                        _jornadaData.value = data.copy(fixtures = sortedFixtures)
+                        val sorted = data.fixtures.sortedBy { it.starting_at_timestamp }
+                        _fixturesState.value = sorted
+                        _jornadaData.value = data.copy(fixtures = sorted)
                     }
                 } else {
                     Log.e("API_CALL", "Error en respuesta jornada: ${response.code()}")
@@ -96,22 +97,24 @@ class HomeLogedViewModel : ViewModel() {
         _isLoading.value = true
         viewModelScope.launch {
             try {
-                val response = RetrofitClient.ligaService.joinLiga(code)
-                if (response.isSuccessful) {
+                val resp = RetrofitClient.ligaService.joinLiga(code)
+                if (resp.isSuccessful) {
                     fetchUserLeagues()
                 } else {
-                    when (response.code()) {
-                        404 -> _errorMessage.value = Event("Error: Liga no encontrada.")
-                        409 -> _errorMessage.value = Event("Error: Ya estás en esta liga.")
-                        422 -> _errorMessage.value = Event("Error: Código de liga inválido.")
-                        403 -> _errorMessage.value = Event("Error: No tienes permiso para unirte.")
-                        401 -> {} // ignoramos para evitar alertas en el primer arranque
-                        500 -> _errorMessage.value = Event("Error del servidor. Intenta más tarde.")
-                        else -> _errorMessage.value = Event("Error desconocido: ${response.code()}")
+                    val msg = when (resp.code()) {
+                        404 -> getString(R.string.error_league_not_found)
+                        409 -> getString(R.string.error_already_in_league)
+                        422 -> getString(R.string.error_invalid_league_code)
+                        403 -> getString(R.string.error_no_permission_join)
+                        500 -> getString(R.string.error_server_try_later)
+                        else -> getString(R.string.error_unknown_code, resp.code())
                     }
+                    _errorMessage.value = Event(msg)
                 }
             } catch (e: Exception) {
-                _errorMessage.value = Event("Error de red: ${e.message}")
+                _errorMessage.value = Event(
+                    getString(R.string.error_network, e.message.orEmpty())
+                )
             } finally {
                 _isLoading.value = false
             }
@@ -123,30 +126,30 @@ class HomeLogedViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val request = CreateLigaRequest(name.trim())
-                val response = RetrofitClient.ligaService.createLiga(request)
-                if (response.isSuccessful) {
-                    val wrapper = response.body()!!
-                    _createLigaResult.value = Event(wrapper)
-                    val newLigaId = wrapper.liga.id.toString()
-
+                val resp = RetrofitClient.ligaService.createLiga(request)
+                if (resp.isSuccessful) {
+                    _createLigaResult.value = Event(resp.body())
+                    val newId = resp.body()!!.liga.id.toString()
                     if (imageUri != null) {
-                        updateLigaWithImage(newLigaId, imageUri, context)
+                        updateLigaWithImage(newId, imageUri, context)
                     } else {
                         fetchUserLeagues()
                     }
                 } else {
-                    when (response.code()) {
-                        404 -> _errorMessage.value = Event("Error: No se pudo crear la liga.")
-                        409 -> _errorMessage.value = Event("Error: Liga ya existe.")
-                        422 -> _errorMessage.value = Event("Error: Datos inválidos.")
-                        403 -> _errorMessage.value = Event("Error: No tienes permiso para crear liga.")
-                        401 -> {} // ignorado
-                        500 -> _errorMessage.value = Event("Error del servidor al crear la liga.")
-                        else -> _errorMessage.value = Event("Error desconocido: ${response.code()}")
+                    val msg = when (resp.code()) {
+                        404 -> getString(R.string.error_cannot_create_league)
+                        409 -> getString(R.string.error_league_exists)
+                        422 -> getString(R.string.error_invalid_data)
+                        403 -> getString(R.string.error_no_permission_create_league)
+                        500 -> getString(R.string.error_server_create_league)
+                        else -> getString(R.string.error_unknown_code, resp.code())
                     }
+                    _errorMessage.value = Event(msg)
                 }
             } catch (e: Exception) {
-                _errorMessage.value = Event("Error creando liga: ${e.message}")
+                _errorMessage.value = Event(
+                    getString(R.string.error_creating_league, e.message.orEmpty())
+                )
             } finally {
                 _isLoading.value = false
             }
@@ -156,30 +159,29 @@ class HomeLogedViewModel : ViewModel() {
     fun updateLigaWithImage(ligaId: String, imageUri: Uri, context: Context) {
         viewModelScope.launch {
             try {
-                val contentResolver = context.contentResolver
-                val mimeType = contentResolver.getType(imageUri) ?: return@launch
-                if (mimeType !in listOf("image/png", "image/jpg", "image/jpeg")) {
-                    _errorMessage.value = Event("Formato de imagen no permitido.")
+                val mime = context.contentResolver.getType(imageUri) ?: return@launch
+                if (mime !in listOf("image/png","image/jpg","image/jpeg")) {
+                    _errorMessage.value =
+                        Event(getString(R.string.error_image_format_not_allowed))
                     return@launch
                 }
-
-                val bytes = contentResolver.openInputStream(imageUri)!!.readBytes()
-                val requestFile = bytes.toRequestBody(mimeType.toMediaTypeOrNull())
+                val bytes = context.contentResolver.openInputStream(imageUri)!!.readBytes()
                 val body = MultipartBody.Part.createFormData(
                     "image",
-                    "leagueImage.${mimeType.substringAfter("/")}",
-                    requestFile
+                    "leagueImage.${mime.substringAfter("/")}",
+                    bytes.toRequestBody(mime.toMediaTypeOrNull())
                 )
-
-                val uploadResponse = RetrofitClient.ligaService.uploadLeagueImage(ligaId, body)
-                if (uploadResponse.isSuccessful) {
+                val upResp = RetrofitClient.ligaService.uploadLeagueImage(ligaId, body)
+                if (upResp.isSuccessful) {
                     fetchUserLeagues()
                     _lastImageUpdateTs.value = System.currentTimeMillis()
                 } else {
-                    _errorMessage.value = Event("Error al subir imagen: ${uploadResponse.code()}")
+                    _errorMessage.value =
+                        Event(getString(R.string.error_upload_image_code, upResp.code()))
                 }
             } catch (e: Exception) {
-                _errorMessage.value = Event("Error al subir imagen: ${e.localizedMessage}")
+                _errorMessage.value =
+                    Event(getString(R.string.error_upload_image_message, e.localizedMessage.orEmpty()))
             }
         }
     }
@@ -188,14 +190,16 @@ class HomeLogedViewModel : ViewModel() {
         _isLoading.value = true
         viewModelScope.launch {
             try {
-                val response = RetrofitClient.userService.getUserLeagues()
-                if (response.isSuccessful) {
-                    _userLeagues.value = response.body()?.leagues ?: emptyList()
+                val resp = RetrofitClient.userService.getUserLeagues()
+                if (resp.isSuccessful) {
+                    _userLeagues.value = resp.body()?.leagues.orEmpty()
                 } else {
-                    _errorMessage.value = Event("Error cargando ligas: ${response.code()}")
+                    _errorMessage.value =
+                        Event(getString(R.string.error_loading_leagues_code, resp.code()))
                 }
             } catch (e: Exception) {
-                _errorMessage.value = Event("Error cargando ligas: ${e.message}")
+                _errorMessage.value =
+                    Event(getString(R.string.error_loading_leagues_message, e.message.orEmpty()))
             } finally {
                 _isLoading.value = false
             }
@@ -206,15 +210,17 @@ class HomeLogedViewModel : ViewModel() {
         _isLoading.value = true
         viewModelScope.launch {
             try {
-                val response = RetrofitClient.ligaService.leaveLiga(ligaId)
-                if (response.isSuccessful) {
-                    _leaveLigaResult.value = Event("Liga abandonada")
+                val resp = RetrofitClient.ligaService.leaveLiga(ligaId)
+                if (resp.isSuccessful) {
+                    _leaveLigaResult.value = Event(getString(R.string.league_left))
                     fetchUserLeagues()
                 } else {
-                    _errorMessage.value = Event("No puedes abandonar si eres el capitán.")
+                    _errorMessage.value =
+                        Event(getString(R.string.error_cannot_leave_if_captain))
                 }
             } catch (e: Exception) {
-                _errorMessage.value = Event("Error abandonando liga: ${e.localizedMessage}")
+                _errorMessage.value =
+                    Event(getString(R.string.error_leaving_league, e.localizedMessage.orEmpty()))
             } finally {
                 _isLoading.value = false
             }
@@ -224,14 +230,16 @@ class HomeLogedViewModel : ViewModel() {
     private fun fetchUserInfo() {
         viewModelScope.launch {
             try {
-                val response = RetrofitClient.userService.getMe()
-                if (response.isSuccessful) {
-                    _userEmail.value = response.body()?.user?.correo ?: ""
-                } else if (response.code() != 401) {
-                    _errorMessage.value = Event("Error al cargar usuario: ${response.code()}")
+                val resp = RetrofitClient.userService.getMe()
+                if (resp.isSuccessful) {
+                    _userEmail.value = resp.body()?.user?.correo.orEmpty()
+                } else if (resp.code() != 401) {
+                    _errorMessage.value =
+                        Event(getString(R.string.error_loading_user_code, resp.code()))
                 }
             } catch (e: Exception) {
-                _errorMessage.value = Event("Error cargando usuario: ${e.localizedMessage}")
+                _errorMessage.value =
+                    Event(getString(R.string.error_loading_user_message, e.localizedMessage.orEmpty()))
             }
         }
     }
@@ -241,18 +249,24 @@ class HomeLogedViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val request = UpdateLigaNameRequest(newName)
-                val response = RetrofitClient.ligaService.updateLigaName(ligaId, request)
-                if (response.isSuccessful) {
+                val resp = RetrofitClient.ligaService.updateLigaName(ligaId, request)
+                if (resp.isSuccessful) {
                     _updateLigaSuccess.value = Event(Unit)
                     fetchUserLeagues()
                 } else {
-                    _errorMessage.value = Event("Error actualizando nombre: ${response.code()}")
+                    _errorMessage.value =
+                        Event(getString(R.string.error_updating_name_code, resp.code()))
                 }
             } catch (e: Exception) {
-                _errorMessage.value = Event("Error inesperado: ${e.localizedMessage}")
+                _errorMessage.value =
+                    Event(getString(R.string.error_unexpected, e.localizedMessage.orEmpty()))
             } finally {
                 _isLoading.value = false
             }
         }
     }
+
+    // Helper to avoid casting everywhere
+    private fun getString(id: Int, vararg args: Any): String =
+        getApplication<Application>().getString(id, *args)
 }

@@ -1,6 +1,7 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
 import android.Manifest
+import android.app.Application
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -35,7 +36,9 @@ fun EntryPoint(
     navigationController: NavHostController,
     registerViewModel: RegisterViewModel = viewModel(),
     homeLogedViewModel: HomeLogedViewModel = viewModel(
-        factory = HomeLogedViewModelFactory(RetrofitClient.authRepository)
+        factory = HomeLogedViewModelFactory(
+            LocalContext.current.applicationContext as Application
+        )
     ),
     draftViewModel: DraftViewModel = viewModel(),
     notificationViewModel: NotificationViewModel = viewModel(),

@@ -1,16 +1,18 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel
 
+import android.app.Application
 import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.*
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.*
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.launch
 
-class DraftViewModel : ViewModel() {
+class DraftViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _tempDraft = MutableLiveData<TempPlantillaResponse?>()
     val tempDraft: LiveData<TempPlantillaResponse?> = _tempDraft
@@ -45,23 +47,21 @@ class DraftViewModel : ViewModel() {
     ) {
         _isFetchingDraft.value = true
         viewModelScope.launch {
-            // 1) Intentamos el POST y miramos si es 500
+            // 1) Intentar POST, detectar 500
             try {
                 val createResp = RetrofitClient.draftService.createDraft(
                     CreateDraftRequest(formation, ligaId)
                 )
-                if (!createResp.isSuccessful && createResp.code() == 500) {
-                    // tenemos draft ya creado en esta jornada:
-                    _errorMessage.value = "Ya tienes un draft creado en esta jornada."
+                if (createResp.code() == 500) {
+                    _errorMessage.value = getString(R.string.error_draft_already_created)
                     _isFetchingDraft.value = false
                     return@launch
                 }
             } catch (ex: Exception) {
-                // si hay otro fallo de red, dejamos seguir al GET para ver si hay uno ya
                 Log.w("DraftViewModel", "POST draft fallo inesperado", ex)
             }
 
-            // 2) Si no era un 500, seguimos con el GET
+            // 2) GET del draft
             try {
                 val fetchResp = RetrofitClient.draftService.getTempDraft(ligaId)
                 if (fetchResp.isSuccessful) {
@@ -69,10 +69,16 @@ class DraftViewModel : ViewModel() {
                     currentLigaId = ligaId
                     onSuccess()
                 } else {
-                    _errorMessage.value = "Error al recuperar draft: ${fetchResp.code()}"
+                    _errorMessage.value = getString(
+                        R.string.error_fetch_draft_code,
+                        fetchResp.code()
+                    )
                 }
             } catch (ex: Exception) {
-                _errorMessage.value = "Error de conexión al recuperar draft: ${ex.message}"
+                _errorMessage.value = getString(
+                    R.string.error_fetch_draft_network,
+                    ex.message.orEmpty()
+                )
                 Log.e("DraftViewModel", "GET tempDraft excepción", ex)
             } finally {
                 _isFetchingDraft.value = false
@@ -80,24 +86,21 @@ class DraftViewModel : ViewModel() {
         }
     }
 
-
-
-
     fun createOrFetchDraft(
         ligaId: Int,
         onSuccess: () -> Unit,
         onRequestFormation: () -> Unit
     ) {
+        _isFetchingDraft.value = true
         viewModelScope.launch {
             try {
-                val response = RetrofitClient.draftService.getTempDraft(ligaId)
-                Log.d("DraftViewModel", "Respuesta de obtener draft: código ${response.code()} - body: ${response.body()}")
-                if (response.isSuccessful) {
-                    _tempDraft.value = response.body()!!.tempDraft
+                val resp = RetrofitClient.draftService.getTempDraft(ligaId)
+                Log.d("DraftViewModel", "GET draft: code ${resp.code()} body ${resp.body()}")
+                if (resp.isSuccessful) {
+                    _tempDraft.value = resp.body()!!.tempDraft
                     currentLigaId = ligaId
                     onSuccess()
                 } else {
-                    Log.d("DraftViewModel", "No se encontró draft existente. Se pedirá formación")
                     onRequestFormation()
                 }
             } catch (ex: Exception) {
@@ -109,14 +112,13 @@ class DraftViewModel : ViewModel() {
         }
     }
 
-    private fun parsePlayerOptionsJson(json: String): List<List<Any?>> {
-        return try {
+    private fun parsePlayerOptionsJson(json: String): List<List<Any?>> =
+        try {
             Gson().fromJson(json, object : TypeToken<List<List<Any?>>>() {}.type)
         } catch (e: Exception) {
-            Log.e("DraftViewModel", "Error al parsear playerOptions: ${e.message}")
+            Log.e("DraftViewModel", "Error parseando playerOptions: ${e.message}")
             emptyList()
         }
-    }
 
     fun updateDraft(
         ligaId: Int,
@@ -124,27 +126,35 @@ class DraftViewModel : ViewModel() {
         onSuccess: () -> Unit
     ) {
         viewModelScope.launch {
-            val currentDraft = _tempDraft.value ?: run {
-                _errorMessage.value = "Draft no encontrado."
+            val current = _tempDraft.value
+            if (current == null) {
+                _errorMessage.value = getString(R.string.error_draft_not_found)
                 Log.e("DraftViewModel", "updateDraft: Draft no encontrado")
                 return@launch
             }
             try {
-                val updateRequest = UpdateDraftRequest(
-                    plantillaId = currentDraft.idPlantilla,
+                val req = UpdateDraftRequest(
+                    plantillaId = current.idPlantilla,
                     playerOptions = updatedPlayerOptions
                 )
-                Log.d("DraftViewModel", "updateDraft request: $updateRequest")
-                val response = RetrofitClient.draftService.updateDraft(ligaId, updateRequest)
-                Log.d("DraftViewModel", "updateDraft response code: ${response.code()} - body: ${response.body()}")
-                if (response.isSuccessful) {
+                Log.d("DraftViewModel", "updateDraft req: $req")
+                val resp = RetrofitClient.draftService.updateDraft(ligaId, req)
+                Log.d("DraftViewModel", "updateDraft resp: code ${resp.code()} body ${resp.message()}")
+                if (resp.isSuccessful) {
                     onSuccess()
                 } else {
-                    _errorMessage.value = "Error al actualizar el draft: ${response.code()} ${response.message()}"
-                    Log.e("DraftViewModel", "updateDraft error: ${response.code()} - ${response.message()}")
+                    _errorMessage.value = getString(
+                        R.string.error_update_draft,
+                        resp.code(),
+                        resp.message()
+                    )
+                    Log.e("DraftViewModel", "updateDraft error: ${resp.code()} - ${resp.message()}")
                 }
             } catch (ex: Exception) {
-                _errorMessage.value = "Error de conexión: ${ex.message}"
+                _errorMessage.value = getString(
+                    R.string.error_connection,
+                    ex.message.orEmpty()
+                )
                 Log.e("DraftViewModel", "updateDraft exception: ${ex.message}", ex)
             }
         }
@@ -156,15 +166,17 @@ class DraftViewModel : ViewModel() {
     ) {
         _isSavingDraft.value = true
         viewModelScope.launch {
-            Log.d("DraftViewModel", "🧠 Entrando en saveDraft()")
+            Log.d("DraftViewModel", "Entrando en saveDraft()")
 
-            val currentDraft = _tempDraft.value ?: run {
-                _errorMessage.value = "Draft no encontrado."
-                Log.e("DraftViewModel", "❌ Draft no encontrado")
+            val current = _tempDraft.value
+            if (current == null) {
+                _errorMessage.value = getString(R.string.error_draft_not_found)
+                Log.e("DraftViewModel", "Draft no encontrado")
+                _isSavingDraft.value = false
                 return@launch
             }
 
-            val parsedGroups = parsePlayerOptionsJson(currentDraft.playerOptions ?: "[]")
+            val parsed = parsePlayerOptionsJson(current.playerOptions ?: "[]")
             val formationRows = when (_selectedFormation.value) {
                 "4-3-3" -> listOf("Delantero" to 3, "Mediocentro" to 3, "Defensa" to 4, "Portero" to 1)
                 "4-4-2" -> listOf("Delantero" to 2, "Mediocampista" to 4, "Defensa" to 4, "Portero" to 1)
@@ -172,88 +184,85 @@ class DraftViewModel : ViewModel() {
                 else -> emptyList()
             }
 
-            val finalPlayerOptions = mutableListOf<List<Any?>>()
-            var groupIndex = 0
-
-            for ((positionName, count) in formationRows) {
+            val finalOptions = mutableListOf<List<Any?>>()
+            var idx = 0
+            for ((posName, count) in formationRows) {
                 repeat(count) {
-                    val key = "${positionName}_$it"
-                    val selectedPlayer = selectedPlayers[key]
-                    if (selectedPlayer == null) {
-                        _errorMessage.value = "No se ha seleccionado un jugador para $key."
-                        Log.e("DraftViewModel", "❌ No se ha seleccionado un jugador para $key.")
+                    val key = "${posName}_$it"
+                    val selected = selectedPlayers[key]
+                    if (selected == null) {
+                        _errorMessage.value = getString(R.string.error_no_player_selected, key)
+                        Log.e("DraftViewModel", "No se ha seleccionado un jugador para $key")
+                        _isSavingDraft.value = false
                         return@launch
                     }
 
-                    val group = parsedGroups.getOrNull(groupIndex)
+                    val group = parsed.getOrNull(idx)
                     if (group == null || group.size < 4) {
-                        _errorMessage.value = "Grupo de jugadores inválido para $key."
-                        Log.e("DraftViewModel", "❌ Grupo de jugadores inválido para $key.")
+                        _errorMessage.value = getString(R.string.error_invalid_group, key)
+                        Log.e("DraftViewModel", "Grupo inválido para $key")
+                        _isSavingDraft.value = false
                         return@launch
                     }
 
-                    val players = group.take(4).mapNotNull { item ->
-                        when (item) {
-                            is Map<*, *> -> Gson().fromJson(Gson().toJson(item), PlayerOption::class.java)
-                            is PlayerOption -> item
+                    val players = group.take(4).mapNotNull {
+                        when (it) {
+                            is Map<*, *> -> Gson().fromJson(Gson().toJson(it), PlayerOption::class.java)
+                            is PlayerOption -> it
                             else -> null
                         }
                     }
                     if (players.size < 4) {
-                        _errorMessage.value = "Los datos del grupo $key están corruptos."
-                        Log.e("DraftViewModel", "❌ Los datos del grupo $key están corruptos.")
+                        _errorMessage.value = getString(R.string.error_corrupt_group_data, key)
+                        Log.e("DraftViewModel", "Datos corruptos en grupo $key")
+                        _isSavingDraft.value = false
                         return@launch
                     }
 
-                    val chosenIndex = players.indexOfFirst { it.id == selectedPlayer.id }
-                    if (chosenIndex == -1) {
-                        _errorMessage.value = "El jugador seleccionado en $key no coincide con las opciones."
-                        Log.e("DraftViewModel", "❌ El jugador seleccionado en $key no coincide.")
+                    val chosenIdx = players.indexOfFirst { it.id == selected.id }
+                    if (chosenIdx == -1) {
+                        _errorMessage.value = getString(R.string.error_player_option_mismatch, key)
+                        Log.e("DraftViewModel", "Jugador seleccionado no coincide en $key")
+                        _isSavingDraft.value = false
                         return@launch
                     }
 
-                    val newGroup = group.take(4).toMutableList().apply { add(chosenIndex) }
-                    finalPlayerOptions.add(newGroup.toList())
-                    groupIndex++
+                    finalOptions += group.take(4).toMutableList().apply { add(chosenIdx) }.toList()
+                    idx++
                 }
             }
 
-            val tempDraftFinal = TempDraftFinal(
-                idPlantilla = currentDraft.idPlantilla,
-                playerOptions = finalPlayerOptions.map { it.filterNotNull() } // quitar nulls por si acaso
+            val tempFinal = TempDraftFinal(
+                idPlantilla = current.idPlantilla,
+                playerOptions = finalOptions.map { it.filterNotNull() }
             )
-
-            val saveRequest = SaveDraftRequest(tempDraft = tempDraftFinal)
-
-            Log.d("DraftViewModel", "✅ Guardando draft...")
-            Log.d("DraftViewModel", "TempDraftFinal.idPlantilla = ${tempDraftFinal.idPlantilla}")
-            tempDraftFinal.playerOptions.forEachIndexed { index, grupo ->
-                Log.d("DraftViewModel", "Grupo $index:")
-                grupo.forEachIndexed { i, jugador ->
-                    Log.d("DraftViewModel", "   [$i] = ${Gson().toJson(jugador)}")
-                }
-            }
-            val jsonRequest = Gson().toJson(saveRequest)
-            Log.d("DraftViewModel", "📦 JSON enviado: $jsonRequest")
+            val saveReq = SaveDraftRequest(tempDraft = tempFinal)
+            Log.d("DraftViewModel", "Guardando draft: ${Gson().toJson(saveReq)}")
 
             try {
-                val response = RetrofitClient.draftService.saveDraft(saveRequest)
-                Log.d("DraftViewModel", "📡 Código de respuesta: ${response.code()}")
-                if (response.isSuccessful) {
-                    Log.d("DraftViewModel", "✅ Draft guardado correctamente.")
+                val resp = RetrofitClient.draftService.saveDraft(saveReq)
+                Log.d("DraftViewModel", "Código de respuesta: ${resp.code()}")
+                if (resp.isSuccessful) {
                     onSuccess()
                 } else {
-                    val errorText = response.errorBody()?.string()
-                    _errorMessage.value = "Error al guardar: ${response.code()} $errorText"
-                    Log.e("DraftViewModel", "❌ Error: $errorText")
+                    val errText = resp.errorBody()?.string().orEmpty()
+                    _errorMessage.value = getString(
+                        R.string.error_save_draft,
+                        resp.code(),
+                        errText
+                    )
+                    Log.e("DraftViewModel", "Error al guardar: $errText")
                 }
             } catch (ex: Exception) {
-                _errorMessage.value = "Error de conexión: ${ex.message}"
-                Log.e("DraftViewModel", "❌ Excepción: ${ex.message}", ex)
+                _errorMessage.value = getString(R.string.error_connection, ex.message.orEmpty())
+                Log.e("DraftViewModel", "Excepción: ${ex.message}", ex)
             } finally {
                 _isSavingDraft.value = false
             }
         }
     }
 
+    // Helper para obtener cadenas con parámetros
+    private fun getString(id: Int, vararg args: Any): String =
+        getApplication<Application>().getString(id, *args)
 }
