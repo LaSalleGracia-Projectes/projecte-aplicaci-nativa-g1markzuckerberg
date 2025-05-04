@@ -23,6 +23,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.data.ThemePreferences
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.factory.HomeLogedViewModelFactory
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.service.NotificationSocketService
@@ -38,7 +39,8 @@ fun EntryPoint(
     ),
     draftViewModel: DraftViewModel = viewModel(),
     notificationViewModel: NotificationViewModel = viewModel(),
-    settingsVM: SettingsViewModel
+    settingsVM: SettingsViewModel,
+    themePrefs: ThemePreferences
 ) {
     val context = LocalContext.current
 
@@ -143,7 +145,11 @@ fun EntryPoint(
                 HomeLogedView(navController = navigationController, homeLogedViewModel = homeLogedViewModel)
             }
             composable(Routes.Settings.route) {
-                SettingsScreen(navController = navigationController, viewModel = settingsVM)
+                SettingsScreen(
+                    navController = navigationController,
+                    viewModel     = settingsVM,
+                    themePrefs    = themePrefs    // ← le pasamos aquí la instancia
+                )
             }
             composable(Routes.LigaView.route) { backStackEntry ->
                 val ligaCode = backStackEntry.arguments?.getString("ligaCode") ?: ""

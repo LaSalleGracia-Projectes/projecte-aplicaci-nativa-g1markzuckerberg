@@ -145,18 +145,24 @@ fun LigaView(
                                 modifier = Modifier.weight(1f),
                                 textAlign = TextAlign.Center
                             )
-                            Image(
-                                painter = rememberAsyncImagePainter(
-                                    model = ImageRequest.Builder(LocalContext.current)
-                                        .data(imageUrl)
-                                        .placeholder(R.drawable.fantasydraft)
-                                        .error(R.drawable.fantasydraft)
-                                        .build()
-                                ),
-                                contentDescription = "Icono de la liga",
-                                modifier = Modifier
+                            val ctx   = LocalContext.current
+                            val token = authRepository.getToken().orEmpty()
+                            val leagueIconRequest = ImageRequest.Builder(ctx)
+                                .data(imageUrl)
+                                .addHeader("Authorization", "Bearer $token")
+                                .placeholder(R.drawable.fantasydraft)
+                                .error(R.drawable.fantasydraft)
+                                .crossfade(true)
+                                .build()
+
+                            AsyncImage(
+                                model             = leagueIconRequest,
+                                contentDescription= "Icono de la liga",
+                                modifier          = Modifier
                                     .size(45.dp)
                                     .clip(CircleShape)
+                                    .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
+                                contentScale      = ContentScale.Crop
                             )
                         }
                     }

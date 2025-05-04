@@ -42,6 +42,9 @@ android {
 }
 
 dependencies {
+    //Datastore
+    implementation ("androidx.datastore:datastore-preferences:1.1.0")
+
     //Swipe
     implementation ("androidx.compose.foundation:foundation:1.4.0")
 

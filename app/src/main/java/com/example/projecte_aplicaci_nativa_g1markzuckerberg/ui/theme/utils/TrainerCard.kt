@@ -1,6 +1,7 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,12 +25,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 
 @Composable
 fun TrainerCard(
@@ -60,11 +66,24 @@ fun TrainerCard(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 // Imagen a la izquierda
-                UserImage(
-                    url = imageUrl,
-                    modifier = Modifier
+                val ctx   = LocalContext.current
+                val token = RetrofitClient.authRepository.getToken().orEmpty()
+                val req   = ImageRequest.Builder(ctx)
+                    .data(imageUrl)
+                    .addHeader("Authorization", "Bearer $token")
+                    .placeholder(R.drawable.fantasydraft)
+                    .error(R.drawable.fantasydraft)
+                    .crossfade(true)
+                    .build()
+
+                AsyncImage(
+                    model             = req,
+                    contentDescription= "Foto de $name",
+                    modifier          = Modifier
                         .size(60.dp)
                         .clip(CircleShape)
+                        .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
+                    contentScale      = ContentScale.Crop
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 // Datos centrales: nombre, fecha y estado de capitán
@@ -75,8 +94,12 @@ fun TrainerCard(
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(4.dp))
+                    val displayDate = birthDate
+                        ?.substringBefore("T")
+                        ?: stringResource(R.string.no_birthdate)
+
                     Text(
-                        text = birthDate ?: stringResource(R.string.no_birthdate),
+                        text = displayDate,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )

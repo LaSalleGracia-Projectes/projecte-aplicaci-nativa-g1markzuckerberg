@@ -27,25 +27,33 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.data.ThemePreferences
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.ContactFormDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.GradientHeader
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.SettingsViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsScreen(
     navController: NavController,
-    viewModel: SettingsViewModel
+    viewModel: SettingsViewModel,
+    themePrefs: ThemePreferences
 ) {
-    SettingsView(navController, viewModel)
+    SettingsView(navController, viewModel, themePrefs)
 }
 
 @Composable
 fun SettingsView(
     navController: NavController,
-    viewModel: SettingsViewModel
+    viewModel: SettingsViewModel,
+    themePrefs: ThemePreferences
+
 ) {
-    val isDark by viewModel.isDarkTheme.observeAsState(false)
+    // recogemos el estado actual del switch desde DataStore
+    val isDark by themePrefs.isDarkModeFlow.collectAsState(initial = false)
+    val scope = rememberCoroutineScope()
+
     val isLoading by viewModel.isLoading.observeAsState(false)
     val errorMessage by viewModel.errorMessage.observeAsState()
     var showContactDialog by remember { mutableStateOf(false) }
@@ -77,7 +85,12 @@ fun SettingsView(
                 }
             }
             item {
-                DarkModeCard(isDark) { viewModel.toggleTheme() }
+                DarkModeCard(isDark) {
+                    // 2) Cuando el usuario toca el switch, persiste el cambio
+                    scope.launch {
+                        themePrefs.setDarkMode(!isDark)
+                    }
+                }
             }
             item {
                 SettingsCard(stringResource(R.string.privacy_title)) {

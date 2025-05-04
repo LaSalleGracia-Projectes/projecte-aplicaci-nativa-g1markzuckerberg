@@ -4,6 +4,7 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.Over
 import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -35,6 +36,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -58,9 +60,11 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.UserDraft
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import androidx.compose.ui.unit.Velocity
+import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
+import coil.request.ImageRequest
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.LocalAppDarkTheme
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.FancyLoadingAnimation
 
@@ -166,12 +170,27 @@ fun UserDraftView(
                         modifier  = Modifier.weight(1f),
                         textAlign = TextAlign.Center
                     )
-                    UserImage(
-                        url      = decodedUserPhotoUrl,
+                    val ctx = LocalContext.current
+                    val token = RetrofitClient.authRepository.getToken().orEmpty()
+                    val avatarRequest = ImageRequest.Builder(ctx)
+                        .data(decodedUserPhotoUrl)
+                        .addHeader("Authorization", "Bearer $token")
+                        .placeholder(R.drawable.fantasydraft)
+                        .error(R.drawable.fantasydraft)
+                        .crossfade(true)
+                        .build()
+
+                    AsyncImage(
+                        model = avatarRequest,
+                        contentDescription = "User avatar",
                         modifier = Modifier
                             .size(45.dp)
                             .clip(CircleShape)
+                            .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                            .clickable { /* opcional: abrir detalle */ },
+                        contentScale = ContentScale.Crop
                     )
+
                 }
                 Row(
                     Modifier
