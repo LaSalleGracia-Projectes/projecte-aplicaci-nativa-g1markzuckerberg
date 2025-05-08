@@ -37,7 +37,7 @@
 
 Fantasy Draft: El Fantasy Fútbol con Draft Semanal es un proyecto académico desarrollado por dos estudiantes de DAM (Desarrollo de Aplicaciones Multiplataforma). Se trata de la propuesta final de su módulo de Desarrollo de Aplicaciones, en la que debían diseñar y programar una aplicación completa, desde la interfaz hasta la lógica de negocio y la conexión con la base de datos.
 
-La idea principal de la app es ofrecer una experiencia de Fantasy Fútbol más dinámica: en lugar de gestionar un equipo fijo toda la temporada, cada semana los usuarios participan en un draft para seleccionar a sus 11 futbolistas. A través de un sistema de “puntos de estrellas” y un límite de valor, cada jugador elegirá estratégicamente su alineación semanal y competirá en ligas personalizadas contra otros usuarios. Todo ello desde una plataforma multiplataforma (web y móvil) sincronizada por correo electrónico.
+La idea principal de la app es ofrecer una experiencia de Fantasy Fútbol más dinámica: en lugar de gestionar un equipo fijo toda la temporada, cada semana los usuarios participan en un draft para seleccionar a sus 11 futbolistas. A través de un sistema de “puntos de estrellas” , cada jugador elegirá estratégicamente su alineación semanal y competirá en ligas personalizadas contra otros usuarios. Todo ello desde una plataforma multiplataforma (web y móvil) sincronizada por correo electrónico.
 
 
 ## 💻Tecnologias
