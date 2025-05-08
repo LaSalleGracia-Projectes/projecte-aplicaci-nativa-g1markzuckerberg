@@ -1,6 +1,40 @@
 
 # ⚽Fanstasy Draft
 
+## Índice
+
+- [Introducción](#introducción)
+- [💻 Tecnologías](#-tecnologías)
+    - [Plugins de Gradle](#plugins-de-gradle)
+    - [Configuración de Android](#configuración-de-android)
+    - [Dependencias clave](#dependencias-clave)
+- [🔒 Autenticación y Gestión de Tokens](#-autenticación-y-gestión-de-tokens)
+- [Flujo de UI / ViewModel](#flujo-de-ui--viewmodel)
+- [🚀 Navegación](#-navegación)
+    - [1. Declaración de rutas (`Routes`)](#1-declaración-de-rutas-routes)
+    - [2. Tipos de navegación](#2-tipos-de-navegación)
+        - [a) Navegación por clics](#a-navegación-por-clics)
+        - [b) Navegación con argumentos](#b-navegación-con-argumentos)
+        - [c) Control del back-stack](#c-control-del-back-stack)
+    - [3. Barra de navegación (`NavbarView`)](#3-barra-de-navegación-navbarview)
+    - [Cuándo mostrar la Navbar](#cuándo-mostrar-la-navbar)
+- [🎨 Home](#-home)
+- [🏗️ Reparto de responsabilidades (Home)](#️-reparto-de-responsabilidades-home)
+- [🚀 Acciones disponibles desde Home](#️-acciones-disponibles-desde-home)
+- [🎨 LigaView](#-ligaview)
+- [🏗️ Reparto de responsabilidades (LigaView)](#️-reparto-de-responsabilidades-ligaview)
+- [👤 UserSelfScreen / Perfil](#-userselfscreen--perfil)
+- [👥 UserDraftView](#-userdraftview)
+- [⚽️ DraftScreen](#️-draftscreen)
+- [🎮 Jugadores](#🎮-jugadores)
+- [🎯 Detalle de Jugador](#🎯-detalle-de-jugador)
+- [🔔 Notifications](#-notifications)
+- [⚙️ Settings](#️-settings)
+- [🔗 Módulo API / Retrofit – Resumen](#🔗-módulo-api--retrofit--resumen)
+- [🎨 Color Reference](#-color-reference)
+- [👥 Authors](#-authors)
+
+
 Fantasy Draft: El Fantasy Fútbol con Draft Semanal es un proyecto académico desarrollado por dos estudiantes de DAM (Desarrollo de Aplicaciones Multiplataforma). Se trata de la propuesta final de su módulo de Desarrollo de Aplicaciones, en la que debían diseñar y programar una aplicación completa, desde la interfaz hasta la lógica de negocio y la conexión con la base de datos.
 
 La idea principal de la app es ofrecer una experiencia de Fantasy Fútbol más dinámica: en lugar de gestionar un equipo fijo toda la temporada, cada semana los usuarios participan en un draft para seleccionar a sus 11 futbolistas. A través de un sistema de “puntos de estrellas” y un límite de valor, cada jugador elegirá estratégicamente su alineación semanal y competirá en ligas personalizadas contra otros usuarios. Todo ello desde una plataforma multiplataforma (web y móvil) sincronizada por correo electrónico.
