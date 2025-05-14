@@ -135,6 +135,8 @@
     <string name="password_confirm">Confirm</string>
     <string name="new_name">New name</string>
     <string name="new_birthdate">Date (YYYY-MM-DD)</string>
+    <string name="password_change_error_title">Error</string>
+    <string name="password_change_error_msg">Password could not be changed; the current password is incorrect.</string>
 
     <!-- SettingsView -->
     <string name="settings_title">Settings</string>
@@ -328,5 +330,10 @@
     <string name="error_corrupt_group_data">Data for group %1$s is corrupt.</string>
     <string name="error_player_option_mismatch">Selected player for %1$s does not match the options.</string>
     <string name="error_save_draft">Error saving: %1$d %2$s</string>
+
+    <string name="database_error_updating_password">Error introducing your actual password.</string>
+    <string name="incorrect_current_password">The current password is incorrect.</string>
+    <string name="password_fields_required">All password fields are required.</string>
+    <string name="passwords_do_not_match">New password and confirmation do not match.</string>
 
 </resources>

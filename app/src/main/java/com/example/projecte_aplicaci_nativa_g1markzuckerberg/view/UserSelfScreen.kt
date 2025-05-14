@@ -42,6 +42,7 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.LigaConPuntos
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.LocalAppDarkTheme
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialogSingleButton
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.FancyLoadingAnimation
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.LoadingTransitionScreen
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.grafanaUserUrl
@@ -68,6 +69,23 @@ fun UserSelfScreen(
             else -> {}
         }
     }
+    // ─── Error al editar (p.e. contraseña incorrecta) ───────────────
+    if (edit is UserEditState.Error) {
+        val code = (edit as UserEditState.Error).message
+        val userMessage = when (code) {
+            "INCORRECT_CURRENT_PASSWORD"      -> stringResource(R.string.incorrect_current_password)
+            "PASSWORD_FIELDS_REQUIRED"        -> stringResource(R.string.password_fields_required)
+            "PASSWORDS_DO_NOT_MATCH"          -> stringResource(R.string.passwords_do_not_match)
+            else                              -> stringResource(R.string.database_error_updating_password)
+        }
+
+        CustomAlertDialogSingleButton(
+            title   = stringResource(R.string.password_change_error_title),
+            message = userMessage,
+            onAccept = { vm.clearEditError() }
+        )
+    }
+
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

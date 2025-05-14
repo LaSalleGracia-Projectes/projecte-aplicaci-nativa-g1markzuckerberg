@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -48,21 +49,17 @@ fun SettingsView(
     navController: NavController,
     viewModel: SettingsViewModel,
     themePrefs: ThemePreferences
-
 ) {
-    // recogemos el estado actual del switch desde DataStore
+    val context = LocalContext.current
     val isDark by themePrefs.isDarkModeFlow.collectAsState(initial = false)
     val scope = rememberCoroutineScope()
-
     val isLoading by viewModel.isLoading.observeAsState(false)
     val errorMessage by viewModel.errorMessage.observeAsState()
     var showContactDialog by remember { mutableStateOf(false) }
     var showPrivacyDialog by remember { mutableStateOf(false) }
-
-    val dialogTitle by remember { mutableStateOf<String?>(null) }
-    dialogTitle?.let { }
-
+    val contactResult by viewModel.contactResult.observeAsState()
     val headerHeight = 110.dp
+
     BackHandler(enabled = true) {}
 
     Box(Modifier.fillMaxSize()) {
@@ -79,24 +76,25 @@ fun SettingsView(
                     body = stringResource(R.string.creators_body)
                 )
             }
+
             item {
                 SettingsCard(stringResource(R.string.contact)) {
                     showContactDialog = true
                 }
             }
+
             item {
                 DarkModeCard(isDark) {
-                    // 2) Cuando el usuario toca el switch, persiste el cambio
-                    scope.launch {
-                        themePrefs.setDarkMode(!isDark)
-                    }
+                    scope.launch { themePrefs.setDarkMode(!isDark) }
                 }
             }
+
             item {
                 SettingsCard(stringResource(R.string.privacy_title)) {
                     showPrivacyDialog = true
                 }
             }
+
             item {
                 ExpandableSettingsCard(
                     title = stringResource(R.string.api_title),
@@ -109,7 +107,7 @@ fun SettingsView(
             item {
                 Button(
                     onClick = {
-                        viewModel.logout {
+                        viewModel.logout(context) {
                             navController.navigate(Routes.Home.route) {
                                 popUpTo(Routes.Home.route) { inclusive = true }
                             }
@@ -183,7 +181,6 @@ fun SettingsView(
         )
     }
 
-    val contactResult by viewModel.contactResult.observeAsState()
     LaunchedEffect(contactResult) {
         contactResult?.let {
             viewModel.clearContactResult()
@@ -192,10 +189,7 @@ fun SettingsView(
 }
 
 @Composable
-fun SettingsCard(
-    title: String,
-    onClick: (String) -> Unit
-) {
+fun SettingsCard(title: String, onClick: (String) -> Unit) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -214,10 +208,7 @@ fun SettingsCard(
 }
 
 @Composable
-fun DarkModeCard(
-    isDark: Boolean,
-    onToggle: () -> Unit
-) {
+fun DarkModeCard(isDark: Boolean, onToggle: () -> Unit) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -240,10 +231,7 @@ fun DarkModeCard(
 }
 
 @Composable
-fun ExpandableSettingsCard(
-    title: String,
-    body: String,
-) {
+fun ExpandableSettingsCard(title: String, body: String) {
     var expanded by remember { mutableStateOf(false) }
     val interactionSource = remember { MutableInteractionSource() }
 
@@ -331,80 +319,28 @@ fun PrivacyPolicyDialog(onDismiss: () -> Unit) {
                         .padding(16.dp)
                         .verticalScroll(scrollState)
                 ) {
-                    Text(
-                        text = stringResource(R.string.privacy_point1),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Start
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = stringResource(R.string.privacy_body1),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Start
-                    )
-                    Spacer(Modifier.height(16.dp))
-
-                    Text(
-                        text = stringResource(R.string.privacy_point2),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Start
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = stringResource(R.string.privacy_body2),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Start
-                    )
-                    Spacer(Modifier.height(16.dp))
-
-                    Text(
-                        text = stringResource(R.string.privacy_point3),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Start
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = stringResource(R.string.privacy_body3),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Start
-                    )
-                    Spacer(Modifier.height(16.dp))
-
-                    Text(
-                        text = stringResource(R.string.privacy_point4),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Start
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = stringResource(R.string.privacy_body4),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Start
-                    )
-                    Spacer(Modifier.height(16.dp))
-
-                    Text(
-                        text = stringResource(R.string.privacy_point5),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Start
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = stringResource(R.string.privacy_body5),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Start
-                    )
-                    Spacer(Modifier.height(24.dp))
+                    listOf(
+                        R.string.privacy_point1 to R.string.privacy_body1,
+                        R.string.privacy_point2 to R.string.privacy_body2,
+                        R.string.privacy_point3 to R.string.privacy_body3,
+                        R.string.privacy_point4 to R.string.privacy_body4,
+                        R.string.privacy_point5 to R.string.privacy_body5
+                    ).forEach { (titleRes, bodyRes) ->
+                        Text(
+                            text = stringResource(titleRes),
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = TextAlign.Start
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(bodyRes),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = TextAlign.Start
+                        )
+                        Spacer(Modifier.height(16.dp))
+                    }
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),

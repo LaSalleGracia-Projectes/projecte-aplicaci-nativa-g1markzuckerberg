@@ -1,8 +1,12 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.*
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.repository.AuthRepository
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.repository.ContactRepository
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.launch
 
 class SettingsViewModel(
@@ -25,17 +29,32 @@ class SettingsViewModel(
         _isDarkTheme.value = !(_isDarkTheme.value ?: false)
     }
 
-    /* ---------- logout ---------- */
-    fun logout(onSuccess: () -> Unit) {
+    /* ---------- logout completo ---------- */
+    fun logout(context: Context, onSuccess: () -> Unit) {
         _isLoading.value = true
         viewModelScope.launch {
             val result = authRepository.logoutMobile()
             _isLoading.value = false
             result
-                .onSuccess { onSuccess() }
-                .onFailure { _errorMessage.value = it.message }
+                .onSuccess {
+                    // 🔹 1. Cierra sesión de Google
+                    val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                        .requestEmail()
+                        .build()
+                    val googleSignInClient = GoogleSignIn.getClient(context, gso)
+                    googleSignInClient.signOut()
+
+                    // 🔹 2. Borra token FCM
+                    FirebaseMessaging.getInstance().deleteToken()
+
+                    onSuccess()
+                }
+                .onFailure { exception ->
+                    _errorMessage.value = exception.message
+                }
         }
     }
+
     // ---------- contacto ----------
     private val _contactResult = MutableLiveData<Result<Unit>?>(null)
     val contactResult: LiveData<Result<Unit>?> = _contactResult
@@ -48,6 +67,7 @@ class SettingsViewModel(
         }
     }
 
-    fun clearContactResult() { _contactResult.value = null }
-
+    fun clearContactResult() {
+        _contactResult.value = null
+    }
 }

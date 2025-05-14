@@ -1,9 +1,11 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel
 
+import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.Interface.UserService
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,6 +15,7 @@ import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
+import retrofit2.HttpException
 import java.io.File
 
 /* ---------- estados UI ---------- */
@@ -62,15 +65,22 @@ class UserSelfViewModel(private val api: UserService) : ViewModel() {
 
     /* ---------------- helpers ---------------- */
     private fun runEdit(block: suspend () -> Unit) = viewModelScope.launch {
+        _edit.value = UserEditState.Loading
         try {
-            _edit.value = UserEditState.Loading
             block()
             _edit.value = UserEditState.Done
             refreshAll()
+        } catch (e: HttpException) {
+            val errorMsg = e.response()?.errorBody()?.string() ?: e.message()
+            _edit.value = UserEditState.Error(errorMsg)
         } catch (e: Exception) {
-            _edit.value = UserEditState.Error(e.localizedMessage ?: "Error")
-        } finally { _edit.value = UserEditState.Idle }
+            _edit.value = UserEditState.Error(e.localizedMessage ?: "Error desconocido")
+        }
     }
+
+    /* limpiar error manualmente */
+    fun clearEditError() { _edit.value = UserEditState.Idle }
+
 
     /* ---------------- acciones externas ---------------- */
     fun selectLeague(l: LigaConPuntos) = _ui.update {
@@ -85,8 +95,38 @@ class UserSelfViewModel(private val api: UserService) : ViewModel() {
         api.updateBirthDate(UpdateBirthDateRequest(dateIso))
     }
 
+    class PasswordUpdateException(val code: String) : Exception(code)
+
     fun updatePassword(old: String, new: String, confirm: String) = runEdit {
-        api.updatePassword(UpdatePasswordRequest(old, new, confirm))
+        try {
+            val response = api.updatePassword(UpdatePasswordRequest(old, new, confirm))
+
+            if (!response.isSuccessful) {
+                val body = response.errorBody()?.string().orEmpty()
+                val code = when {
+                    "Incorrect current password" in body       -> "INCORRECT_CURRENT_PASSWORD"
+                    "All password fields are required" in body -> "PASSWORD_FIELDS_REQUIRED"
+                    "do not match" in body                     -> "PASSWORDS_DO_NOT_MATCH"
+                    else                                       -> "DATABASE_ERROR_UPDATING_PASSWORD"
+                }
+                throw PasswordUpdateException(code)
+            }
+        } catch (e: HttpException) {
+            val body = e.response()?.errorBody()?.string().orEmpty()
+            val code = when {
+                "Incorrect current password" in body       -> "INCORRECT_CURRENT_PASSWORD"
+                "All password fields are required" in body -> "PASSWORD_FIELDS_REQUIRED"
+                "do not match" in body                     -> "PASSWORDS_DO_NOT_MATCH"
+                else                                       -> "DATABASE_ERROR_UPDATING_PASSWORD"
+            }
+            throw PasswordUpdateException(code)
+        } catch (e: PasswordUpdateException) {
+            // re-lanzamos tal cual para que runEdit lo capture con el código
+            throw e
+        } catch (e: Exception) {
+            // cualquier otro error
+            throw PasswordUpdateException("DATABASE_ERROR_UPDATING_PASSWORD")
+        }
     }
 
     fun uploadImage(file: File) = runEdit {
@@ -108,4 +148,5 @@ class UserSelfViewModel(private val api: UserService) : ViewModel() {
         override fun <T : ViewModel> create(c: Class<T>): T =
             UserSelfViewModel(RetrofitClient.userService) as T
     }
+
 }
