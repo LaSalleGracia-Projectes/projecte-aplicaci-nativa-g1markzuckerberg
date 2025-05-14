@@ -11,7 +11,7 @@ class LigaViewModel : ViewModel() {
     val ligaData: LiveData<LigaUsersResponse> = _ligaData
 
     // Se usará para guardar la jornada seleccionada; el valor 0 se interpretará como "Total"
-    private val _selectedJornada = MutableLiveData<Int>()
+    private val _selectedJornada = MutableLiveData<Int>(0)
     val selectedJornada: LiveData<Int> = _selectedJornada
 
     // Jornada actual (obtenida del endpoint de SportMonks)
@@ -32,15 +32,20 @@ class LigaViewModel : ViewModel() {
 
     fun fetchLigaInfo(ligaCode: String, jornada: Int? = null) {
         viewModelScope.launch {
-            _isLoading.value = true  // Activamos loading antes de la petición
+            _isLoading.value = true
             try {
-                // Llamada al endpoint de usuarios de la liga
                 val response = RetrofitClient.ligaService.getUsersByLiga(ligaCode, jornada)
                 if (response.isSuccessful) {
-                    _ligaData.postValue(response.body())
+                    response.body()?.let { body ->
+                        val usersOrdenados = when (jornada) {
+                            null, 0 -> body.users.sortedByDescending { it.puntos_acumulados }
+                            else    -> body.users.sortedByDescending { it.puntos_jornada }
+                        }
+                        _ligaData.postValue(body.copy(users = usersOrdenados))
+                    }
                 }
             } finally {
-                _isLoading.value = false  // Desactivamos loading al terminar
+                _isLoading.value = false
             }
         }
     }
