@@ -331,4 +331,9 @@
     <string name="error_player_option_mismatch">Selected player for %1$s does not match the options.</string>
     <string name="error_save_draft">Error saving: %1$d %2$s</string>
 
+    <string name="database_error_updating_password">Error introducing your actual password.</string>
+    <string name="incorrect_current_password">The current password is incorrect.</string>
+    <string name="password_fields_required">All password fields are required.</string>
+    <string name="passwords_do_not_match">New password and confirmation do not match.</string>
+
 </resources>

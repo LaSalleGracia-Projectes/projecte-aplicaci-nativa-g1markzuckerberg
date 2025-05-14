@@ -330,4 +330,10 @@
     <string name="error_player_option_mismatch">El jugador seleccionado en %1$s no coincide con las opciones.</string>
     <string name="error_save_draft">Error al guardar: %1$d %2$s</string>
 
+    <string name="database_error_updating_password">Error al introducir su contraseña actual.</string>
+    <string name="incorrect_current_password">La contraseña actual es incorrecta.</string>
+    <string name="password_fields_required">Todos los campos de contraseña son obligatorios.</string>
+    <string name="passwords_do_not_match">La nueva contraseña y su confirmación no coinciden.</string>
+
+
 </resources>

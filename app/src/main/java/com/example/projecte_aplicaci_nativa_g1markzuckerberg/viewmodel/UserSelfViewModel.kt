@@ -1,9 +1,11 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel
 
+import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.Interface.UserService
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -68,8 +70,11 @@ class UserSelfViewModel(private val api: UserService) : ViewModel() {
             block()
             _edit.value = UserEditState.Done
             refreshAll()
+        } catch (e: HttpException) {
+            val errorMsg = e.response()?.errorBody()?.string() ?: e.message()
+            _edit.value = UserEditState.Error(errorMsg)
         } catch (e: Exception) {
-            _edit.value = UserEditState.Error(e.localizedMessage ?: "Error")
+            _edit.value = UserEditState.Error(e.localizedMessage ?: "Error desconocido")
         }
     }
 
@@ -90,16 +95,37 @@ class UserSelfViewModel(private val api: UserService) : ViewModel() {
         api.updateBirthDate(UpdateBirthDateRequest(dateIso))
     }
 
+    class PasswordUpdateException(val code: String) : Exception(code)
+
     fun updatePassword(old: String, new: String, confirm: String) = runEdit {
         try {
-            api.updatePassword(UpdatePasswordRequest(old, new, confirm))
-        } catch (e: HttpException) {
-            if (e.code() == 500) {
-                /* señal especial para la UI */
-                throw Exception("PW_500")
-            } else {
-                throw e        // deja pasar otros errores
+            val response = api.updatePassword(UpdatePasswordRequest(old, new, confirm))
+
+            if (!response.isSuccessful) {
+                val body = response.errorBody()?.string().orEmpty()
+                val code = when {
+                    "Incorrect current password" in body       -> "INCORRECT_CURRENT_PASSWORD"
+                    "All password fields are required" in body -> "PASSWORD_FIELDS_REQUIRED"
+                    "do not match" in body                     -> "PASSWORDS_DO_NOT_MATCH"
+                    else                                       -> "DATABASE_ERROR_UPDATING_PASSWORD"
+                }
+                throw PasswordUpdateException(code)
             }
+        } catch (e: HttpException) {
+            val body = e.response()?.errorBody()?.string().orEmpty()
+            val code = when {
+                "Incorrect current password" in body       -> "INCORRECT_CURRENT_PASSWORD"
+                "All password fields are required" in body -> "PASSWORD_FIELDS_REQUIRED"
+                "do not match" in body                     -> "PASSWORDS_DO_NOT_MATCH"
+                else                                       -> "DATABASE_ERROR_UPDATING_PASSWORD"
+            }
+            throw PasswordUpdateException(code)
+        } catch (e: PasswordUpdateException) {
+            // re-lanzamos tal cual para que runEdit lo capture con el código
+            throw e
+        } catch (e: Exception) {
+            // cualquier otro error
+            throw PasswordUpdateException("DATABASE_ERROR_UPDATING_PASSWORD")
         }
     }
 

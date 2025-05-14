@@ -71,9 +71,17 @@ fun UserSelfScreen(
     }
     // ─── Error al editar (p.e. contraseña incorrecta) ───────────────
     if (edit is UserEditState.Error) {
+        val code = (edit as UserEditState.Error).message
+        val userMessage = when (code) {
+            "INCORRECT_CURRENT_PASSWORD"      -> stringResource(R.string.incorrect_current_password)
+            "PASSWORD_FIELDS_REQUIRED"        -> stringResource(R.string.password_fields_required)
+            "PASSWORDS_DO_NOT_MATCH"          -> stringResource(R.string.passwords_do_not_match)
+            else                              -> stringResource(R.string.database_error_updating_password)
+        }
+
         CustomAlertDialogSingleButton(
             title   = stringResource(R.string.password_change_error_title),
-            message = stringResource(R.string.password_change_error_msg),
+            message = userMessage,
             onAccept = { vm.clearEditError() }
         )
     }
