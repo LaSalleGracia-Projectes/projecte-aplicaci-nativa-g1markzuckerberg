@@ -134,7 +134,8 @@
     <string name="password_confirm">Confirmar</string>
     <string name="new_name">Nuevo nombre</string>
     <string name="new_birthdate">Fecha (YYYY-MM-DD)</string>
-
+    <string name="password_change_error_title">Error</string>
+    <string name="password_change_error_msg">No se pudo cambiar la contraseña, la contraseña original no es correcta.</string>
     <!-- SettingsView -->
     <string name="settings_title">Ajustes</string>
     <string name="creators_title">Creadores del proyecto</string>

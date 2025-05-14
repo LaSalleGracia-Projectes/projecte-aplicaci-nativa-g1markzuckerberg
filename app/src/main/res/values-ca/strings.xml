@@ -135,6 +135,8 @@
     <string name="password_confirm">Confirmar</string>
     <string name="new_name">Nom nou</string>
     <string name="new_birthdate">Data (AAAA-MM-DD)</string>
+    <string name="password_change_error_title">Error</string>
+    <string name="password_change_error_msg">No s’ha pogut canviar la contrasenya; la contrasenya original no és correcta.</string>
 
     <!-- SettingsView -->
     <string name="settings_title">Ajustaments</string>

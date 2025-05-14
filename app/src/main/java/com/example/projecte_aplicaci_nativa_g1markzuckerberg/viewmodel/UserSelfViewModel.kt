@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
+import retrofit2.HttpException
 import java.io.File
 
 /* ---------- estados UI ---------- */
@@ -62,15 +63,19 @@ class UserSelfViewModel(private val api: UserService) : ViewModel() {
 
     /* ---------------- helpers ---------------- */
     private fun runEdit(block: suspend () -> Unit) = viewModelScope.launch {
+        _edit.value = UserEditState.Loading
         try {
-            _edit.value = UserEditState.Loading
             block()
             _edit.value = UserEditState.Done
             refreshAll()
         } catch (e: Exception) {
             _edit.value = UserEditState.Error(e.localizedMessage ?: "Error")
-        } finally { _edit.value = UserEditState.Idle }
+        }
     }
+
+    /* limpiar error manualmente */
+    fun clearEditError() { _edit.value = UserEditState.Idle }
+
 
     /* ---------------- acciones externas ---------------- */
     fun selectLeague(l: LigaConPuntos) = _ui.update {
@@ -86,7 +91,16 @@ class UserSelfViewModel(private val api: UserService) : ViewModel() {
     }
 
     fun updatePassword(old: String, new: String, confirm: String) = runEdit {
-        api.updatePassword(UpdatePasswordRequest(old, new, confirm))
+        try {
+            api.updatePassword(UpdatePasswordRequest(old, new, confirm))
+        } catch (e: HttpException) {
+            if (e.code() == 500) {
+                /* señal especial para la UI */
+                throw Exception("PW_500")
+            } else {
+                throw e        // deja pasar otros errores
+            }
+        }
     }
 
     fun uploadImage(file: File) = runEdit {
@@ -108,4 +122,5 @@ class UserSelfViewModel(private val api: UserService) : ViewModel() {
         override fun <T : ViewModel> create(c: Class<T>): T =
             UserSelfViewModel(RetrofitClient.userService) as T
     }
+
 }

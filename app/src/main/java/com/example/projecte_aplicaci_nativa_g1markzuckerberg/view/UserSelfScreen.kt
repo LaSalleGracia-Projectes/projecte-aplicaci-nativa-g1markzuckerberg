@@ -42,6 +42,7 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.api.RetrofitClient
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.LigaConPuntos
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.LocalAppDarkTheme
+import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialogSingleButton
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.FancyLoadingAnimation
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.LoadingTransitionScreen
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.grafanaUserUrl
@@ -68,6 +69,15 @@ fun UserSelfScreen(
             else -> {}
         }
     }
+    // ─── Error al editar (p.e. contraseña incorrecta) ───────────────
+    if (edit is UserEditState.Error) {
+        CustomAlertDialogSingleButton(
+            title   = stringResource(R.string.password_change_error_title),
+            message = stringResource(R.string.password_change_error_msg),
+            onAccept = { vm.clearEditError() }
+        )
+    }
+
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

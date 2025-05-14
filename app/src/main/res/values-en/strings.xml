@@ -135,6 +135,8 @@
     <string name="password_confirm">Confirm</string>
     <string name="new_name">New name</string>
     <string name="new_birthdate">Date (YYYY-MM-DD)</string>
+    <string name="password_change_error_title">Error</string>
+    <string name="password_change_error_msg">Password could not be changed; the current password is incorrect.</string>
 
     <!-- SettingsView -->
     <string name="settings_title">Settings</string>
