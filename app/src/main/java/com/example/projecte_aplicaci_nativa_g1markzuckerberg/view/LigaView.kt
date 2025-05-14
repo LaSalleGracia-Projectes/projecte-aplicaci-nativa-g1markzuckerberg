@@ -1,7 +1,6 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.LoadingTransitionScreen
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -36,7 +35,6 @@ import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import coil.compose.rememberAsyncImagePainter
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.R
@@ -58,7 +56,7 @@ fun LigaView(
 ) {
     val ligaData by ligaViewModel.ligaData.observeAsState()
     val createdJornada = ligaData?.liga?.created_jornada ?: 0
-    val selectedJornada by ligaViewModel.selectedJornada.observeAsState(createdJornada)
+    val selectedJornada by ligaViewModel.selectedJornada.observeAsState(0)
     val currentJornada by ligaViewModel.currentJornada.observeAsState(createdJornada)
     val showCodeDialog by ligaViewModel.showCodeDialog.observeAsState(false)
     val isLoading by ligaViewModel.isLoading.observeAsState(initial = true)
@@ -257,6 +255,10 @@ fun LigaView(
                                 val cardModifier = Modifier
                                     .fillMaxWidth()
                                     .clickable {
+                                        navController.currentBackStackEntry
+                                            ?.savedStateHandle
+                                            ?.set("selectedJornadaKey", selectedJornada)
+
                                         navController.navigate(
                                             Routes.UserDraftView.createRoute(
                                                 data.liga.id.toString(),
@@ -566,25 +568,49 @@ fun JornadaDropdown(
     onSelected: (Int) -> Unit,
     textColor: Color = MaterialTheme.colorScheme.onSurface
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    var expanded   by remember { mutableStateOf(false) }
+    var buttonSize by remember { mutableStateOf(Size.Zero) }
+    val density    = LocalDensity.current
+
     Box {
         Button(
             onClick = { expanded = true },
             shape = RoundedCornerShape(8.dp),
-            modifier = Modifier.height(42.dp)
+            modifier = Modifier
+                .height(42.dp)
+                .onGloballyPositioned { buttonSize = it.size.toSize() }
         ) {
             Text(
-                text = if (selected == 0) stringResource(R.string.jornada_total) else "J$selected",
+                text  = if (selected == 0)
+                    stringResource(R.string.jornada_total)
+                else "J$selected",
                 style = MaterialTheme.typography.bodyMedium.copy(color = textColor)
             )
             Icon(
-                imageVector = Icons.Default.ArrowDropDown,
+                Icons.Default.ArrowDropDown,
                 contentDescription = stringResource(R.string.show_options),
                 tint = textColor
             )
         }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            for (j in createdJornada..currentJornada) {
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier
+                .width(with(density) { buttonSize.width.toDp() })
+                .heightIn(max = 200.dp)          // límite de alto
+        ) {
+            // ───── 1) TOTAL ─────
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.jornada_total)) },
+                onClick = {
+                    onSelected(0)
+                    expanded = false
+                }
+            )
+
+            // ───── 2) JORNADAS: de la actual ↓ a la creada ─────
+            for (j in currentJornada downTo createdJornada) {
                 DropdownMenuItem(
                     text = { Text("J$j") },
                     onClick = {
@@ -593,13 +619,6 @@ fun JornadaDropdown(
                     }
                 )
             }
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.jornada_total)) },
-                onClick = {
-                    onSelected(0)
-                    expanded = false
-                }
-            )
         }
     }
 }

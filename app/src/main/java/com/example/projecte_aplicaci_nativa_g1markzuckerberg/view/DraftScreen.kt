@@ -850,16 +850,36 @@ fun CompactPlayerCard(
 
 @Composable
 fun getPlayerCardDimensions(): Pair<Dp, Dp> {
-    val density        = LocalDensity.current
-    val screenWidthDp  = LocalConfiguration.current.screenWidthDp.dp
 
-    val availableWidth = screenWidthDp - 24.dp                // padding lateral (12×2)
-    val cardWidth      = (availableWidth - (3 * 8.dp)) / 4
+    // ─── Datos del dispositivo ───────────────────────────────────────────────────
+    val configuration = LocalConfiguration.current
+    val density       = LocalDensity.current
 
-    // 122:80 + margen -> redondeamos siempre hacia ARRIBA
+    //    • “phone”  → smallestScreenWidthDp  < 600
+    //    • “tablet” → smallestScreenWidthDp ≥ 600  (guía oficial de Android)
+    val isTablet = configuration.smallestScreenWidthDp >= 600
+
+    // ─── Constantes de layout (mismos valores que usa el Row) ────────────────────
+    val lateralPadding    = 24.dp        // 12 dp a cada lado
+    val interCardSpacing  = 8.dp         // Arrangement.spacedBy(8.dp)
+    val defaultPhoneCols  = 4            // en móvil queremos seguir con 4 columnas
+
+    // ─── Cálculo del ancho ───────────────────────────────────────────────────────
+    val screenWidth   = configuration.screenWidthDp.dp
+    val available     = screenWidth - lateralPadding
+
+    // 1⃣  MÓVIL → exactamente el mismo algoritmo que tenías
+    // 2⃣  TABLET → fijamos un ancho máximo para que la carta no “crezca sin límite”
+    val rawPhoneWidth   = (available - interCardSpacing * (defaultPhoneCols - 1)) / defaultPhoneCols
+    val maxTabletWidth  = 110.dp                          // puedes afinarlo a tu gusto
+    val cardWidth       = if (isTablet) maxTabletWidth
+    else              rawPhoneWidth // (< maxTabletWidth en la práctica)
+
+    // ─── Alto manteniendo la relación de aspecto original ───────────────────────
     val cardHeight = with(density) {
-        kotlin.math.ceil(cardWidth.toPx() * 122f / 80f).toDp() + 6.dp // +4 dp
+        kotlin.math.ceil(cardWidth.toPx() * 122f / 80f).toDp() + 6.dp
     }
 
     return cardWidth to cardHeight
 }
+

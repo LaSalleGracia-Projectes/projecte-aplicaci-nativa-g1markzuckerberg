@@ -2,7 +2,6 @@
 
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -19,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -196,42 +196,50 @@ fun PlayerDetailView(navController: NavController, playerId: String) {
                             )
                         }
                     }
-
+                    /* ----------  GRÁFICO DE PUNTOS  ---------- */
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp)
+                        shape    = RoundedCornerShape(16.dp)
                     ) {
+                        /* ─── Config tablet / phone ────────────────────────────────────────── */
+                        val cfg      = LocalConfiguration.current
+                        val isTablet = cfg.smallestScreenWidthDp >= 600      // ≥ 600 dp → tablet
+
                         var chartLoading by remember { mutableStateOf(true) }
-                        val rawUrl = grafanaPlayerUrl(player.id)
+                        val rawUrl   = grafanaPlayerUrl(player.id)
                         val cleanUrl = rawUrl.substringBefore("?")
                         val grafanaUrl = "$cleanUrl?theme=${if (darkTheme) "dark" else "light"}"
 
-                        Box(
-                            Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(rememberScrollState())
-                        ) {
+                        /* ─── Contenedor scrollable solo en móvil ──────────────────────────── */
+                        val boxMod = if (isTablet) Modifier.fillMaxWidth()
+                        else Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())
+
+                        Box(boxMod) {
                             AsyncImage(
                                 model = ImageRequest.Builder(LocalContext.current)
                                     .data(grafanaUrl)
                                     .crossfade(true)
                                     .listener(
                                         onSuccess = { _, _ -> chartLoading = false },
-                                        onError = { _, _ -> chartLoading = false }
+                                        onError   = { _, _ -> chartLoading = false }
                                     )
                                     .build(),
                                 contentDescription = stringResource(R.string.chart_desc),
-                                modifier = Modifier
-                                    .height(260.dp)
-                                    .padding(16.dp),
-                                contentScale = ContentScale.FillHeight
+                                modifier = if (isTablet)
+                                    Modifier
+                                        .fillMaxWidth()          // ⬅ se estira al 100%
+                                        .aspectRatio(16f / 9f)   // altura proporcional
+                                        .padding(16.dp)
+                                else
+                                    Modifier
+                                        .height(260.dp)          // diseño anterior
+                                        .padding(16.dp),
+                                contentScale = if (isTablet) ContentScale.FillWidth
+                                else            ContentScale.FillHeight
                             )
-                            if (chartLoading) {
-                                Box(
-                                    Modifier.matchParentSize(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    FancyLoadingAnimation(modifier = Modifier.size(100.dp))                                }
+
+                            if (chartLoading) Box(Modifier.matchParentSize(), Alignment.Center) {
+                                FancyLoadingAnimation(modifier = Modifier.size(100.dp))
                             }
                         }
                     }

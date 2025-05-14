@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -22,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -48,7 +50,6 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserSelfScreen(
     navController: NavHostController,
@@ -244,7 +245,6 @@ private fun EditRow(label: String, value: String, onClick: () -> Unit) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AvatarDialog(currentUrl: String, onDismiss: () -> Unit, onSave: (Uri) -> Unit) {
     var selected by remember { mutableStateOf<Uri?>(null) }
@@ -325,35 +325,56 @@ private fun LeagueSelector(st: UserSelfUiState.Ready, onClick: () -> Unit) {
 
 @Composable
 private fun PointsGraph(st: UserSelfUiState.Ready) {
+
+    /* ─── Configuración de dispositivo ─────────────────────────────────── */
+    val cfg      = LocalConfiguration.current
+    val isTablet = cfg.smallestScreenWidthDp >= 600          // guía oficial
+
+    /* ─── Carga de la imagen ───────────────────────────────────────────── */
     var loading by remember(st.selectedLeague.id) { mutableStateOf(true) }
     val isDarkApp = LocalAppDarkTheme.current
-    val rawUrl   = grafanaUserUrl(st.selectedLeague.id.toString(), st.user.id.toString())
-        .substringBefore("?")
-    val grafanaUrl = if (isDarkApp) "$rawUrl?theme=dark" else rawUrl
+    val baseUrl   = grafanaUserUrl(st.selectedLeague.id.toString(), st.user.id.toString())
+    val grafanaUrl = if (isDarkApp) baseUrl.substringBefore("?") + "?theme=dark" else baseUrl
+    val request = ImageRequest.Builder(LocalContext.current)
+        .data(grafanaUrl)
+        .crossfade(true)
+        .build()
 
-    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
-        Box(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
-            val request = ImageRequest.Builder(LocalContext.current)
-                .data(grafanaUrl)
-                .crossfade(true)
-                .build()
+    /* ─── UI ────────────────────────────────────────────────────────────── */
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape    = RoundedCornerShape(16.dp)
+    ) {
+        /**  En móvil mantenemos el scroll horizontal; en tablet lo quitamos  */
+        val boxMod = if (isTablet) Modifier.fillMaxWidth()
+        else Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())
 
+        Box(boxMod) {
             AsyncImage(
                 model = request,
                 contentDescription = null,
-                modifier = Modifier
-                    .height(260.dp)
-                    .padding(16.dp),
-                contentScale = ContentScale.FillHeight,
+                modifier = if (isTablet)
+                    Modifier
+                        .fillMaxWidth()         // ⬅ ocupa todo el ancho del padre
+                        .aspectRatio(16f / 9f)  // altura proporcional (ajústalo si quieres)
+                        .padding(16.dp)
+                else
+                    Modifier
+                        .height(260.dp)         // diseño anterior
+                        .padding(16.dp),
+                contentScale = if (isTablet) ContentScale.FillWidth
+                else            ContentScale.FillHeight,
                 onSuccess = { loading = false },
-                onError = { loading = false }
+                onError   = { loading = false }
             )
+
             if (loading) Box(Modifier.matchParentSize(), Alignment.Center) {
                 FancyLoadingAnimation(modifier = Modifier.size(100.dp))
             }
         }
     }
 }
+
 
 @Composable
 private fun LeaguePopup(leagues: List<LigaConPuntos>, onSelect: (LigaConPuntos) -> Unit, onDismiss: () -> Unit) {
@@ -396,7 +417,6 @@ private fun LeaguePopup(leagues: List<LigaConPuntos>, onSelect: (LigaConPuntos) 
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SimpleEditDialog(title: String, init: String, onRes: (String?) -> Unit) {
     var txt by remember { mutableStateOf(init) }
@@ -409,74 +429,126 @@ private fun SimpleEditDialog(title: String, init: String, onRes: (String?) -> Un
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PassDialog(onSave: (String, String, String) -> Unit) {
-    var oldPassword by remember { mutableStateOf("") }
-    var newPassword by remember { mutableStateOf("") }
+
+    /* ─── State ─────────────────────────────────────────────────────────── */
+    var oldPassword     by remember { mutableStateOf("") }
+    var newPassword     by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
 
-    var showOld by remember { mutableStateOf(false) }
-    var showNew by remember { mutableStateOf(false) }
+    var showOld     by remember { mutableStateOf(false) }
+    var showNew     by remember { mutableStateOf(false) }
     var showConfirm by remember { mutableStateOf(false) }
 
+    /* ─── Reglas de validación ──────────────────────────────────────────── */
+    val ruleLength = newPassword.length >= 6
+    val ruleUpper  = newPassword.any { it.isUpperCase() }
+    val ruleDigit  = newPassword.any { it.isDigit() }
+    val ruleMatch  = newPassword.isNotBlank() && newPassword == confirmPassword
+    val canSave    = ruleLength && ruleUpper && ruleDigit && ruleMatch
+
+    /* ─── UI ─────────────────────────────────────────────────────────────── */
     AlertDialog(
         onDismissRequest = { onSave("", "", "") },
         title = { Text(stringResource(R.string.change_password)) },
+
         text = {
             Column {
+
+                /* -------- Campo contraseña actual -------- */
                 OutlinedTextField(
                     value = oldPassword,
                     onValueChange = { oldPassword = it },
                     label = { Text(stringResource(R.string.password_current)) },
                     singleLine = true,
-                    visualTransformation = if (showOld) VisualTransformation.None else PasswordVisualTransformation(),
+                    visualTransformation = if (showOld) VisualTransformation.None
+                    else PasswordVisualTransformation(),
                     trailingIcon = {
                         val icon = if (showOld) R.drawable.visibility_on else R.drawable.visibility_off
                         IconButton(onClick = { showOld = !showOld }) {
-                            Icon(painter = painterResource(id = icon), contentDescription = null)
+                            Icon(painterResource(icon), null)
                         }
                     }
                 )
+
+                /* -------- Nueva contraseña -------- */
                 OutlinedTextField(
                     value = newPassword,
                     onValueChange = { newPassword = it },
                     label = { Text(stringResource(R.string.password_new)) },
                     singleLine = true,
-                    visualTransformation = if (showNew) VisualTransformation.None else PasswordVisualTransformation(),
+                    visualTransformation = if (showNew) VisualTransformation.None
+                    else PasswordVisualTransformation(),
                     trailingIcon = {
                         val icon = if (showNew) R.drawable.visibility_on else R.drawable.visibility_off
                         IconButton(onClick = { showNew = !showNew }) {
-                            Icon(painter = painterResource(id = icon), contentDescription = null)
+                            Icon(painterResource(icon), null)
                         }
                     }
                 )
+
+                /* -------- Confirmar contraseña -------- */
                 OutlinedTextField(
                     value = confirmPassword,
                     onValueChange = { confirmPassword = it },
                     label = { Text(stringResource(R.string.password_confirm)) },
                     singleLine = true,
-                    visualTransformation = if (showConfirm) VisualTransformation.None else PasswordVisualTransformation(),
+                    visualTransformation = if (showConfirm) VisualTransformation.None
+                    else PasswordVisualTransformation(),
                     trailingIcon = {
                         val icon = if (showConfirm) R.drawable.visibility_on else R.drawable.visibility_off
                         IconButton(onClick = { showConfirm = !showConfirm }) {
-                            Icon(painter = painterResource(id = icon), contentDescription = null)
+                            Icon(painterResource(icon), null)
                         }
                     }
                 )
+
+                Spacer(Modifier.height(12.dp))
+
+                /* -------- Reglas / validaciones -------- */
+                ValidationRow(ruleLength, stringResource(R.string.password_rule_length))
+                ValidationRow(ruleUpper,  stringResource(R.string.password_rule_uppercase))
+                ValidationRow(ruleDigit,  stringResource(R.string.password_rule_digit))
             }
         },
+
         confirmButton = {
-            TextButton(onClick = { onSave(oldPassword, newPassword, confirmPassword) }) {
-                Text(stringResource(R.string.ModalUsersave))
-            }
+            TextButton(
+                enabled = canSave,                               // ⬅ sólo si TODO es válido
+                onClick  = { onSave(oldPassword, newPassword, confirmPassword) }
+            ) { Text(stringResource(R.string.ModalUsersave)) }
         },
+
         dismissButton = {
             TextButton(onClick = { onSave("", "", "") }) {
-                Text(stringResource(R.string.ModalUsercancel)) }
+                Text(stringResource(R.string.ModalUsercancel))
+            }
         }
     )
 }
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/* Helper reutilizable para mostrar cada regla con ✓ verde al cumplirse      */
+@Composable
+private fun ValidationRow(isValid: Boolean, text: String) {
+    val okColor   = Color(0xFF4CAF50)
+    val textColor = if (isValid) okColor else MaterialTheme.colorScheme.onSurfaceVariant
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        if (isValid) {
+            Icon(
+                imageVector = Icons.Default.Check,
+                contentDescription = null,
+                tint = okColor,
+                modifier = Modifier.size(16.dp)
+            )
+        }
+        Spacer(Modifier.width(6.dp))
+        Text(text, color = textColor, fontSize = 14.sp)
+    }
+}
+
 
 private fun String.prettyDate(): String = try {
     val inFmt = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())

@@ -253,7 +253,7 @@ fun RegisterEmailView(
                 Text(
                     text = stringResource(R.string.register_button),
                     style = MaterialTheme.typography.bodyLarge,
-                    color = if (isDarkTheme) Color.White else Color.Black
+                    color = Color.White
                 )
             }
 

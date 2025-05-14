@@ -7,7 +7,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -36,6 +35,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -53,7 +53,6 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.model.ResultDialogD
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialog
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.CustomAlertDialogSingleButton
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.TrainerCard
-import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.UserImage
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.grafanaUserUrl
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.Tab
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.UserDraftViewModel
@@ -303,14 +302,19 @@ fun UserDraftView(
                                 .padding(vertical = 16.dp),
                             shape = RoundedCornerShape(16.dp)
                         ) {
+                            val isTablet = LocalConfiguration.current.smallestScreenWidthDp >= 600   // ← NUEVO
+
                             Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(220.dp)
-                                    .horizontalScroll(imageScroll)
-                                    .nestedScroll(grafanaConn),
-                                contentAlignment = Alignment.Center
-                            ) {
+                                modifier = if (isTablet)
+                                    Modifier.fillMaxWidth()               // ocupa todo el ancho en tablet
+                                else
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .height(220.dp)                   // móvil se queda igual
+                                        .horizontalScroll(imageScroll)
+                                        .nestedScroll(grafanaConn),
+
+                                ) {
                                 // 1️⃣ estado de carga
                                 var loading by remember { mutableStateOf(true) }
 
@@ -318,18 +322,22 @@ fun UserDraftView(
                                 SubcomposeAsyncImage(
                                     model = grafanaUrl,
                                     contentDescription = stringResource(R.string.performance_chart_desc),
-                                    modifier = Modifier
-                                        .fillMaxHeight()
-                                        .clip(MaterialTheme.shapes.medium),
-                                    contentScale = ContentScale.FillHeight
-                                ) {
+                                    modifier = if (isTablet)
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .aspectRatio(16f / 9f)                // alto proporcional; ajústalo si quieres
+                                            .clip(MaterialTheme.shapes.medium)
+                                    else
+                                        Modifier
+                                            .fillMaxHeight()
+                                            .clip(MaterialTheme.shapes.medium),
+                                    contentScale = if (isTablet) ContentScale.FillWidth
+                                    else            ContentScale.FillHeight,
+
+                                    ) {
                                     // 3️⃣ accede al painter y comprueba su estado
                                     val painter = painter
                                     when (painter.state) {
-                                        is AsyncImagePainter.State.Loading -> {
-                                            // 4️⃣ tu FancyLoadingAnimation centrado
-                                            FancyLoadingAnimation(modifier = Modifier.size(120.dp))
-                                        }
                                         is AsyncImagePainter.State.Success -> {
                                             loading = false
                                             SubcomposeAsyncImageContent()
@@ -341,6 +349,14 @@ fun UserDraftView(
                                         else -> {
                                             SubcomposeAsyncImageContent()
                                         }
+                                    }
+                                }
+                                if (loading) {
+                                    Box(
+                                        Modifier.matchParentSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        FancyLoadingAnimation(modifier = Modifier.size(120.dp))
                                     }
                                 }
                             }
