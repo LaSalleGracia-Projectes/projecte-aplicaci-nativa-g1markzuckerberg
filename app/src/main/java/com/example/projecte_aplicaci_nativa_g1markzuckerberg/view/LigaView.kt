@@ -46,6 +46,10 @@ import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.Leag
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.TokenManager
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.DraftViewModel
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.viewmodel.LigaViewModel
+import java.time.OffsetDateTime
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeParseException
 
 @Composable
 fun LigaView(
@@ -58,11 +62,11 @@ fun LigaView(
     val createdJornada = ligaData?.liga?.created_jornada ?: 0
     val selectedJornada by ligaViewModel.selectedJornada.observeAsState(0)
     val currentJornada by ligaViewModel.currentJornada.observeAsState(createdJornada)
+    val currentJActual by ligaViewModel.currentJornadaActual.observeAsState()
     val showCodeDialog by ligaViewModel.showCodeDialog.observeAsState(false)
     val isLoading by ligaViewModel.isLoading.observeAsState(initial = true)
 
     val context = LocalContext.current
-    // Instancia tu TokenManager y AuthRepository
     val tokenManager = TokenManager(context)
     val authRepository = AuthRepository(service = RetrofitClient.authService, tokenManager = tokenManager)
     val currentUserId = authRepository.getCurrentUserId()
@@ -70,6 +74,7 @@ fun LigaView(
     val draftError    by draftViewModel.errorMessage.observeAsState("")
     var showDraftErr  by remember { mutableStateOf(false) }
 
+    // Refetch cada vez que cambie la jornada seleccionada
     LaunchedEffect(key1 = selectedJornada) {
         val jornadaParam = if (selectedJornada == 0) null else selectedJornada
         ligaViewModel.fetchLigaInfo(ligaCode, jornadaParam)
@@ -83,21 +88,40 @@ fun LigaView(
 
     // Estado para mostrar el diálogo de creación de draft
     var showCreateDraftDialog by remember { mutableStateOf(false) }
-    LoadingTransitionScreen(isLoading = isFetching) {
-        // Pantalla de carga
 
+    // ----------- CONTROL VISIBILIDAD BOTÓN CREAR DRAFT -----------
+    // Solo mostrar si AHORA >= ending_at de la jornada actual
+    val showDraftButton = remember(currentJActual) {
+        currentJActual?.ending_at?.let { endStr ->
+            try {
+                val endDateTime = try {
+                    OffsetDateTime.parse(endStr)
+                } catch (e: DateTimeParseException) {
+                    // Si viene solo fecha (YYYY-MM-DD), se interpreta como 23:59:59 local
+                    LocalDate.parse(endStr)
+                        .atTime(23, 59, 59)
+                        .atZone(ZoneId.systemDefault())
+                        .toOffsetDateTime()
+                }
+                val now = OffsetDateTime.now()
+                now.isAfter(endDateTime) || now.isEqual(endDateTime)
+            } catch (e: Exception) {
+                false
+            }
+        } ?: false
+    }
+
+    LoadingTransitionScreen(isLoading = isFetching) {
         Box(modifier = Modifier.fillMaxSize()) {
             if (ligaData == null) {
-                LoadingTransitionScreen(isLoading = true) {
-                    // Pantalla de carga
-                }
+                LoadingTransitionScreen(isLoading = true) {}
             } else {
                 val data = ligaData!!
                 val imageUrl = "${RetrofitClient.BASE_URL}api/v1/liga/image/${data.liga.id}"
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(bottom = 56.dp) // Espacio para la Navbar
+                        .padding(bottom = 56.dp)
                 ) {
                     // HEADER
                     Box(
@@ -128,7 +152,6 @@ fun LigaView(
                                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                     contentDescription = stringResource(R.string.Ligaback),
                                     tint = MaterialTheme.colorScheme.onSecondary
-
                                 )
                             }
                             Text(
@@ -143,27 +166,25 @@ fun LigaView(
                                 modifier = Modifier.weight(1f),
                                 textAlign = TextAlign.Center
                             )
-                            val ctx   = LocalContext.current
-                            val token = authRepository.getToken().orEmpty()
-                            val leagueIconRequest = ImageRequest.Builder(ctx)
+                            val leagueIconRequest = ImageRequest.Builder(context)
                                 .data(imageUrl)
-                                .addHeader("Authorization", "Bearer $token")
+                                .addHeader("Authorization", "Bearer ${authRepository.getToken().orEmpty()}")
                                 .placeholder(R.drawable.fantasydraft)
                                 .error(R.drawable.fantasydraft)
                                 .crossfade(true)
                                 .build()
-
                             AsyncImage(
-                                model             = leagueIconRequest,
-                                contentDescription= "Icono de la liga",
-                                modifier          = Modifier
+                                model = leagueIconRequest,
+                                contentDescription = "Icono de la liga",
+                                modifier = Modifier
                                     .size(45.dp)
                                     .clip(CircleShape)
                                     .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
-                                contentScale      = ContentScale.Crop
+                                contentScale = ContentScale.Crop
                             )
                         }
                     }
+
                     // SECCIÓN DE BOTONES
                     Surface(
                         modifier = Modifier
@@ -189,34 +210,33 @@ fun LigaView(
                                 )
                             }
                             Spacer(modifier = Modifier.width(12.dp))
-                            // Al pulsar el botón stringResource(R.string.crear_draft_dialog_title)
-                            Button(
-                                onClick = {
-                                    draftViewModel.createOrFetchDraft(
-                                        ligaId           = data.liga.id,
-                                        onSuccess        = {
-                                            navController.navigate(Routes.DraftScreen.createRoute())
-                                        },
-                                        onRequestFormation = {
-                                            showCreateDraftDialog = true
-                                        }
+                            if (showDraftButton) {
+                                Button(
+                                    onClick = {
+                                        draftViewModel.createOrFetchDraft(
+                                            ligaId           = data.liga.id,
+                                            onSuccess        = {
+                                                navController.navigate(Routes.DraftScreen.createRoute())
+                                            },
+                                            onRequestFormation = {
+                                                showCreateDraftDialog = true
+                                            }
+                                        )
+                                    },
+                                    modifier = Modifier.height(42.dp),
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.secondary
                                     )
-                                },
-                                modifier = Modifier.height(42.dp),
-                                shape = RoundedCornerShape(8.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.secondary
-                                )
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.create_draft),
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        color = MaterialTheme.colorScheme.onSecondary
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.create_draft),
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            color = MaterialTheme.colorScheme.onSecondary
+                                        )
                                     )
-                                )
+                                }
                             }
-
-
                         }
                     }
                     // CONTENIDO: Ranking de usuarios
@@ -492,7 +512,7 @@ fun LigaView(
                             }
                         }
                     }
-                } // fin de Column
+                }
 
                 if (showCreateDraftDialog) {
                     CreateDraftDialog(
@@ -500,7 +520,6 @@ fun LigaView(
                         onDismiss = { showCreateDraftDialog = false },
                         onConfirm = { formation ->
                             showCreateDraftDialog = false
-                            // ahora usamos el método corregido:
                             draftViewModel.createAndFetchDraft(
                                 formation = formation,
                                 ligaId    = data.liga.id
@@ -510,7 +529,6 @@ fun LigaView(
                         }
                     )
                 }
-
             }
             if (showCodeDialog && ligaData != null) {
                 LeagueCodeDialog(
@@ -518,7 +536,6 @@ fun LigaView(
                     onDismiss = { ligaViewModel.toggleShowCodeDialog() }
                 )
             }
-
             if (showDraftErr) {
                 CustomAlertDialogSingleButton(
                     title    = stringResource(R.string.draft_error_title),
@@ -532,6 +549,7 @@ fun LigaView(
         }
     }
 }
+
 @Composable
 fun metallicBrushForRanking(index: Int): Brush {
     return when (index) {
@@ -598,9 +616,8 @@ fun JornadaDropdown(
             onDismissRequest = { expanded = false },
             modifier = Modifier
                 .width(with(density) { buttonSize.width.toDp() })
-                .heightIn(max = 200.dp)          // límite de alto
+                .heightIn(max = 200.dp)
         ) {
-            // ───── 1) TOTAL ─────
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.jornada_total)) },
                 onClick = {
@@ -608,8 +625,6 @@ fun JornadaDropdown(
                     expanded = false
                 }
             )
-
-            // ───── 2) JORNADAS: de la actual ↓ a la creada ─────
             for (j in currentJornada downTo createdJornada) {
                 DropdownMenuItem(
                     text = { Text("J$j") },
