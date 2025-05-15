@@ -2,6 +2,8 @@ package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.OverlayLoading
 import android.net.Uri
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -67,7 +69,12 @@ import coil.request.ImageRequest
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.nav.Routes
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.LocalAppDarkTheme
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.FancyLoadingAnimation
+import java.time.LocalDate
+import java.time.OffsetDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeParseException
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun UserDraftView(
     navController: NavController,
@@ -77,15 +84,51 @@ fun UserDraftView(
     userName: String,
     userPhotoUrl: String,
     createdJornada: Int,
-    currentJornada: Int
+    currentJornada: Int,
+    currentEndingAt: String? = null // <-- NUEVO (la fecha de fin de jornada actual, formato ISO)
 ) {
     val decodedUserPhotoUrl = Uri.decode(userPhotoUrl)
+
+    // --- NUEVO: calculo de si ya se pasó la fecha de fin de la jornada actual ---
+    val hemosPasadoFin = remember(currentEndingAt) {
+        currentEndingAt?.let { endingAt ->
+            try {
+                if (endingAt.length == 10) {
+                    // solo fecha yyyy-MM-dd
+                    val fechaFin = LocalDate.parse(endingAt)
+                    val hoy = LocalDate.now()
+                    hoy.isAfter(fechaFin) || hoy.isEqual(fechaFin)
+                } else {
+                    // fecha y hora ISO-8601
+                    val fechaFin = OffsetDateTime.parse(endingAt)
+                    val ahora = OffsetDateTime.now(ZoneId.systemDefault())
+                    ahora.isAfter(fechaFin) || ahora.isEqual(fechaFin)
+                }
+            } catch (e: Exception) {
+                false
+            }
+        } ?: false
+    }
+
+    // Ahora mostramos la jornada actual + 1 SOLO si hemos pasado la fecha de fin
+    val lastJornadaToShow = remember(currentJornada, hemosPasadoFin) {
+        if (hemosPasadoFin) currentJornada + 1 else currentJornada
+    }
+
+    // La lista de jornadas disponibles
+    val jornadas = remember(createdJornada, currentJornada) {
+        val maxJornada = currentJornada + 1      // añadimos la siguiente
+        (createdJornada..maxJornada).toList()
+    }
+
+    // --- selectedJornada empieza por defecto en la última visible ---
+    var selectedJornada by remember { mutableIntStateOf(lastJornadaToShow) }
 
     // 1) Pager USER / DRAFT
     val selectedTab by userDraftViewModel.selectedTab.observeAsState(initial = Tab.USER)
     val pagerState = rememberPagerState(
         initialPage = if (selectedTab == Tab.USER) 0 else 1,
-        pageCount   = { 2 }
+        pageCount = { 2 }
     )
     val scope = rememberCoroutineScope()
 
@@ -95,44 +138,35 @@ fun UserDraftView(
     }
     val leagueUserResponse by userDraftViewModel.leagueUserResponse.observeAsState()
 
-    // 3) Dropdowns y diálogos (igual que antes)
+    // 3) Dropdowns y diálogos
     var showConfirmationDialog by remember { mutableStateOf(false) }
     var confirmationAction by remember { mutableStateOf("") }
     var resultDialogData by remember { mutableStateOf<ResultDialogData?>(null) }
-// variables reactivas
-    val draftPlayers   by userDraftViewModel.draftPlayers.observeAsState(emptyList())
+
+    // variables reactivas
+    val draftPlayers by userDraftViewModel.draftPlayers.observeAsState(emptyList())
     val draftFormation by userDraftViewModel.draftFormation.observeAsState("4-3-3")
-    val isLoadingDraft  by userDraftViewModel.isLoadingDraft.observeAsState(false)
-    // 1 ─ estados NUEVOS junto a dropDownExpanded
-    var boxCoords      by remember { mutableStateOf<LayoutCoordinates?>(null) }   // ← NUEVO
+    val isLoadingDraft by userDraftViewModel.isLoadingDraft.observeAsState(false)
+    var boxCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
 
-    val jornadas = remember(createdJornada, currentJornada) {
-        (createdJornada..currentJornada).toList()
-    }
-
-    var selectedJornada by remember { mutableIntStateOf(currentJornada) }
-
-// cuando cambia la jornada seleccionada → descargar plantilla
+    // --- DESCARGAR DRAFT AL CAMBIAR JORNADA ---
     LaunchedEffect(selectedJornada) {
         userDraftViewModel.fetchUserDraft(leagueId, userId, selectedJornada)
     }
     LaunchedEffect(pagerState.currentPage) {
         val nuevaPestanya = if (pagerState.currentPage == 0) Tab.USER else Tab.DRAFT
         userDraftViewModel.setSelectedTab(nuevaPestanya)
-
-        // Si acabamos de ir a DRAFT, recargamos la plantilla de la jornada seleccionada
         if (nuevaPestanya == Tab.DRAFT) {
             userDraftViewModel.fetchUserDraft(
                 leagueId = leagueId,
-                userId   = userId,
+                userId = userId,
                 roundName = selectedJornada
             )
         }
     }
 
-
     Box(Modifier.fillMaxSize()) {
-        // ─── HEADER ─────────────────────────────────────────
+        // HEADER
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -153,21 +187,21 @@ fun UserDraftView(
                     Modifier
                         .fillMaxWidth()
                         .weight(1f),
-                    verticalAlignment    = Alignment.CenterVertically,
+                    verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
-                            imageVector   = Icons.AutoMirrored.Filled.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.back),
-                            tint          = MaterialTheme.colorScheme.onSecondary
+                            tint = MaterialTheme.colorScheme.onSecondary
                         )
                     }
                     Text(
-                        text      = userName,
-                        style     = MaterialTheme.typography.titleLarge,
-                        color     = MaterialTheme.colorScheme.onSecondary,
-                        modifier  = Modifier.weight(1f),
+                        text = userName,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSecondary,
+                        modifier = Modifier.weight(1f),
                         textAlign = TextAlign.Center
                     )
                     val ctx = LocalContext.current
@@ -179,7 +213,6 @@ fun UserDraftView(
                         .error(R.drawable.fantasydraft)
                         .crossfade(true)
                         .build()
-
                     AsyncImage(
                         model = avatarRequest,
                         contentDescription = "User avatar",
@@ -187,10 +220,9 @@ fun UserDraftView(
                             .size(45.dp)
                             .clip(CircleShape)
                             .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
-                            .clickable { /* opcional: abrir detalle */ },
+                            .clickable { },
                         contentScale = ContentScale.Crop
                     )
-
                 }
                 Row(
                     Modifier
@@ -201,9 +233,10 @@ fun UserDraftView(
                         scope.launch { pagerState.animateScrollToPage(page) }
                     }
                 }
-            }}
+            }
+        }
 
-        // ─── PAGER ──────────────────────────────────────────
+        // PAGER
         HorizontalPager(
             state = pagerState,
             modifier = Modifier
@@ -212,23 +245,18 @@ fun UserDraftView(
         ) { page ->
             if (page == 0) {
                 val isDarkApp = LocalAppDarkTheme.current
-
-                // 3) Calcula la URL base sin parámetros
                 val baseGrafanaUrl = remember(leagueId, userId) {
                     grafanaUserUrl(leagueId, userId).substringBefore("?")
                 }
                 val grafanaUrl = remember(baseGrafanaUrl, isDarkApp) {
                     "$baseGrafanaUrl?theme=${if (isDarkApp) "dark" else "light"}"
                 }
-
                 val imageScroll = rememberScrollState()
-                // === GRAFANA ===
                 val grafanaConn = remember(imageScroll) {
                     object : NestedScrollConnection {
                         override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                            val canScrollForward  = available.x < 0 && imageScroll.value < imageScroll.maxValue
+                            val canScrollForward = available.x < 0 && imageScroll.value < imageScroll.maxValue
                             val canScrollBackward = available.x > 0 && imageScroll.value > 0
-
                             return if (canScrollForward || canScrollBackward) {
                                 Offset.Zero
                             } else {
@@ -236,9 +264,8 @@ fun UserDraftView(
                             }
                         }
                         override suspend fun onPreFling(available: Velocity): Velocity {
-                            val canFlingForward  = available.x < 0 && imageScroll.value < imageScroll.maxValue
+                            val canFlingForward = available.x < 0 && imageScroll.value < imageScroll.maxValue
                             val canFlingBackward = available.x > 0 && imageScroll.value > 0
-
                             return if (canFlingForward || canFlingBackward) {
                                 Velocity.Zero
                             } else {
@@ -247,7 +274,6 @@ fun UserDraftView(
                         }
                     }
                 }
-                // === USUARIO ===
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
@@ -261,7 +287,6 @@ fun UserDraftView(
                     }
                     item {
                         leagueUserResponse?.let { resp ->
-                            // 1) Este Box "envuelve" sólo al TrainerCard y al DropdownMenu
                             Box(
                                 modifier = Modifier
                                     .wrapContentSize(align = Alignment.TopEnd)
@@ -269,32 +294,28 @@ fun UserDraftView(
                                 contentAlignment = Alignment.TopEnd
                             ) {
                                 TrainerCard(
-                                    imageUrl     = RetrofitClient.BASE_URL.trimEnd('/') + resp.user.imageUrl,
-                                    name         = resp.user.username,
-                                    birthDate    = resp.user.birthDate,
-                                    isCaptain    = resp.user.is_capitan,
-                                    puntosTotales= resp.user.puntos_totales,
-
-                                    onExpelClick = {          // 🔴 “Expulsar”
-                                        confirmationAction     = "expulsar"
+                                    imageUrl = RetrofitClient.BASE_URL.trimEnd('/') + resp.user.imageUrl,
+                                    name = resp.user.username,
+                                    birthDate = resp.user.birthDate,
+                                    isCaptain = resp.user.is_capitan,
+                                    puntosTotales = resp.user.puntos_totales,
+                                    onExpelClick = {
+                                        confirmationAction = "expulsar"
                                         showConfirmationDialog = true
                                     },
-                                    onCaptainClick = {        // 🟢 “Hacer Capitán”
-                                        confirmationAction     = "captain"
+                                    onCaptainClick = {
+                                        confirmationAction = "captain"
                                         showConfirmationDialog = true
                                     }
                                 )
                             }
                         } ?: Text(stringResource(R.string.loading_data))
-
                     }
                     item {
                         Spacer(modifier = Modifier.height(18.dp))
                         SectionHeader(title = stringResource(R.string.historic_section))
                         HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
-
                     }
-
                     item {
                         Card(
                             modifier = Modifier
@@ -302,40 +323,33 @@ fun UserDraftView(
                                 .padding(vertical = 16.dp),
                             shape = RoundedCornerShape(16.dp)
                         ) {
-                            val isTablet = LocalConfiguration.current.smallestScreenWidthDp >= 600   // ← NUEVO
-
+                            val isTablet = LocalConfiguration.current.smallestScreenWidthDp >= 600
                             Box(
                                 modifier = if (isTablet)
-                                    Modifier.fillMaxWidth()               // ocupa todo el ancho en tablet
+                                    Modifier.fillMaxWidth()
                                 else
                                     Modifier
                                         .fillMaxWidth()
-                                        .height(220.dp)                   // móvil se queda igual
+                                        .height(220.dp)
                                         .horizontalScroll(imageScroll)
                                         .nestedScroll(grafanaConn),
-
-                                ) {
-                                // 1️⃣ estado de carga
+                            ) {
                                 var loading by remember { mutableStateOf(true) }
-
-                                // 2️⃣ imagen de Grafana con SubcomposeAsyncImage
                                 SubcomposeAsyncImage(
                                     model = grafanaUrl,
                                     contentDescription = stringResource(R.string.performance_chart_desc),
                                     modifier = if (isTablet)
                                         Modifier
                                             .fillMaxWidth()
-                                            .aspectRatio(16f / 9f)                // alto proporcional; ajústalo si quieres
+                                            .aspectRatio(16f / 9f)
                                             .clip(MaterialTheme.shapes.medium)
                                     else
                                         Modifier
                                             .fillMaxHeight()
                                             .clip(MaterialTheme.shapes.medium),
                                     contentScale = if (isTablet) ContentScale.FillWidth
-                                    else            ContentScale.FillHeight,
-
-                                    ) {
-                                    // 3️⃣ accede al painter y comprueba su estado
+                                    else ContentScale.FillHeight,
+                                ) {
                                     val painter = painter
                                     when (painter.state) {
                                         is AsyncImagePainter.State.Success -> {
@@ -363,17 +377,12 @@ fun UserDraftView(
                         }
                     }
                 }
-
-            } else { /* ---------- PÁGINA DRAFT ---------- */
+            } else { // ----------- PÁGINA DRAFT -----------
                 OverlayLoading(isLoading = isLoadingDraft) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(modifier = Modifier.fillMaxSize()) {
-
-                            val jornadaPoints =
-                                draftPlayers.sumOf { it.puntos_jornada.toDouble().roundToInt() }
-
-
-                            /* 1️⃣  LazyRow — SIEMPRE visible arriba */
+                            val jornadaPoints = draftPlayers.sumOf { it.puntos_jornada.toDouble().roundToInt() }
+                            // --- LazyRow de jornadas ---
                             LazyRow(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -418,45 +427,42 @@ fun UserDraftView(
                                     }
                                 }
                             }
-
-                            /* 2️⃣  Lo que queda de alto: campo + contenido */
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clipToBounds()
                             ) {
                                 Image(
-                                    painter           = painterResource(R.drawable.futbol_pitch_background),
+                                    painter = painterResource(R.drawable.futbol_pitch_background),
                                     contentDescription = null,
-                                    modifier          = Modifier
+                                    modifier = Modifier
                                         .fillMaxSize()
                                         .graphicsLayer { scaleX = 1.25f },
-                                    contentScale      = ContentScale.FillBounds
+                                    contentScale = ContentScale.FillBounds
                                 )
                                 if (draftPlayers.isEmpty() && !isLoadingDraft) {
                                     Surface(
-                                        color  = MaterialTheme.colorScheme.surface.copy(alpha = 0.65f),
-                                        shape  = MaterialTheme.shapes.medium,
+                                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.65f),
+                                        shape = MaterialTheme.shapes.medium,
                                         tonalElevation = 6.dp,
                                         modifier = Modifier
                                             .align(Alignment.Center)
                                             .padding(horizontal = 24.dp)
                                     ) {
                                         Text(
-                                            text      = stringResource(R.string.no_draft, userName),
-                                            style     = MaterialTheme.typography.bodyLarge,
-                                            color     = MaterialTheme.colorScheme.onSurface,
+                                            text = stringResource(R.string.no_draft, userName),
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = MaterialTheme.colorScheme.onSurface,
                                             textAlign = TextAlign.Center,
-                                            modifier  = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                                         )
                                     }
                                 }
-                                // Solo si hay jugadores, dibujamos su plantilla
                                 if (draftPlayers.isNotEmpty()) {
                                     ReadonlyDraftLayout(
                                         navController = navController,
                                         formation = draftFormation,
-                                        players   = draftPlayers
+                                        players = draftPlayers
                                     )
                                 }
                             }
@@ -466,8 +472,7 @@ fun UserDraftView(
             }
         }
 
-        // ─── DROPDOWN / DIÁLOGOS ───────────────────────────
-
+        // --- DROPDOWN / DIÁLOGOS ---
         if (showConfirmationDialog) {
             val titleText = if (confirmationAction == "expulsar")
                 stringResource(R.string.confirm_expel_title)
@@ -479,9 +484,8 @@ fun UserDraftView(
             else
                 stringResource(R.string.confirm_captain_msg)
 
-            // Traducciones anticipadas para evitar error de context
             val successText = stringResource(R.string.success)
-            val errorText   = stringResource(R.string.error)
+            val errorText = stringResource(R.string.error)
 
             CustomAlertDialog(
                 title = titleText,
@@ -507,11 +511,10 @@ fun UserDraftView(
                 }
             )
         }
-
         resultDialogData?.let { data ->
             CustomAlertDialogSingleButton(
-                title    = data.title,
-                message  = data.message,
+                title = data.title,
+                message = data.message,
                 onAccept = { resultDialogData = null }
             )
         }

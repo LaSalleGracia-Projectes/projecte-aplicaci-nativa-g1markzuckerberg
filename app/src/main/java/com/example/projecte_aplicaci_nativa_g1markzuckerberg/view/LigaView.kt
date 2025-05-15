@@ -1,5 +1,7 @@
 package com.example.projecte_aplicaci_nativa_g1markzuckerberg.view
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import com.example.projecte_aplicaci_nativa_g1markzuckerberg.ui.theme.utils.LoadingTransitionScreen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -51,6 +53,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeParseException
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun LigaView(
     navController: NavController,
@@ -91,24 +94,29 @@ fun LigaView(
 
     // ----------- CONTROL VISIBILIDAD BOTÓN CREAR DRAFT -----------
     // Solo mostrar si AHORA >= ending_at de la jornada actual
-    val showDraftButton = remember(currentJActual) {
-        currentJActual?.ending_at?.let { endStr ->
-            try {
-                val endDateTime = try {
-                    OffsetDateTime.parse(endStr)
+    val endingAt = currentJActual?.ending_at
+    val showDraftButton by remember(endingAt) {
+        mutableStateOf(
+            endingAt?.let { endStr ->
+                try {
+                    if (endStr.length == 10) {
+                        /* ---------- solo fecha YYYY-MM-DD ---------- */
+                        val fechaFin   = LocalDate.parse(endStr)
+                        val hoy        = LocalDate.now()
+
+                        hoy.isAfter(fechaFin) || hoy.isEqual(fechaFin)   // ≥
+                    } else {
+                        /* ---------- fecha + hora ------------------ */
+                        val fin = OffsetDateTime.parse(endStr)           // conserva zona del servidor
+                        val ahora = OffsetDateTime.now(ZoneId.systemDefault())
+
+                        ahora.isAfter(fin) || ahora.isEqual(fin)         // ≥
+                    }
                 } catch (e: DateTimeParseException) {
-                    // Si viene solo fecha (YYYY-MM-DD), se interpreta como 23:59:59 local
-                    LocalDate.parse(endStr)
-                        .atTime(23, 59, 59)
-                        .atZone(ZoneId.systemDefault())
-                        .toOffsetDateTime()
+                    false       // si falla el parseo, no se muestra
                 }
-                val now = OffsetDateTime.now()
-                now.isAfter(endDateTime) || now.isEqual(endDateTime)
-            } catch (e: Exception) {
-                false
-            }
-        } ?: false
+            } ?: false          // si endingAt es null, no se muestra
+        )
     }
 
     LoadingTransitionScreen(isLoading = isFetching) {
